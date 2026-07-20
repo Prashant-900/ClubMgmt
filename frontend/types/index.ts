@@ -15,6 +15,7 @@ export interface User {
   phone: string | null;
   role: Role;
   isVerified: boolean;
+  clubId?: string | null;
   club?: Club | null;
   createdAt: string;
   invitedBy?: Pick<User, "id" | "email" | "name" | "role"> | null;

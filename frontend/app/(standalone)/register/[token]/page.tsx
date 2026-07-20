@@ -6,6 +6,9 @@ import { validateInviteLink } from "@/lib/api/invite-link.api";
 import { register } from "@/lib/api/auth.api";
 import type { InviteLink } from "@/types";
 
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+
 function getRoleBadgeClasses(role: string): string {
   switch (role) {
     case "COORDINATOR":
@@ -32,6 +35,10 @@ export default function RegisterPage() {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  const handleGoogleSignup = () => {
+    window.location.href = `${API_BASE_URL}/auth/google?inviteToken=${encodeURIComponent(inviteToken)}`;
+  };
 
   // Validate invite link on mount
   useEffect(() => {
@@ -184,6 +191,20 @@ export default function RegisterPage() {
           onSubmit={handleSubmit}
           className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 space-y-4 backdrop-blur-xl"
         >
+          <button
+            type="button"
+            onClick={handleGoogleSignup}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 bg-white text-slate-950 font-semibold hover:bg-slate-100"
+          >
+            Continue with Google
+          </button>
+
+          <div className="flex items-center gap-3 text-[11px] text-gray-600 uppercase tracking-wider">
+            <span className="h-px flex-1 bg-white/10" />
+            or
+            <span className="h-px flex-1 bg-white/10" />
+          </div>
+
           {/* Name */}
           <div className="space-y-1.5">
             <label htmlFor="reg-name" className="block text-xs font-medium text-gray-400">Full Name</label>

@@ -35,3 +35,18 @@ export async function removeMember(id: string, token?: string) {
     token,
   });
 }
+
+/**
+ * Promote a member to a club lead for a specific club.
+ */
+export async function promoteMember(
+  id: string,
+  data: { clubId: string },
+  token?: string
+) {
+  return apiRequest<User>(`/members/${id}/promote`, {
+    method: "POST",
+    body: data,
+    token,
+  });
+}

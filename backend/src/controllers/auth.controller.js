@@ -63,4 +63,45 @@ async function getProfile(req, res, next) {
   }
 }
 
-module.exports = { register, login, getProfile };
+async function googleLogin(req, res, next) {
+  try {
+    const { inviteToken } = req.query;
+    const redirectUrl = new URL(authService.getGoogleAuthUrl());
+
+    if (inviteToken && typeof inviteToken === "string") {
+      redirectUrl.searchParams.set("state", inviteToken);
+    }
+
+    return res.redirect(redirectUrl.toString());
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function googleCallback(req, res, next) {
+  try {
+    const { code, error, state } = req.query;
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+
+    if (error) {
+      return res.redirect(`${frontendUrl}/auth/callback?error=${encodeURIComponent(error)}`);
+    }
+
+    if (!code || typeof code !== "string") {
+      return res.redirect(
+        `${frontendUrl}/auth/callback?error=${encodeURIComponent("Missing Google authorization code")}`
+      );
+    }
+
+    const inviteToken = typeof state === "string" && state ? state : null;
+    const result = await authService.loginWithGoogle(code, inviteToken);
+    const callbackUrl = new URL("/auth/callback", frontendUrl);
+    callbackUrl.searchParams.set("token", result.token);
+
+    return res.redirect(callbackUrl.toString());
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { register, login, getProfile, googleLogin, googleCallback };

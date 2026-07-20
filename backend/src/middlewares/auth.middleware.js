@@ -24,6 +24,7 @@ async function authenticate(req, res, next) {
           email: "admin@localhost",
           name: "Local Admin",
           role: "ADMIN",
+          clubId: null,
         };
         return next();
       }
@@ -40,7 +41,7 @@ async function authenticate(req, res, next) {
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
-      select: { id: true, email: true, name: true, role: true },
+      select: { id: true, email: true, name: true, role: true, clubId: true },
     });
 
     if (!user) {
