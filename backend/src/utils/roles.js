@@ -2,13 +2,11 @@
  * Role hierarchy: ADMIN > COORDINATOR > MEMBER
  *
  * Invitation rules:
- *   - ADMIN can invite COORDINATOR and MEMBER
- *   - COORDINATOR can invite MEMBER only
+ *   - ADMIN can invite COORDINATOR only (must select a club)
+ *   - COORDINATOR can invite MEMBER only (auto-assigned to their club)
  *   - MEMBER cannot invite anyone
- *   - COORDINATOR can ONLY be invited by ADMIN
  *
  * Removal rules:
- *   - A user can remove anyone strictly below their hierarchy level
  *   - ADMIN can remove COORDINATOR and MEMBER
  *   - COORDINATOR can remove MEMBER
  *   - MEMBER cannot remove anyone
@@ -23,26 +21,19 @@ const ROLE_HIERARCHY = {
 /**
  * Check if the inviter's role can invite a user with the target role.
  *
- * Special rule: COORDINATOR can only be invited by ADMIN.
+ * Rules:
+ *   - ADMIN      → can only invite COORDINATOR
+ *   - COORDINATOR → can only invite MEMBER
+ *   - MEMBER     → cannot invite anyone
  *
- * @param {string} inviterRole - The role of the person sending the invite
- * @param {string} targetRole  - The role being assigned to the invitee
+ * @param {string} inviterRole
+ * @param {string} targetRole
  * @returns {boolean}
  */
 function canInvite(inviterRole, targetRole) {
-  const inviterLevel = ROLE_HIERARCHY[inviterRole];
-  const targetLevel = ROLE_HIERARCHY[targetRole];
-
-  if (inviterLevel === undefined || targetLevel === undefined) {
-    return false;
-  }
-
-  // COORDINATOR can only be invited by ADMIN
-  if (targetRole === "COORDINATOR" && inviterRole !== "ADMIN") {
-    return false;
-  }
-
-  return inviterLevel > targetLevel;
+  if (inviterRole === "ADMIN" && targetRole === "COORDINATOR") return true;
+  if (inviterRole === "COORDINATOR" && targetRole === "MEMBER") return true;
+  return false;
 }
 
 /**
@@ -51,17 +42,9 @@ function canInvite(inviterRole, targetRole) {
  * @returns {string[]}
  */
 function getInvitableRoles(role) {
-  const level = ROLE_HIERARCHY[role];
-  if (level === undefined) return [];
-
-  return Object.entries(ROLE_HIERARCHY)
-    .filter(([roleName, lvl]) => {
-      if (lvl >= level) return false;
-      // COORDINATOR can only be invited by ADMIN
-      if (roleName === "COORDINATOR" && role !== "ADMIN") return false;
-      return true;
-    })
-    .map(([roleName]) => roleName);
+  if (role === "ADMIN") return ["COORDINATOR"];
+  if (role === "COORDINATOR") return ["MEMBER"];
+  return [];
 }
 
 /**

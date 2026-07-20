@@ -2,9 +2,10 @@ import { apiRequest } from "./client";
 import type { User, AuthResponse } from "@/types";
 
 /**
- * Register / complete profile for an invited user.
+ * Register a new user via invite link.
  */
 export async function register(data: {
+  inviteToken: string;
   email: string;
   password: string;
   name: string;

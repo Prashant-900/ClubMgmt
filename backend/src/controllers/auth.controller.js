@@ -2,16 +2,22 @@ const authService = require("../services/auth.service");
 
 async function register(req, res, next) {
   try {
-    const { email, password, name, phone } = req.body;
+    const { inviteToken, email, password, name, phone } = req.body;
 
-    if (!email || !password || !name) {
+    if (!inviteToken || !email || !password || !name) {
       return res.status(400).json({
         success: false,
-        message: "Email, password, and name are required",
+        message: "inviteToken, email, password, and name are required",
       });
     }
 
-    const result = await authService.register({ email, password, name, phone });
+    const result = await authService.register({
+      inviteToken,
+      email,
+      password,
+      name,
+      phone,
+    });
 
     res.status(201).json({
       success: true,

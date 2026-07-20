@@ -1,4 +1,4 @@
-import { InviteForm } from "@/components/members/InviteForm";
+import { InviteLinkForm } from "@/components/members/InviteForm";
 import Link from "next/link";
 
 export default function InvitePage() {
@@ -18,16 +18,16 @@ export default function InvitePage() {
           </Link>
           <div className="w-2 h-8 rounded-full bg-gradient-to-b from-cyan-500 to-blue-600" />
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-100 tracking-tight">
-            Invite Members
+            Invite Links
           </h1>
         </div>
         <p className="text-sm text-gray-500 ml-[4.5rem]">
-          Add new coordinators and members to the club
+          Create shareable invite links for new members
         </p>
       </div>
 
       {/* Form */}
-      <InviteForm />
+      <InviteLinkForm />
     </div>
   );
 }

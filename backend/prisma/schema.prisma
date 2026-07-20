@@ -16,6 +16,16 @@ enum Role {
   MEMBER
 }
 
+model Club {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  createdAt   DateTime     @default(now())
+  users       User[]
+  inviteLinks InviteLink[]
+
+  @@map("clubs")
+}
+
 model User {
   id         String   @id @default(uuid())
   email      String   @unique
@@ -25,13 +35,41 @@ model User {
   role       Role     @default(MEMBER)
   isVerified Boolean  @default(false)
 
+  // Club — required for COORDINATOR and MEMBER, null for ADMIN
+  clubId String?
+  club   Club?   @relation(fields: [clubId], references: [id])
+
   // Invitation hierarchy tracking
   invitedById String?
   invitedBy   User?   @relation("Invitations", fields: [invitedById], references: [id])
   invitees    User[]  @relation("Invitations")
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  // Invite links created by this user
+  createdInviteLinks InviteLink[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("users")
+}
+
+model InviteLink {
+  id        String   @id @default(uuid())
+  token     String   @unique @default(uuid())
+  role      Role     @default(MEMBER)
+  maxUses   Int
+  usedCount Int      @default(0)
+  expiresAt DateTime
+
+  // Club — assigned to registrants (null for admin-created general links)
+  clubId String?
+  club   Club?   @relation(fields: [clubId], references: [id])
+
+  // Who created this link (optional — null for local-admin dev bypass)
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("invite_links")
 }

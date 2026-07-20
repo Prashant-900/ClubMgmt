@@ -1,6 +1,12 @@
 // ── Role enum ──
 export type Role = "ADMIN" | "COORDINATOR" | "MEMBER";
 
+// ── Club model ──
+export interface Club {
+  id: string;
+  name: string;
+}
+
 // ── User model ──
 export interface User {
   id: string;
@@ -9,9 +15,23 @@ export interface User {
   phone: string | null;
   role: Role;
   isVerified: boolean;
+  club?: Club | null;
   createdAt: string;
   invitedBy?: Pick<User, "id" | "email" | "name" | "role"> | null;
   invitees?: Pick<User, "id" | "email" | "name" | "role">[];
+}
+
+// ── Invite Link ──
+export interface InviteLink {
+  id: string;
+  token: string;
+  role: Role;
+  maxUses: number;
+  usedCount: number;
+  expiresAt: string;
+  club?: Club | null;
+  createdBy?: Pick<User, "id" | "name" | "email"> | null;
+  createdAt: string;
 }
 
 // ── Auth responses ──
