@@ -8,7 +8,7 @@ async function list(req, res, next) {
       role,
       page: page ? parseInt(page) : undefined,
       limit: limit ? parseInt(limit) : undefined,
-    });
+    }, req.user);
 
     res.status(200).json({
       success: true,
@@ -21,7 +21,7 @@ async function list(req, res, next) {
 
 async function getById(req, res, next) {
   try {
-    const member = await memberService.getMemberById(req.params.id);
+    const member = await memberService.getMemberById(req.params.id, req.user);
 
     res.status(200).json({
       success: true,
@@ -34,7 +34,12 @@ async function getById(req, res, next) {
 
 async function remove(req, res, next) {
   try {
-    const result = await memberService.removeMember(req.params.id, req.user.id, req.user.role);
+    const result = await memberService.removeMember(
+      req.params.id,
+      req.user.id,
+      req.user.role,
+      req.user.clubId
+    );
 
     res.status(200).json({
       success: true,
@@ -45,4 +50,18 @@ async function remove(req, res, next) {
   }
 }
 
-module.exports = { list, getById, remove };
+async function promote(req, res, next) {
+  try {
+    const { clubId } = req.body;
+    const member = await memberService.promoteMember(req.params.id, clubId);
+
+    res.status(200).json({
+      success: true,
+      data: member,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { list, getById, remove, promote };

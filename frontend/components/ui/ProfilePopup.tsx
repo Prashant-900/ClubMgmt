@@ -7,6 +7,7 @@ interface ProfilePopupProps {
   user: User;
   isOpen: boolean;
   onClose: () => void;
+  onLogout: () => void;
 }
 
 function getRoleBadgeClasses(role: string): string {
@@ -35,7 +36,7 @@ function getAvatarGradient(role: string): string {
   }
 }
 
-export function ProfilePopup({ user, isOpen, onClose }: ProfilePopupProps) {
+export function ProfilePopup({ user, isOpen, onClose, onLogout }: ProfilePopupProps) {
   const popupRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -171,6 +172,14 @@ export function ProfilePopup({ user, isOpen, onClose }: ProfilePopupProps) {
                        hover:bg-white/10 hover:text-gray-300 transition-all cursor-pointer"
           >
             Close
+          </button>
+          <button
+            onClick={onLogout}
+            className="w-full mt-2 py-2 text-xs font-medium text-rose-300 bg-rose-500/10 
+                       border border-rose-500/20 rounded-lg
+                       hover:bg-rose-500/15 hover:text-rose-200 transition-all cursor-pointer"
+          >
+            Sign out
           </button>
         </div>
       </div>

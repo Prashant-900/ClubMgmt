@@ -3,9 +3,10 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { listMembers, removeMember } from "@/lib/api/member.api";
+import { listClubs } from "@/lib/api/club.api";
 import { MemberCard } from "@/components/members/MemberCard";
 import { RoleGate } from "@/components/ui/RoleGate";
-import type { User, Role } from "@/types";
+import type { User, Role, Club } from "@/types";
 
 type FilterTab = "ALL" | Role;
 
@@ -37,14 +38,27 @@ function SkeletonCard() {
 }
 
 export function MemberGrid() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [members, setMembers] = useState<User[]>([]);
+  const [clubs, setClubs] = useState<Club[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterTab>("ALL");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+
+  useEffect(() => {
+    if (user?.role !== "ADMIN") return;
+
+    listClubs()
+      .then((res) => {
+        if (res.success && res.data) {
+          setClubs(res.data);
+        }
+      })
+      .catch(() => setClubs([]));
+  }, [user?.role]);
 
   const fetchMembers = useCallback(async () => {
     setLoading(true);
@@ -100,8 +114,8 @@ export function MemberGrid() {
 
   return (
     <div className="space-y-6">
-      {/* Filter tabs — visible to ADMIN & COORDINATOR */}
-      <RoleGate allowedRoles={["ADMIN", "COORDINATOR"]}>
+      {/* Filter tabs — visible to ADMIN only */}
+      <RoleGate allowedRoles={["ADMIN"]}>
         <div className="flex items-center gap-2 flex-wrap">
           {FILTER_TABS.map((tab) => (
             <button
@@ -159,6 +173,7 @@ export function MemberGrid() {
               key={member.id}
               member={member}
               onRemove={handleRemove}
+              clubs={clubs}
               index={i}
             />
           ))}

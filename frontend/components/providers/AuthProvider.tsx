@@ -9,17 +9,9 @@ import {
   type ReactNode,
 } from "react";
 import type { User, Role } from "@/types";
+import { getProfile } from "@/lib/api/auth.api";
 
-// ── Local dev admin — matches backend's auth.middleware.js bypass ──
-const LOCAL_DEV_ADMIN: User = {
-  id: "local-admin",
-  email: "admin@localhost",
-  name: "Local Admin",
-  phone: null,
-  role: "ADMIN" as Role,
-  isVerified: true,
-  createdAt: new Date().toISOString(),
-};
+const TOKEN_STORAGE_KEY = "clubmgmt.auth.token";
 
 interface AuthContextValue {
   user: User | null;
@@ -28,18 +20,22 @@ interface AuthContextValue {
   isCoordinator: boolean;
   isMember: boolean;
   hasRole: (...roles: Role[]) => boolean;
+  logout: () => void;
   loading: boolean;
 }
 
-const AuthContext = createContext<AuthContextValue>({
+const defaultAuthContextValue: AuthContextValue = {
   user: null,
   token: null,
   isAdmin: false,
   isCoordinator: false,
   isMember: false,
   hasRole: () => false,
+  logout: () => {},
   loading: true,
-});
+};
+
+const AuthContext = createContext<AuthContextValue>(defaultAuthContextValue);
 
 export function useAuth() {
   return useContext(AuthContext);
@@ -51,10 +47,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // In dev, use the local admin (no token needed — backend bypasses auth)
-    setUser(LOCAL_DEV_ADMIN);
-    setToken(null); // No token = backend local-admin bypass
-    setLoading(false);
+    const storedToken = window.localStorage.getItem(TOKEN_STORAGE_KEY);
+
+    if (!storedToken) {
+      setUser(null);
+      setToken(null);
+      setLoading(false);
+      return;
+    }
+
+    setToken(storedToken);
+
+    getProfile(storedToken)
+      .then((response) => {
+        setUser(response.data ?? null);
+      })
+      .catch(() => {
+        window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+        setUser(null);
+        setToken(null);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   const hasRole = useCallback(
@@ -65,6 +80,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [user]
   );
 
+  const logout = useCallback(() => {
+    window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+    setUser(null);
+    setToken(null);
+  }, []);
+
   const value: AuthContextValue = {
     user,
     token,
@@ -72,6 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isCoordinator: user?.role === "COORDINATOR",
     isMember: user?.role === "MEMBER",
     hasRole,
+    logout,
     loading,
   };
 

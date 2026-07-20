@@ -21,7 +21,7 @@ function getAvatarGradient(role: string): string {
 }
 
 export function Footer() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const pathname = usePathname();
   const [showProfile, setShowProfile] = useState(false);
 
@@ -42,6 +42,10 @@ export function Footer() {
           user={user}
           isOpen={showProfile}
           onClose={() => setShowProfile(false)}
+          onLogout={() => {
+            logout();
+            setShowProfile(false);
+          }}
         />
       )}
 
@@ -52,38 +56,47 @@ export function Footer() {
                    border-t border-white/[0.06]"
       >
         <div className="max-w-7xl mx-auto h-full px-4 sm:px-6 flex items-center justify-between">
-          {/* Left — Profile avatar button */}
-          <button
-            id="profile-button"
-            onClick={() => setShowProfile(!showProfile)}
-            className="flex items-center gap-2.5 group cursor-pointer"
-          >
-            <div
-              className={`w-9 h-9 rounded-full bg-gradient-to-br ${getAvatarGradient(user?.role || "MEMBER")} 
+          {/* Left — Profile avatar button or sign-in */}
+          {user ? (
+            <button
+              id="profile-button"
+              onClick={() => setShowProfile(!showProfile)}
+              className="flex items-center gap-2.5 group cursor-pointer"
+            >
+              <div
+                className={`w-9 h-9 rounded-full bg-gradient-to-br ${getAvatarGradient(user?.role || "MEMBER")} 
                           flex items-center justify-center text-white text-xs font-bold
                           ring-2 ring-white/10 group-hover:ring-white/20 
                           transition-all duration-200 group-hover:scale-105`}
-            >
-              {initials}
-            </div>
-            <div className="hidden sm:block text-left">
-              <p className="text-xs font-medium text-gray-300 group-hover:text-gray-100 transition-colors leading-tight">
-                {user?.name || "User"}
-              </p>
-              <p className="text-[10px] text-gray-600">{user?.role}</p>
-            </div>
-            {/* Chevron */}
-            <svg
-              className={`w-3.5 h-3.5 text-gray-600 transition-transform duration-200 hidden sm:block
+              >
+                {initials}
+              </div>
+              <div className="hidden sm:block text-left">
+                <p className="text-xs font-medium text-gray-300 group-hover:text-gray-100 transition-colors leading-tight">
+                  {user?.name || "User"}
+                </p>
+                <p className="text-[10px] text-gray-600">{user?.role}</p>
+              </div>
+              <svg
+                className={`w-3.5 h-3.5 text-gray-600 transition-transform duration-200 hidden sm:block
                          ${showProfile ? "rotate-180" : ""}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+              </svg>
+            </button>
+          ) : (
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-gray-200 hover:bg-white/10 transition-colors"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
-            </svg>
-          </button>
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              Sign in with Google
+            </Link>
+          )}
 
           {/* Center — Navigation */}
           <nav className="flex items-center gap-1.5">
