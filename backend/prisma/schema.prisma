@@ -1,0 +1,37 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  COORDINATOR
+  MEMBER
+}
+
+model User {
+  id         String   @id @default(uuid())
+  email      String   @unique
+  password   String?
+  name       String?
+  phone      String?
+  role       Role     @default(MEMBER)
+  isVerified Boolean  @default(false)
+
+  // Invitation hierarchy tracking
+  invitedById String?
+  invitedBy   User?   @relation("Invitations", fields: [invitedById], references: [id])
+  invitees    User[]  @relation("Invitations")
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("users")
+}
