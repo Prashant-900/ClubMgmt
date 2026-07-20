@@ -3,10 +3,11 @@ import type { User, PaginatedResponse } from "@/types";
 
 /**
  * Invite a new member with a specific role.
+ * Pass token for authenticated requests, or omit for local-admin bypass.
  */
 export async function inviteMember(
   data: { email: string; role: string },
-  token: string
+  token?: string
 ) {
   return apiRequest<User>("/members/invite", {
     method: "POST",
@@ -17,10 +18,11 @@ export async function inviteMember(
 
 /**
  * List members with optional role filter and pagination.
+ * Pass token for authenticated requests, or omit for local-admin bypass.
  */
 export async function listMembers(
   params: { role?: string; page?: number; limit?: number } = {},
-  token: string
+  token?: string
 ) {
   const searchParams = new URLSearchParams();
   if (params.role) searchParams.set("role", params.role);
@@ -36,14 +38,14 @@ export async function listMembers(
 /**
  * Get a specific member by ID.
  */
-export async function getMemberById(id: string, token: string) {
+export async function getMemberById(id: string, token?: string) {
   return apiRequest<User>(`/members/${id}`, { token });
 }
 
 /**
  * Remove a member by ID.
  */
-export async function removeMember(id: string, token: string) {
+export async function removeMember(id: string, token?: string) {
   return apiRequest<{ message: string }>(`/members/${id}`, {
     method: "DELETE",
     token,

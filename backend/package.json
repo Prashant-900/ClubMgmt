@@ -9,6 +9,8 @@
     "prisma:generate": "npx prisma generate",
     "prisma:migrate": "npx prisma migrate dev",
     "prisma:studio": "npx prisma studio",
+    "seed": "node prisma/seed.js",
+    "seed:register": "node prisma/register-invited.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

@@ -68,7 +68,7 @@ async function getById(req, res, next) {
 
 async function remove(req, res, next) {
   try {
-    const result = await memberService.removeMember(req.params.id, req.user.id);
+    const result = await memberService.removeMember(req.params.id, req.user.id, req.user.role);
 
     res.status(200).json({
       success: true,
