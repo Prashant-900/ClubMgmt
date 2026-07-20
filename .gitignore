@@ -1,0 +1,122 @@
+# ==========================
+# Dependencies
+# ==========================
+node_modules/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# ==========================
+# Build Output
+# ==========================
+.next/
+out/
+build/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Next.js generated types
+next-env.d.ts
+
+# ==========================
+# Environment Files
+# ==========================
+.env
+.env.*
+!.env.example
+
+# ==========================
+# Logs
+# ==========================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ==========================
+# Runtime Files
+# ==========================
+*.pid
+*.seed
+*.pid.lock
+
+# ==========================
+# Cache
+# ==========================
+.cache/
+.parcel-cache/
+.turbo/
+.eslintcache
+
+# ==========================
+# Vercel
+# ==========================
+.vercel/
+
+# ==========================
+# IDE / Editor
+# ==========================
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# ==========================
+# OS Files
+# ==========================
+.DS_Store
+Thumbs.db
+
+# ==========================
+# Security
+# ==========================
+*.pem
+*.key
+*.crt
+
+# ==========================
+# Package Managers
+# ==========================
+package-lock.json.orig
+yarn.lock.orig
+pnpm-lock.yaml.orig
+
+# ==========================
+# Test Reports
+# ==========================
+.nyc_output/
+coverage-final.json
+
+# ==========================
+# Temporary Files
+# ==========================
+tmp/
+temp/
+*.tmp
+
+# ==========================
+# Local Databases
+# ==========================
+*.sqlite
+*.sqlite3
+
+# ==========================
+# Optional (Uncomment if needed)
+# ==========================
+
+# Ignore uploads
+# uploads/
+
+# Ignore generated API docs
+# docs/
+
+# Ignore Prisma generated database
+# prisma/dev.db
