@@ -22,6 +22,7 @@ Last updated: 2026-07-21
 - MEMBER
 
 Behavior:
+- Admin dashboard displays a grid of all clubs. Clicking a club shows its members.
 - Admin can create coordinator invite links, choose club.
 - Coordinator can create member invite links, club auto-assigned.
 - Coordinator access is club-scoped for member listing/detail/removal.
@@ -134,7 +135,7 @@ npx tsc --noEmit
 - GET /api/auth/profile
 
 ### Members
-- GET /api/members
+- GET /api/members (Accepts `?clubId=` filter for ADMIN)
 - GET /api/members/:id
 - POST /api/members/:id/promote (ADMIN)
 - DELETE /api/members/:id (ADMIN)
@@ -152,7 +153,7 @@ npx tsc --noEmit
 
 ### 7.1 View as admin now
 - In development with LOCAL_ADMIN=true and no stored JWT, app can behave as local admin.
-- Open http://localhost:3000 and inspect members.
+- Open http://localhost:3000 to view the list of clubs. Click on a club to inspect its members.
 
 If old token causes unexpected role:
 

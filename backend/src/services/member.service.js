@@ -5,7 +5,7 @@ const { canRemove, getRemovableRoles } = require("../utils/roles");
 /**
  * List members, optionally filtered by role.
  */
-async function listMembers({ role, page = 1, limit = 20 }, requester) {
+async function listMembers({ role, page = 1, limit = 20, clubId }, requester) {
   const where = {};
   if (role) {
     where.role = role;
@@ -16,6 +16,8 @@ async function listMembers({ role, page = 1, limit = 20 }, requester) {
       throw createError("You must belong to a club to view members", 403);
     }
     where.clubId = requester.clubId;
+  } else if (requester?.role === "ADMIN" && clubId) {
+    where.clubId = clubId;
   }
 
   const [members, total] = await Promise.all([

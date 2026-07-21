@@ -12,7 +12,6 @@ type FilterTab = "ALL" | Role;
 
 const FILTER_TABS: { label: string; value: FilterTab }[] = [
   { label: "All", value: "ALL" },
-  { label: "Admins", value: "ADMIN" },
   { label: "Coordinators", value: "COORDINATOR" },
   { label: "Members", value: "MEMBER" },
 ];
@@ -37,7 +36,7 @@ function SkeletonCard() {
   );
 }
 
-export function MemberGrid() {
+export function MemberGrid({ clubId }: { clubId?: string }) {
   const { token, user } = useAuth();
   const [members, setMembers] = useState<User[]>([]);
   const [clubs, setClubs] = useState<Club[]>([]);
@@ -64,12 +63,15 @@ export function MemberGrid() {
     setLoading(true);
     setError(null);
     try {
-      const params: { role?: string; page?: number; limit?: number } = {
+      const params: { role?: string; page?: number; limit?: number; clubId?: string } = {
         page,
         limit: 20,
       };
       if (activeFilter !== "ALL") {
         params.role = activeFilter;
+      }
+      if (clubId) {
+        params.clubId = clubId;
       }
 
       const res = await listMembers(params, token ?? undefined);
@@ -87,7 +89,7 @@ export function MemberGrid() {
     } finally {
       setLoading(false);
     }
-  }, [token, activeFilter, page]);
+  }, [token, activeFilter, page, clubId]);
 
   useEffect(() => {
     fetchMembers();
