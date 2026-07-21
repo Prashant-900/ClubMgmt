@@ -60,3 +60,112 @@ export interface ApiResponse<T = unknown> {
   data?: T;
   message?: string;
 }
+
+// ── Contribution enums ────────────────────────────────────────────────────────
+
+export type ContributionStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export type ContributionCategory =
+  | "DEVELOPMENT"
+  | "WORKSHOP"
+  | "PRESENTATION"
+  | "DESIGN"
+  | "EVENT_SUPPORT"
+  | "DOCUMENTATION"
+  | "MEETING"
+  | "OTHER";
+
+// ── Contribution model ────────────────────────────────────────────────────────
+
+export interface Contribution {
+  id: string;
+  title: string;
+  description: string | null;
+  category: ContributionCategory;
+  hours: number;
+  datePerformed: string;
+  attachmentUrl: string | null;
+  status: ContributionStatus;
+  rejectionReason: string | null;
+  approvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  user: Pick<User, "id" | "name" | "email" | "role">;
+  club: Pick<Club, "id" | "name">;
+  approvedBy: Pick<User, "id" | "name" | "email"> | null;
+}
+
+// ── Contribution list response ────────────────────────────────────────────────
+
+export interface ContributionListResponse {
+  contributions: Contribution[];
+  pagination: Pagination;
+}
+
+// ── Analytics types ───────────────────────────────────────────────────────────
+
+export interface CategoryStat {
+  category: ContributionCategory;
+  totalHours: number;
+  count: number;
+}
+
+export interface TopContributor {
+  user: Pick<User, "id" | "name" | "email"> & { club?: Club | null };
+  totalHours: number;
+  totalContributions?: number;
+}
+
+export interface WeeklyTrendPoint {
+  week: string;
+  count: number;
+  hours: number;
+}
+
+export interface ClubStats {
+  totalApproved: number;
+  totalPending: number;
+  totalRejected: number;
+  totalApprovedHours: number;
+}
+
+export interface ClubAnalytics {
+  club: Club;
+  stats: ClubStats;
+  categoryBreakdown: CategoryStat[];
+  topContributors: TopContributor[];
+  recentContributions: Contribution[];
+  weeklyTrend: WeeklyTrendPoint[];
+}
+
+export interface TopClub {
+  club: Club;
+  totalHours: number;
+  count: number;
+}
+
+export interface GlobalAnalytics {
+  stats: ClubStats;
+  topClubs: TopClub[];
+  topContributors: TopContributor[];
+  categoryBreakdown: CategoryStat[];
+  recentContributions: Contribution[];
+  weeklyTrend: WeeklyTrendPoint[];
+}
+
+// ── Leaderboard ───────────────────────────────────────────────────────────────
+
+export type LeaderboardPeriod = "weekly" | "monthly" | "semester" | "all";
+
+export interface LeaderboardEntry {
+  rank: number;
+  user: Pick<User, "id" | "name" | "email"> & { club?: Club | null };
+  totalHours: number;
+  totalContributions: number;
+}
+
+export interface LeaderboardResponse {
+  period: LeaderboardPeriod;
+  entries: LeaderboardEntry[];
+  pagination: Pagination;
+}
