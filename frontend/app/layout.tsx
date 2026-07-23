@@ -1,6 +1,6 @@
 import { Inter } from "next/font/google";
 import { AuthProvider } from "@/components/providers/AuthProvider";
-import { Footer } from "@/components/layout/Footer";
+import { Navbar } from "@/components/layout/Navbar";
 import "./globals.css";
 
 const inter = Inter({
@@ -20,10 +20,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.className}>
-      <body className="min-h-screen bg-bg-primary text-gray-100 antialiased">
+      <body className="min-h-screen bg-[#0d1117] text-[#e6edf3] antialiased">
         <AuthProvider>
-          <main className="pb-20">{children}</main>
-          <Footer />
+          <Navbar />
+          {/* pt-28 accounts for 64px navbar top bar + 44px tab row */}
+          <main className="pt-28 min-h-screen">{children}</main>
         </AuthProvider>
       </body>
     </html>

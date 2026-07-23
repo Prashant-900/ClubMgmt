@@ -209,7 +209,8 @@ async function loginWithGoogle(code, inviteToken = null) {
         where: { email: profileData.email },
         data: {
           name: profileData.name || existingUser.name,
-          role: isAdmin ? "ADMIN" : existingUser.role,
+          role: isAdmin ? "ADMIN" : (inviteLink?.role || existingUser.role),
+          clubId: isAdmin ? null : (inviteLink?.club?.id || existingUser.clubId),
           isVerified: true,
         },
         select: { id: true, email: true, name: true, role: true, clubId: true },

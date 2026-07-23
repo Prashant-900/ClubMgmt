@@ -1,74 +1,188 @@
 @import "tailwindcss";
 
-/* ── Minimal custom stuff Tailwind doesn't cover ── */
+/* ── GitHub-inspired design tokens ── */
 
 @theme {
-  --color-bg-primary: #0a0a0f;
-  --color-bg-secondary: #0f0d1a;
-  --color-role-admin: #8b5cf6;
-  --color-role-admin-bg: rgba(139, 92, 246, 0.15);
-  --color-role-coordinator: #06b6d4;
-  --color-role-coordinator-bg: rgba(6, 182, 212, 0.15);
-  --color-role-member: #10b981;
-  --color-role-member-bg: rgba(16, 185, 129, 0.15);
-  --color-glass: rgba(255, 255, 255, 0.04);
-  --color-glass-hover: rgba(255, 255, 255, 0.07);
-  --color-glass-border: rgba(255, 255, 255, 0.06);
-  --color-glass-border-light: rgba(255, 255, 255, 0.1);
+  /* Backgrounds */
+  --color-gh-canvas-default:   #0d1117;
+  --color-gh-canvas-subtle:    #161b22;
+  --color-gh-canvas-inset:     #010409;
+
+  /* Borders */
+  --color-gh-border-default:   #30363d;
+  --color-gh-border-muted:     #21262d;
+  --color-gh-border-subtle:    rgba(240, 246, 252, 0.1);
+
+  /* Text */
+  --color-gh-text-primary:     #e6edf3;
+  --color-gh-text-secondary:   #8b949e;
+  --color-gh-text-tertiary:    #6e7681;
+  --color-gh-text-disabled:    #484f58;
+  --color-gh-text-inverse:     #0d1117;
+
+  /* Accent / Brand */
+  --color-gh-accent-emphasis:  #1f6feb;
+  --color-gh-accent-subtle:    rgba(31, 111, 235, 0.15);
+
+  /* Success / Green */
+  --color-gh-success-emphasis: #238636;
+  --color-gh-success-muted:    rgba(35, 134, 54, 0.15);
+  --color-gh-success-fg:       #3fb950;
+
+  /* Danger / Red */
+  --color-gh-danger-emphasis:  #da3633;
+  --color-gh-danger-muted:     rgba(218, 54, 51, 0.15);
+  --color-gh-danger-fg:        #f85149;
+
+  /* Warning */
+  --color-gh-warning-emphasis: #9e6a03;
+  --color-gh-warning-muted:    rgba(187, 128, 9, 0.15);
+  --color-gh-warning-fg:       #d29922;
+
+  /* Roles */
+  --color-role-admin:          #a371f7;
+  --color-role-admin-bg:       rgba(163, 113, 247, 0.15);
+  --color-role-coordinator:    #79c0ff;
+  --color-role-coordinator-bg: rgba(121, 192, 255, 0.15);
+  --color-role-member:         #3fb950;
+  --color-role-member-bg:      rgba(63, 185, 80, 0.15);
+
+  /* Heatmap scale (GitHub green palette) */
+  --color-heatmap-0: #161b22;
+  --color-heatmap-1: #0e4429;
+  --color-heatmap-2: #006d32;
+  --color-heatmap-3: #26a641;
+  --color-heatmap-4: #39d353;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
+/* ── Base ── */
+
+* {
+  box-sizing: border-box;
 }
-::-webkit-scrollbar-track {
-  background: transparent;
+
+html,
+body {
+  background-color: #0d1117;
+  color: #e6edf3;
 }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: #30363d;
   border-radius: 9999px;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
+::-webkit-scrollbar-thumb:hover { background: #484f58; }
 
-/* Custom keyframes */
+/* ── Animations ── */
+
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
+  0%   { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
 
 @keyframes scale-in {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-.animate-scale-in {
-  animation: scale-in 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.skeleton {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.04) 25%,
-    rgba(255, 255, 255, 0.08) 50%,
-    rgba(255, 255, 255, 0.04) 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+  from { opacity: 0; transform: scale(0.96) translateY(6px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
 }
 
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.animate-fade-in {
-  animation: fade-in 0.2s ease-out;
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-scale-in  { animation: scale-in  0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+.animate-fade-in   { animation: fade-in   0.2s ease-out; }
+.animate-slide-down { animation: slide-down 0.15s ease-out; }
+
+/* ── Skeleton loader ── */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #161b22 25%,
+    #21262d 50%,
+    #161b22 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+/* ── GitHub-style inputs ── */
+.gh-input {
+  background-color: #010409;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  color: #e6edf3;
+  font-size: 14px;
+  padding: 5px 12px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+}
+.gh-input:focus {
+  border-color: #1f6feb;
+  box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.2);
+}
+.gh-input::placeholder { color: #6e7681; }
+
+/* ── GitHub-style select ── */
+.gh-select {
+  background-color: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  color: #e6edf3;
+  font-size: 13px;
+  padding: 4px 12px;
+  cursor: pointer;
+  outline: none;
+}
+.gh-select:focus { border-color: #1f6feb; }
+
+/* ── GitHub-style buttons ── */
+.gh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.gh-btn-primary {
+  background-color: #238636;
+  border-color: rgba(240, 246, 252, 0.1);
+  color: #ffffff;
+}
+.gh-btn-primary:hover:not(:disabled) { background-color: #2ea043; }
+.gh-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.gh-btn-default {
+  background-color: #21262d;
+  border-color: #30363d;
+  color: #e6edf3;
+}
+.gh-btn-default:hover:not(:disabled) { background-color: #30363d; border-color: #8b949e; }
+
+.gh-btn-danger {
+  background-color: #da3633;
+  border-color: rgba(240, 246, 252, 0.1);
+  color: #ffffff;
+}
+.gh-btn-danger:hover:not(:disabled) { background-color: #b91c1c; }
+
+.gh-btn-sm {
+  padding: 3px 12px;
+  font-size: 12px;
 }

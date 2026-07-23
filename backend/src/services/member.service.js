@@ -5,10 +5,19 @@ const { canRemove, getRemovableRoles } = require("../utils/roles");
 /**
  * List members, optionally filtered by role.
  */
-async function listMembers({ role, page = 1, limit = 20, clubId }, requester) {
+async function listMembers({ role, page = 1, limit = 20, clubId, search, clubStatus }, requester) {
   const where = {};
   if (role) {
     where.role = role;
+  }
+
+  if (search && typeof search === "string" && search.trim()) {
+    const term = search.trim();
+    where.OR = [
+      { name: { contains: term, mode: "insensitive" } },
+      { email: { contains: term, mode: "insensitive" } },
+      { phone: { contains: term, mode: "insensitive" } },
+    ];
   }
 
   if (requester?.role === "COORDINATOR" || requester?.role === "MEMBER") {
@@ -16,8 +25,16 @@ async function listMembers({ role, page = 1, limit = 20, clubId }, requester) {
       throw createError("You must belong to a club to view members", 403);
     }
     where.clubId = requester.clubId;
-  } else if (requester?.role === "ADMIN" && clubId) {
-    where.clubId = clubId;
+  } else if (requester?.role === "ADMIN") {
+    if (clubId) {
+      where.clubId = clubId;
+    } else if (clubStatus === "pending") {
+      where.clubId = null;
+      // Exclude admins — they have no club by design
+      where.role = { not: "ADMIN" };
+    } else if (clubStatus === "assigned") {
+      where.clubId = { not: null };
+    }
   }
 
   const [members, total] = await Promise.all([
@@ -118,8 +135,22 @@ async function removeMember(id, requesterId, requesterRole, requesterClubId = nu
     }
   }
 
-  await prisma.user.delete({ where: { id } });
-  return { message: "Member removed successfully" };
+  try {
+    // Rely on the database ON DELETE CASCADE and ON DELETE SET NULL for dependent records
+    await prisma.user.delete({ where: { id } });
+
+    return {
+      message: "Member removed successfully"
+    };
+  } catch (error) {
+    if (error.code === "P2003") {
+      throw createError(
+        "Cannot remove member because dependent records still reference this user",
+        409
+      );
+    }
+    throw error;
+  }
 }
 
 async function promoteMember(id, clubId) {
@@ -161,4 +192,48 @@ async function promoteMember(id, clubId) {
   });
 }
 
-module.exports = { listMembers, getMemberById, removeMember, promoteMember };
+async function assignMemberToClub(id, { clubId, role }) {
+  const member = await prisma.user.findUnique({
+    where: { id },
+    select: { id: true, role: true, clubId: true },
+  });
+
+  if (!member) {
+    throw createError("Member not found", 404);
+  }
+
+  if (member.role === "ADMIN") {
+    throw createError("Admins cannot be assigned to a club", 400);
+  }
+
+  if (!clubId) {
+    throw createError("clubId is required", 400);
+  }
+
+  const validRoles = ["COORDINATOR", "MEMBER"];
+  if (!validRoles.includes(role)) {
+    throw createError(`Role must be one of: ${validRoles.join(", ")}`, 400);
+  }
+
+  const club = await prisma.club.findUnique({ where: { id: clubId } });
+  if (!club) {
+    throw createError("Club not found", 404);
+  }
+
+  return prisma.user.update({
+    where: { id },
+    data: { clubId, role },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      phone: true,
+      role: true,
+      isVerified: true,
+      club: { select: { id: true, name: true } },
+      createdAt: true,
+    },
+  });
+}
+
+module.exports = { listMembers, getMemberById, removeMember, promoteMember, assignMemberToClub };

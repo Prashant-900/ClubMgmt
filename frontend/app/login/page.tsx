@@ -9,37 +9,58 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-5rem)] px-4 sm:px-6 flex items-center justify-center">
-      <div className="w-full max-w-xl rounded-3xl border border-white/10 bg-[rgba(12,12,18,0.92)] backdrop-blur-2xl p-8 sm:p-10 shadow-2xl shadow-black/40">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-3 h-10 rounded-full bg-gradient-to-b from-cyan-400 to-indigo-600" />
-          <div>
-            <p className="text-xs uppercase tracking-[0.28em] text-cyan-300/70">
-              ClubMgmt Access
-            </p>
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-50 tracking-tight mt-1">
-              Sign in with Google
-            </h1>
+    <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="w-full max-w-sm">
+        {/* Logo */}
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-12 h-12 bg-[#161b22] border border-[#30363d] rounded-lg flex items-center justify-center mb-4">
+            <span className="text-base font-extrabold text-[#e6edf3] font-mono tracking-tight">
+              CM
+            </span>
           </div>
+          <h1 className="text-xl font-semibold text-[#e6edf3]">Sign in to ClubMgmt</h1>
         </div>
 
-        <p className="text-sm sm:text-base text-gray-400 leading-6 max-w-prose">
-          Use your Google account to create or access your club profile. After
-          Google approves the sign-in, you will be redirected back into the app
-          with a JWT session.
-        </p>
+        {/* Sign-in card */}
+        <div className="bg-[#161b22] border border-[#30363d] rounded-md p-5 space-y-4">
+          <p className="text-sm text-[#8b949e] text-center">
+            Use your Google account to access your club profile.
+          </p>
 
-        <button
-          onClick={handleGoogleSignIn}
-          className="mt-8 inline-flex items-center justify-center gap-3 px-6 py-3 rounded-full
-                     bg-white text-slate-950 font-semibold hover:bg-slate-100 transition-colors"
-        >
-          <span className="text-lg">G</span>
-          Continue with Google
-        </button>
+          <button
+            onClick={handleGoogleSignIn}
+            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 bg-white text-[#1f2328] text-sm font-semibold rounded-md hover:bg-[#f3f4f6] transition-colors cursor-pointer border border-[#d0d7de]"
+          >
+            {/* Google G icon */}
+            <svg viewBox="0 0 24 24" className="w-5 h-5" aria-hidden="true">
+              <path
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                fill="#4285F4"
+              />
+              <path
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                fill="#34A853"
+              />
+              <path
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                fill="#FBBC05"
+              />
+              <path
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                fill="#EA4335"
+              />
+            </svg>
+            Continue with Google
+          </button>
 
-        <p className="mt-5 text-xs text-gray-500">
-          Backend redirect: <span className="text-gray-300">{API_BASE_URL}/auth/google</span>
+          <p className="text-xs text-center text-[#6e7681]">
+            After sign-in you'll be redirected back with a session token.
+          </p>
+        </div>
+
+        {/* Footer note */}
+        <p className="text-center text-xs text-[#6e7681] mt-6">
+          ClubMgmt · Role-based club management
         </p>
       </div>
     </div>

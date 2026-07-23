@@ -1,6 +1,6 @@
 # ClubMgmt End-to-End Status
 
-Last updated: 2026-07-21
+Last updated: 2026-07-23
 
 ## 1. Current Architecture
 
@@ -224,6 +224,10 @@ Run:
 cd C:\workspace\club_projects\ClubMgmt\backend
 npx prisma migrate deploy
 ```
+
+### Error: P2003 Foreign key constraint failed when deleting a user
+Cause: The database enforced an `ON DELETE RESTRICT` constraint on `contributions.userId`.
+Fix: The database schema was updated to use `ON DELETE CASCADE` on `contributions.userId`. A new migration (`cascade_user_deletion`) was applied to reflect this. The application correctly relies on database cascading rather than manual transaction cleanups.
 
 ### Error: EPERM during prisma generate on Windows
 Cause: Node process locking Prisma engine file.

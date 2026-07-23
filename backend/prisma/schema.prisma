@@ -16,12 +16,30 @@ enum Role {
   MEMBER
 }
 
+enum ContributionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ContributionCategory {
+  DEVELOPMENT
+  WORKSHOP
+  PRESENTATION
+  DESIGN
+  EVENT_SUPPORT
+  DOCUMENTATION
+  MEETING
+  OTHER
+}
+
 model Club {
-  id          String       @id @default(uuid())
-  name        String       @unique
-  createdAt   DateTime     @default(now())
-  users       User[]
-  inviteLinks InviteLink[]
+  id            String         @id @default(uuid())
+  name          String         @unique
+  createdAt     DateTime       @default(now())
+  users         User[]
+  inviteLinks   InviteLink[]
+  contributions Contribution[]
 
   @@map("clubs")
 }
@@ -46,6 +64,12 @@ model User {
 
   // Invite links created by this user
   createdInviteLinks InviteLink[]
+
+  // Contributions submitted by this user
+  contributions Contribution[] @relation("UserContributions")
+
+  // Contributions approved/rejected by this user
+  approvedContributions Contribution[] @relation("Approvals")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -73,3 +97,30 @@ model InviteLink {
 
   @@map("invite_links")
 }
+
+model Contribution {
+  id            String               @id @default(uuid())
+  userId        String
+  user          User                 @relation("UserContributions", fields: [userId], references: [id], onDelete: Cascade)
+  clubId        String
+  club          Club                 @relation(fields: [clubId], references: [id])
+  title         String
+  description   String?
+  category      ContributionCategory
+  hours         Float
+  datePerformed DateTime
+  attachmentUrl String?
+
+  status          ContributionStatus @default(PENDING)
+  rejectionReason String?
+
+  approvedById String?
+  approvedBy   User?     @relation("Approvals", fields: [approvedById], references: [id])
+  approvedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("contributions")
+}
+
