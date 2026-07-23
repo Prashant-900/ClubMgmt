@@ -53,3 +53,18 @@ export async function promoteMember(
     token,
   });
 }
+
+/**
+ * Assign a pending (no-club) user to a club with a specified role.
+ */
+export async function assignMember(
+  id: string,
+  data: { clubId: string; role: "COORDINATOR" | "MEMBER" },
+  token?: string
+) {
+  return apiRequest<User>(`/members/${id}/assign`, {
+    method: "POST",
+    body: data,
+    token,
+  });
+}

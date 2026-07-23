@@ -67,4 +67,18 @@ async function promote(req, res, next) {
   }
 }
 
-module.exports = { list, getById, remove, promote };
+async function assign(req, res, next) {
+  try {
+    const { clubId, role } = req.body;
+    const member = await memberService.assignMemberToClub(req.params.id, { clubId, role });
+
+    res.status(200).json({
+      success: true,
+      data: member,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { list, getById, remove, promote, assign };

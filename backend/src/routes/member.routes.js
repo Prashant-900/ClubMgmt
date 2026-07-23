@@ -13,6 +13,9 @@ router.get("/", authorize("ADMIN", "COORDINATOR", "MEMBER"), memberController.li
 // Get a specific member
 router.get("/:id", memberController.getById);
 
+// Assign a pending member to a club (Admin only)
+router.post("/:id/assign", authorize("ADMIN"), memberController.assign);
+
 // Promote a member to club lead (Admin only)
 router.post("/:id/promote", authorize("ADMIN"), memberController.promote);
 

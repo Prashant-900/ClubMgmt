@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { validateInviteLink } from "@/lib/api/invite-link.api";
 import { register } from "@/lib/api/auth.api";
 import type { InviteLink } from "@/types";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+
+const TOKEN_STORAGE_KEY = "clubmgmt.auth.token";
 
 function getRoleBadgeClasses(role: string): string {
   switch (role) {
@@ -22,6 +24,7 @@ function getRoleBadgeClasses(role: string): string {
 
 export default function RegisterPage() {
   const params = useParams();
+  const router = useRouter();
   const inviteToken = params.token as string;
 
   const [link, setLink] = useState<InviteLink | null>(null);
@@ -85,8 +88,12 @@ export default function RegisterPage() {
         password,
         phone: phone.trim() || undefined,
       });
-      if (res.success) {
+      if (res.success && res.data?.token) {
+        // Store the JWT so the user is immediately logged in
+        window.localStorage.setItem(TOKEN_STORAGE_KEY, res.data.token);
         setSuccess(true);
+        // Redirect to dashboard after a brief success display
+        setTimeout(() => router.push("/"), 1800);
       }
     } catch (err: unknown) {
       const message =
@@ -98,6 +105,7 @@ export default function RegisterPage() {
       setSubmitting(false);
     }
   };
+
 
   // ── Validating ──
   if (validating) {
