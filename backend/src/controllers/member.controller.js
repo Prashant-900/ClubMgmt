@@ -2,13 +2,15 @@ const memberService = require("../services/member.service");
 
 async function list(req, res, next) {
   try {
-    const { role, page, limit, clubId } = req.query;
+    const { role, page, limit, clubId, search, clubStatus } = req.query;
 
     const result = await memberService.listMembers({
       role,
       page: page ? parseInt(page) : undefined,
       limit: limit ? parseInt(limit) : undefined,
       clubId,
+      search,
+      clubStatus,
     }, req.user);
 
     res.status(200).json({

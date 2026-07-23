@@ -5,7 +5,7 @@ import type { User, PaginatedResponse } from "@/types";
  * List members with optional role filter and pagination.
  */
 export async function listMembers(
-  params: { role?: string; page?: number; limit?: number; clubId?: string } = {},
+  params: { role?: string; page?: number; limit?: number; clubId?: string; search?: string; clubStatus?: string } = {},
   token?: string
 ) {
   const searchParams = new URLSearchParams();
@@ -13,6 +13,8 @@ export async function listMembers(
   if (params.page) searchParams.set("page", String(params.page));
   if (params.limit) searchParams.set("limit", String(params.limit));
   if (params.clubId) searchParams.set("clubId", params.clubId);
+  if (params.search) searchParams.set("search", params.search);
+  if (params.clubStatus) searchParams.set("clubStatus", params.clubStatus);
 
   const query = searchParams.toString();
   const endpoint = `/members${query ? `?${query}` : ""}`;

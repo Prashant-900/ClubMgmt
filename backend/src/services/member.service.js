@@ -5,10 +5,19 @@ const { canRemove, getRemovableRoles } = require("../utils/roles");
 /**
  * List members, optionally filtered by role.
  */
-async function listMembers({ role, page = 1, limit = 20, clubId }, requester) {
+async function listMembers({ role, page = 1, limit = 20, clubId, search, clubStatus }, requester) {
   const where = {};
   if (role) {
     where.role = role;
+  }
+
+  if (search && typeof search === "string" && search.trim()) {
+    const term = search.trim();
+    where.OR = [
+      { name: { contains: term, mode: "insensitive" } },
+      { email: { contains: term, mode: "insensitive" } },
+      { phone: { contains: term, mode: "insensitive" } },
+    ];
   }
 
   if (requester?.role === "COORDINATOR" || requester?.role === "MEMBER") {
@@ -16,8 +25,14 @@ async function listMembers({ role, page = 1, limit = 20, clubId }, requester) {
       throw createError("You must belong to a club to view members", 403);
     }
     where.clubId = requester.clubId;
-  } else if (requester?.role === "ADMIN" && clubId) {
-    where.clubId = clubId;
+  } else if (requester?.role === "ADMIN") {
+    if (clubId) {
+      where.clubId = clubId;
+    } else if (clubStatus === "pending") {
+      where.clubId = null;
+    } else if (clubStatus === "assigned") {
+      where.clubId = { not: null };
+    }
   }
 
   const [members, total] = await Promise.all([
@@ -118,8 +133,22 @@ async function removeMember(id, requesterId, requesterRole, requesterClubId = nu
     }
   }
 
-  await prisma.user.delete({ where: { id } });
-  return { message: "Member removed successfully" };
+  try {
+    // Rely on the database ON DELETE CASCADE and ON DELETE SET NULL for dependent records
+    await prisma.user.delete({ where: { id } });
+
+    return {
+      message: "Member removed successfully"
+    };
+  } catch (error) {
+    if (error.code === "P2003") {
+      throw createError(
+        "Cannot remove member because dependent records still reference this user",
+        409
+      );
+    }
+    throw error;
+  }
 }
 
 async function promoteMember(id, clubId) {

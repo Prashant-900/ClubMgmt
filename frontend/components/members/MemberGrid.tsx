@@ -43,6 +43,7 @@ export function MemberGrid({ clubId }: { clubId?: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterTab>("ALL");
+  const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
@@ -73,6 +74,9 @@ export function MemberGrid({ clubId }: { clubId?: string }) {
       if (clubId) {
         params.clubId = clubId;
       }
+      if (searchTerm.trim()) {
+        params.search = searchTerm.trim();
+      }
 
       const res = await listMembers(params, token ?? undefined);
       if (res.success && res.data) {
@@ -89,7 +93,7 @@ export function MemberGrid({ clubId }: { clubId?: string }) {
     } finally {
       setLoading(false);
     }
-  }, [token, activeFilter, page, clubId]);
+  }, [token, activeFilter, page, clubId, searchTerm]);
 
   useEffect(() => {
     fetchMembers();
@@ -114,8 +118,32 @@ export function MemberGrid({ clubId }: { clubId?: string }) {
     setPage(1);
   };
 
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setPage(1);
+  };
+
   return (
     <div className="space-y-6">
+      <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 sm:p-5 flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <label className="flex-1 space-y-1">
+            <span className="block text-xs uppercase tracking-[0.2em] text-gray-500">
+              Search members
+            </span>
+            <input
+              value={searchTerm}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Search by name, email, or phone"
+              className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-3 text-sm text-gray-100 placeholder:text-gray-600 outline-none focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/10"
+            />
+          </label>
+          <span className="text-xs text-gray-500 sm:self-end">
+            {total} {total === 1 ? "member" : "members"}
+          </span>
+        </div>
+      </div>
+
       {/* Filter tabs — visible to ADMIN only */}
       <RoleGate allowedRoles={["ADMIN"]}>
         <div className="flex items-center gap-2 flex-wrap">

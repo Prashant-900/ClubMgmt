@@ -4,6 +4,7 @@ import { AuthGuard } from "@/components/providers/AuthGuard";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { MemberGrid } from "@/components/members/MemberGrid";
 import { ClubGrid } from "@/components/clubs/ClubGrid";
+import { AdminMembersOverview } from "@/components/members/AdminMembersOverview";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
@@ -78,7 +79,10 @@ function DashboardContent() {
       </div>
 
       {isAdmin && !urlClubId ? (
-        <ClubGrid />
+        <div className="space-y-10">
+          <ClubGrid />
+          <AdminMembersOverview />
+        </div>
       ) : (
         <MemberGrid clubId={urlClubId ?? undefined} />
       )}

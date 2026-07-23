@@ -101,7 +101,7 @@ model InviteLink {
 model Contribution {
   id            String               @id @default(uuid())
   userId        String
-  user          User                 @relation("UserContributions", fields: [userId], references: [id])
+  user          User                 @relation("UserContributions", fields: [userId], references: [id], onDelete: Cascade)
   clubId        String
   club          Club                 @relation(fields: [clubId], references: [id])
   title         String
