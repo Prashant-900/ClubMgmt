@@ -46,9 +46,9 @@ async function createLink({ role, clubId, maxUses, expiresInDays, createdById })
       throw createError("You must belong to a club to create invite links", 400);
     }
   } else if (creatorRole === "ADMIN") {
-    // Admin MUST specify a club when inviting coordinators
+    // Admin MUST specify a club when inviting coordinators or members
     if (!clubId) {
-      throw createError("Club is required when inviting a coordinator", 400);
+      throw createError("Club is required when creating an invite link", 400);
     }
     const club = await prisma.club.findUnique({ where: { id: clubId } });
     if (!club) {

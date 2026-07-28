@@ -1,17 +1,20 @@
 import { apiRequest } from "./client";
-import type { User, PaginatedResponse } from "@/types";
+import type { User, PaginatedResponse, MemberProfile } from "@/types";
 
 /**
  * List members with optional role filter and pagination.
  */
 export async function listMembers(
-  params: { role?: string; page?: number; limit?: number } = {},
+  params: { role?: string; page?: number; limit?: number; clubId?: string; search?: string; clubStatus?: string } = {},
   token?: string
 ) {
   const searchParams = new URLSearchParams();
   if (params.role) searchParams.set("role", params.role);
   if (params.page) searchParams.set("page", String(params.page));
   if (params.limit) searchParams.set("limit", String(params.limit));
+  if (params.clubId) searchParams.set("clubId", params.clubId);
+  if (params.search) searchParams.set("search", params.search);
+  if (params.clubStatus) searchParams.set("clubStatus", params.clubStatus);
 
   const query = searchParams.toString();
   const endpoint = `/members${query ? `?${query}` : ""}`;
@@ -24,6 +27,18 @@ export async function listMembers(
  */
 export async function getMemberById(id: string, token?: string) {
   return apiRequest<User>(`/members/${id}`, { token });
+}
+
+/**
+ * Get a member's full profile, including their contribution stats and the
+ * most recent contributions they submitted.
+ *
+ * Access is enforced server-side: admins may view anyone, coordinators and
+ * members may only view people in their own club, and everyone may always
+ * view themselves. Rejects with status 403 otherwise, 404 for unknown ids.
+ */
+export async function getMemberProfile(id: string, token?: string) {
+  return apiRequest<MemberProfile>(`/members/${id}`, { token });
 }
 
 /**
@@ -45,6 +60,21 @@ export async function promoteMember(
   token?: string
 ) {
   return apiRequest<User>(`/members/${id}/promote`, {
+    method: "POST",
+    body: data,
+    token,
+  });
+}
+
+/**
+ * Assign a pending (no-club) user to a club with a specified role.
+ */
+export async function assignMember(
+  id: string,
+  data: { clubId: string; role: "COORDINATOR" | "MEMBER" },
+  token?: string
+) {
+  return apiRequest<User>(`/members/${id}/assign`, {
     method: "POST",
     body: data,
     token,

@@ -6,107 +6,106 @@ import { listMembers, removeMember } from "@/lib/api/member.api";
 import { listClubs } from "@/lib/api/club.api";
 import { MemberCard } from "@/components/members/MemberCard";
 import { RoleGate } from "@/components/ui/RoleGate";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { Pagination } from "@/components/ui/Pagination";
+import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
+import { getApiErrorMessage } from "@/lib/hooks/apiError";
 import type { User, Role, Club } from "@/types";
 
 type FilterTab = "ALL" | Role;
 
 const FILTER_TABS: { label: string; value: FilterTab }[] = [
-  { label: "All", value: "ALL" },
-  { label: "Admins", value: "ADMIN" },
+  { label: "All members",  value: "ALL" },
   { label: "Coordinators", value: "COORDINATOR" },
-  { label: "Members", value: "MEMBER" },
+  { label: "Members",      value: "MEMBER" },
 ];
 
-function SkeletonCard() {
-  return (
-    <div className="bg-glass backdrop-blur-xl border border-glass-border rounded-2xl p-5 space-y-4">
-      <div className="flex items-start gap-3.5">
-        <div className="w-11 h-11 rounded-full skeleton shrink-0" />
-        <div className="flex-1 space-y-2">
-          <div className="h-4 w-32 skeleton rounded" />
-          <div className="h-3 w-44 skeleton rounded" />
-        </div>
-        <div className="h-5 w-16 skeleton rounded-full" />
-      </div>
-      <div className="h-3 w-28 skeleton rounded" />
-      <div className="flex justify-between pt-2 border-t border-white/5">
-        <div className="h-3 w-16 skeleton rounded" />
-        <div className="h-3 w-20 skeleton rounded" />
-      </div>
-    </div>
-  );
-}
+/** Rows per page. The API clamps `limit` to 100, so never ask for the world. */
+const PAGE_SIZE = 20;
 
-export function MemberGrid() {
+export function MemberGrid({ clubId }: { clubId?: string }) {
   const { token, user } = useAuth();
   const [members, setMembers] = useState<User[]>([]);
   const [clubs, setClubs] = useState<Club[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterTab>("ALL");
+  const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [removeTargetId, setRemoveTargetId] = useState<string | null>(null);
+  const [removing, setRemoving] = useState(false);
+
+  // Typing stays instant; only the debounced value drives requests.
+  const debouncedSearch = useDebouncedValue(searchTerm, 300);
 
   useEffect(() => {
     if (user?.role !== "ADMIN") return;
-
     listClubs()
-      .then((res) => {
-        if (res.success && res.data) {
-          setClubs(res.data);
-        }
-      })
+      .then((res) => { if (res.success && res.data) setClubs(res.data); })
       .catch(() => setClubs([]));
   }, [user?.role]);
+
+  // Any change to the query itself must start again from page 1
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, activeFilter, clubId]);
 
   const fetchMembers = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const params: { role?: string; page?: number; limit?: number } = {
-        page,
-        limit: 20,
-      };
-      if (activeFilter !== "ALL") {
-        params.role = activeFilter;
-      }
+      const search = debouncedSearch.trim();
+      const res = await listMembers(
+        {
+          page,
+          limit: PAGE_SIZE,
+          ...(activeFilter !== "ALL" ? { role: activeFilter } : {}),
+          ...(clubId ? { clubId } : {}),
+          ...(search ? { search } : {}),
+        },
+        token ?? undefined
+      );
 
-      const res = await listMembers(params, token ?? undefined);
       if (res.success && res.data) {
-        setMembers(res.data.members);
+        // Sort within the page: coordinators first, then by name
+        const sorted = [...res.data.members].sort((a, b) => {
+          if (a.role === "COORDINATOR" && b.role !== "COORDINATOR") return -1;
+          if (b.role === "COORDINATOR" && a.role !== "COORDINATOR") return 1;
+          return (a.name ?? "").localeCompare(b.name ?? "");
+        });
+        setMembers(sorted);
         setTotalPages(res.data.pagination.totalPages);
         setTotal(res.data.pagination.total);
       }
     } catch (err: unknown) {
-      const message =
-        err && typeof err === "object" && "message" in err
-          ? (err as { message: string }).message
-          : "Failed to fetch members";
-      setError(message);
+      setError(getApiErrorMessage(err, "Failed to fetch members"));
     } finally {
       setLoading(false);
     }
-  }, [token, activeFilter, page]);
+  }, [token, activeFilter, page, clubId, debouncedSearch]);
 
-  useEffect(() => {
-    fetchMembers();
-  }, [fetchMembers]);
+  useEffect(() => { fetchMembers(); }, [fetchMembers]);
 
-  const handleRemove = async (id: string) => {
-    if (!confirm("Are you sure you want to remove this member?")) return;
+  const handleRemove = (id: string) => setRemoveTargetId(id);
+
+  const confirmRemove = async () => {
+    if (!removeTargetId) return;
+    setRemoving(true);
     try {
-      await removeMember(id, token ?? undefined);
+      await removeMember(removeTargetId, token ?? undefined);
+      setRemoveTargetId(null);
       fetchMembers();
     } catch (err: unknown) {
-      const message =
-        err && typeof err === "object" && "message" in err
-          ? (err as { message: string }).message
-          : "Failed to remove member";
-      alert(message);
+      setError(getApiErrorMessage(err, "Failed to remove member"));
+      setRemoveTargetId(null);
+    } finally {
+      setRemoving(false);
     }
   };
 
+<<<<<<< HEAD
   const handleFilterChange = (filter: FilterTab) => {
     setActiveFilter(filter);
     setPage(1);
@@ -128,50 +127,55 @@ export function MemberGrid() {
     return false;
   };
 
+=======
+>>>>>>> 8867ea5f460448d17c5e94e6e0b19880246d6153
   return (
-    <div className="space-y-6">
-      {/* Filter tabs — visible to ADMIN only */}
-      <RoleGate allowedRoles={["ADMIN"]}>
-        <div className="flex items-center gap-2 flex-wrap">
-          {FILTER_TABS.map((tab) => (
-            <button
-              key={tab.value}
-              onClick={() => handleFilterChange(tab.value)}
-              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer
-                ${
-                  activeFilter === tab.value
-                    ? "bg-violet-600 text-white shadow-lg shadow-violet-600/20"
-                    : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-gray-200 border border-white/5"
-                }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-          <span className="ml-auto text-xs text-gray-600">
-            {total} {total === 1 ? "member" : "members"}
-          </span>
-        </div>
-      </RoleGate>
-
-      {/* Error state */}
-      {error && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-sm text-red-400 flex items-center gap-3">
-          <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
+    <div className="space-y-4">
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        {/* Search */}
+        <div className="relative flex-1 max-w-sm">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#6e7681]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
           </svg>
-          <div>
-            <p className="font-medium">Could not load members</p>
-            <p className="text-xs text-red-400/60 mt-0.5">{error}</p>
+          <input
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search members…"
+            aria-label="Search members"
+            className="gh-input pl-9"
+          />
+        </div>
+
+        {/* Role filter — ADMIN only */}
+        <RoleGate allowedRoles={["ADMIN"]}>
+          <div className="flex items-center border border-[#30363d] rounded-md overflow-hidden text-xs">
+            {FILTER_TABS.map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => setActiveFilter(tab.value)}
+                className={`px-3 py-1.5 font-medium transition-colors cursor-pointer border-r border-[#30363d] last:border-r-0 whitespace-nowrap ${
+                  activeFilter === tab.value
+                    ? "bg-[#21262d] text-[#e6edf3]"
+                    : "text-[#8b949e] hover:bg-[#161b22] hover:text-[#e6edf3]"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
-          <button
-            onClick={fetchMembers}
-            className="ml-auto px-3 py-1 text-xs bg-red-500/20 hover:bg-red-500/30 rounded-lg transition-colors cursor-pointer"
-          >
-            Retry
-          </button>
+        </RoleGate>
+      </div>
+
+      {/* Error */}
+      {error && (
+        <div className="px-4 py-3 rounded-md bg-[rgba(248,81,73,0.1)] border border-[rgba(248,81,73,0.3)] text-sm text-[#f85149] flex items-center justify-between">
+          <span>{error}</span>
+          <button onClick={fetchMembers} className="gh-btn gh-btn-default gh-btn-sm min-h-[36px] ml-4">Retry</button>
         </div>
       )}
 
+<<<<<<< HEAD
       {/* Loading skeletons */}
       {loading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -226,17 +230,75 @@ export function MemberGrid() {
           </button>
           <span className="text-xs text-gray-500 px-3">
             {page} / {totalPages}
+=======
+      {/* Contributor list container */}
+      <div className="border border-[#30363d] rounded-md overflow-hidden">
+        {/* List header */}
+        <div className="flex items-center px-4 py-2 bg-[#161b22] border-b border-[#30363d]">
+          <span className="text-xs font-medium text-[#8b949e]">
+            {loading ? "Loading…" : `${total} ${total === 1 ? "member" : "members"}`}
+>>>>>>> 8867ea5f460448d17c5e94e6e0b19880246d6153
           </span>
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-            className="px-3 py-1.5 text-xs font-medium bg-white/5 border border-white/5 rounded-lg
-                       hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
-          >
-            Next →
-          </button>
         </div>
-      )}
+
+        {/* Rows */}
+        {loading ? (
+          <div>
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 px-4 py-3 border-b border-[#21262d] last:border-b-0">
+                <div className="w-8 h-8 rounded-full skeleton shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-4 w-32 skeleton rounded" />
+                  <div className="h-3 w-48 skeleton rounded" />
+                </div>
+                <div className="w-20 h-3 skeleton rounded hidden sm:block" />
+              </div>
+            ))}
+          </div>
+        ) : members.length === 0 ? (
+          <div className="py-16 text-center">
+            <p className="text-sm text-[#8b949e]">
+              {debouncedSearch.trim()
+                ? `No members match “${debouncedSearch.trim()}”`
+                : activeFilter !== "ALL"
+                ? `No ${activeFilter.toLowerCase()}s found`
+                : "No members found. Invite members to get started."}
+            </p>
+          </div>
+        ) : (
+          <div>
+            {members.map((member, i) => (
+              <MemberCard
+                key={member.id}
+                member={member}
+                onRemove={handleRemove}
+                onRefresh={fetchMembers}
+                clubs={clubs}
+                index={i}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        onPageChange={setPage}
+        busy={loading}
+        itemLabel="member"
+      />
+
+      <ConfirmModal
+        open={removeTargetId !== null}
+        title="Remove member"
+        message="This member will lose access to the club. You can invite them again later."
+        confirmLabel="Remove member"
+        loading={removing}
+        onConfirm={confirmRemove}
+        onCancel={() => setRemoveTargetId(null)}
+      />
     </div>
   );
 }

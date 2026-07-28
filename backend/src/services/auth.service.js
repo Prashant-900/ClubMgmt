@@ -1,26 +1,55 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const fs = require("fs");
-const path = require("path");
 const prisma = require("../config/db");
 const { createError } = require("../middlewares/error.middleware");
 const { validateLink, consumeLink } = require("./invite-link.service");
+const {
+  issueRefreshToken,
+  rotateRefreshToken,
+  revokeRefreshToken,
+} = require("./refresh-token.service");
+
+// C-03: Validate JWT_SECRET at startup — refuse to run with a weak or default secret.
+const JWT_SECRET = process.env.JWT_SECRET;
+const DEFAULT_JWT_SECRET = "your-jwt-secret-change-me";
+if (!JWT_SECRET || JWT_SECRET.length < 32 || JWT_SECRET === DEFAULT_JWT_SECRET) {
+  throw new Error(
+    "[SECURITY] JWT_SECRET is missing, too short (< 32 chars), or still set to the default value. " +
+    "Generate a strong secret (e.g. `openssl rand -hex 32`) and set it in your .env file."
+  );
+}
+
+// C-02: Read admin emails from ADMIN_EMAILS env var (comma-separated) once at module load.
+// Example: ADMIN_EMAILS=admin@example.com,other@example.com
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
+  .split(",")
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
 
 function getAdminEmails() {
-  try {
-    const listPath = path.join(__dirname, '../config/admin-list.json');
-    if (fs.existsSync(listPath)) {
-      return JSON.parse(fs.readFileSync(listPath, 'utf-8'));
-    }
-  } catch (e) {
-    console.error("Could not read admin-list.json:", e.message);
-  }
-  return [];
+  return ADMIN_EMAILS;
 }
 
 const SALT_ROUNDS = 10;
 const GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
+
+// Access tokens are now short-lived; long-lived sessions are carried by the
+// rotating refresh token (see refresh-token.service.js). Default 1h, overridable
+// via ACCESS_TOKEN_TTL for testing (e.g. "15m", "1h").
+const ACCESS_TOKEN_TTL = process.env.ACCESS_TOKEN_TTL || "1h";
+
+/**
+ * Issue an access token + a fresh refresh token for a just-authenticated user.
+ * Centralizes what register/login/google all need so the flows stay in sync.
+ */
+async function issueSession(user, { userAgent } = {}) {
+  const token = generateToken(user);
+  const { rawToken, maxAgeSeconds } = await issueRefreshToken(user.id, {
+    userAgent,
+  });
+  return { token, refreshToken: rawToken, refreshMaxAgeSeconds: maxAgeSeconds };
+}
 
 /**
  * Register a new user via invite link.
@@ -32,7 +61,7 @@ const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
  *   4. Consume the link (increment usedCount)
  *   5. Return JWT
  */
-async function register({ inviteToken, email, password, name, phone }) {
+async function register({ inviteToken, email, password, name, phone }, { userAgent } = {}) {
   // Validate the invite link
   const link = await validateLink(inviteToken);
 
@@ -61,14 +90,14 @@ async function register({ inviteToken, email, password, name, phone }) {
   // Consume the invite link
   await consumeLink(inviteToken);
 
-  const token = generateToken(user);
-  return { user, token };
+  const session = await issueSession(user, { userAgent });
+  return { user, ...session };
 }
 
 /**
  * Login with email and password.
  */
-async function login({ email, password }) {
+async function login({ email, password }, { userAgent } = {}) {
   const user = await prisma.user.findUnique({ where: { email } });
 
   if (!user) {
@@ -87,10 +116,10 @@ async function login({ email, password }) {
     throw createError("Invalid email or password", 401);
   }
 
-  const token = generateToken(user);
+  const session = await issueSession(user, { userAgent });
   return {
     user: { id: user.id, email: user.email, name: user.name, role: user.role },
-    token,
+    ...session,
   };
 }
 
@@ -146,7 +175,7 @@ function getGoogleAuthUrl() {
 /**
  * Complete Google OAuth, upsert the user, and issue an app JWT.
  */
-async function loginWithGoogle(code, inviteToken = null) {
+async function loginWithGoogle(code, inviteToken = null, { userAgent } = {}) {
   const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
   const redirectUri = process.env.GOOGLE_REDIRECT_URI?.trim();
@@ -209,7 +238,8 @@ async function loginWithGoogle(code, inviteToken = null) {
         where: { email: profileData.email },
         data: {
           name: profileData.name || existingUser.name,
-          role: isAdmin ? "ADMIN" : existingUser.role,
+          role: isAdmin ? "ADMIN" : (inviteLink?.role || existingUser.role),
+          clubId: isAdmin ? null : (inviteLink?.club?.id || existingUser.clubId),
           isVerified: true,
         },
         select: { id: true, email: true, name: true, role: true, clubId: true },
@@ -229,20 +259,64 @@ async function loginWithGoogle(code, inviteToken = null) {
     await consumeLink(inviteToken);
   }
 
-  const token = generateToken(user);
-
-  return { user, token };
+  const session = await issueSession(user, { userAgent });
+  return { user, ...session };
 }
 
 /**
- * Generate a JWT for the given user.
+ * Exchange a valid refresh token for a fresh access token + rotated refresh
+ * token. Called by the /auth/refresh endpoint. Throws 401 (via
+ * rotateRefreshToken) on anything suspicious so the caller can clear the cookie.
+ */
+async function refreshSession(rawToken, { userAgent } = {}) {
+  const rotated = await rotateRefreshToken(rawToken, { userAgent });
+
+  const user = await prisma.user.findUnique({
+    where: { id: rotated.userId },
+    select: { id: true, email: true, name: true, role: true },
+  });
+
+  // The token was valid but the user is gone (deleted account) — revoke the
+  // freshly issued token and reject.
+  if (!user) {
+    await revokeRefreshToken(rotated.rawToken);
+    throw createError("User no longer exists", 401);
+  }
+
+  const token = generateToken(user);
+  return {
+    user,
+    token,
+    refreshToken: rotated.rawToken,
+    refreshMaxAgeSeconds: rotated.maxAgeSeconds,
+  };
+}
+
+/**
+ * Log out by revoking the presented refresh token. Silent if the token is
+ * unknown/already revoked.
+ */
+async function logout(rawToken) {
+  await revokeRefreshToken(rawToken);
+}
+
+/**
+ * Generate a short-lived access JWT for the given user.
  */
 function generateToken(user) {
   return jwt.sign(
     { id: user.id, email: user.email, role: user.role },
-    process.env.JWT_SECRET,
-    { expiresIn: "7d" }
+    JWT_SECRET,
+    { expiresIn: ACCESS_TOKEN_TTL }
   );
 }
 
-module.exports = { register, login, getProfile, getGoogleAuthUrl, loginWithGoogle };
+module.exports = {
+  register,
+  login,
+  getProfile,
+  getGoogleAuthUrl,
+  loginWithGoogle,
+  refreshSession,
+  logout,
+};

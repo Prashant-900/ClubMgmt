@@ -111,6 +111,17 @@ export function Footer() {
             >
               Home
             </Link>
+            <Link
+              href="/contributions"
+              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200
+                ${
+                  pathname.startsWith("/contributions")
+                    ? "bg-violet-600 text-white shadow-lg shadow-violet-600/20"
+                    : "text-gray-400 hover:text-gray-200 hover:bg-white/5"
+                }`}
+            >
+              Contributions
+            </Link>
             <RoleGate allowedRoles={["ADMIN", "COORDINATOR"]}>
               <Link
                 href="/invite"

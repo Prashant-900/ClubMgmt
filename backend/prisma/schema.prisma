@@ -16,12 +16,34 @@ enum Role {
   MEMBER
 }
 
+enum ContributionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ContributionCategory {
+  DEVELOPMENT
+  WORKSHOP
+  PRESENTATION
+  DESIGN
+  EVENT_SUPPORT
+  DOCUMENTATION
+  MEETING
+  OTHER
+}
+
 model Club {
-  id          String       @id @default(uuid())
-  name        String       @unique
-  createdAt   DateTime     @default(now())
-  users       User[]
-  inviteLinks InviteLink[]
+  id          String  @id @default(uuid())
+  name        String  @unique
+  // Optional blurb shown on the club page (max 500 chars, enforced in the service layer)
+  description String?
+
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  users         User[]
+  inviteLinks   InviteLink[]
+  contributions Contribution[]
 
   @@map("clubs")
 }
@@ -47,9 +69,22 @@ model User {
   // Invite links created by this user
   createdInviteLinks InviteLink[]
 
+  // Contributions submitted by this user
+  contributions Contribution[] @relation("UserContributions")
+
+  // Contributions approved/rejected by this user
+  approvedContributions Contribution[] @relation("Approvals")
+
+  // Active refresh tokens (sessions) for this user
+  refreshTokens RefreshToken[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // M-07: members are constantly filtered by club (coordinator scoping).
+  @@index([clubId])
+  // Supports the role filter and the composite club+role member queries.
+  @@index([role])
   @@map("users")
 }
 
@@ -62,8 +97,9 @@ model InviteLink {
   expiresAt DateTime
 
   // Club — assigned to registrants (null for admin-created general links)
+  // M-09: cascade so deleting a club cleans up its invite links in the database.
   clubId String?
-  club   Club?   @relation(fields: [clubId], references: [id])
+  club   Club?   @relation(fields: [clubId], references: [id], onDelete: Cascade)
 
   // Who created this link (optional — null for local-admin dev bypass)
   createdById String?
@@ -71,5 +107,75 @@ model InviteLink {
 
   createdAt DateTime @default(now())
 
+  @@index([clubId])
+  @@index([createdById])
   @@map("invite_links")
+}
+
+model Contribution {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation("UserContributions", fields: [userId], references: [id], onDelete: Cascade)
+
+  // M-09: cascade so deleting a club removes its contributions in the database
+  // rather than relying on a manual deleteMany in the service layer.
+  clubId String
+  club   Club   @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  title         String
+  description   String?
+  category      ContributionCategory
+  hours         Float
+  datePerformed DateTime
+  attachmentUrl String?
+
+  status          ContributionStatus @default(PENDING)
+  rejectionReason String?
+
+  approvedById String?
+  approvedBy   User?     @relation("Approvals", fields: [approvedById], references: [id])
+  approvedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // M-07: indexes for the hot query paths.
+  // "my contributions" and per-user leaderboard grouping
+  @@index([userId])
+  // approval queue + club analytics (club scoping is almost always paired with status)
+  @@index([clubId, status])
+  // heatmap and leaderboard period windows filter on datePerformed
+  @@index([datePerformed])
+  // default list ordering
+  @@index([createdAt])
+  @@map("contributions")
+}
+
+/// A refresh token represents one long-lived session.
+///
+/// Only a SHA-256 hash of the token is stored, so a database leak does not hand
+/// an attacker usable credentials. Tokens are rotated on every use: the old row
+/// is revoked and points at its replacement, which makes token reuse after theft
+/// detectable.
+model RefreshToken {
+  id        String @id @default(uuid())
+  tokenHash String @unique
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  expiresAt DateTime
+  revokedAt DateTime?
+
+  // Set when this token has been rotated, pointing at the token that replaced it.
+  replacedByTokenId String?
+
+  // Coarse client info, useful for an "active sessions" view later.
+  userAgent String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
 }

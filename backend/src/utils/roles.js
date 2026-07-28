@@ -2,7 +2,7 @@
  * Role hierarchy: ADMIN > COORDINATOR > MEMBER
  *
  * Invitation rules:
- *   - ADMIN can invite COORDINATOR only (must select a club)
+ *   - ADMIN can invite COORDINATOR or MEMBER (must select a club)
  *   - COORDINATOR can invite MEMBER only (auto-assigned to their club)
  *   - MEMBER cannot invite anyone
  *
@@ -22,7 +22,7 @@ const ROLE_HIERARCHY = {
  * Check if the inviter's role can invite a user with the target role.
  *
  * Rules:
- *   - ADMIN      → can only invite COORDINATOR
+ *   - ADMIN      → can invite COORDINATOR or MEMBER (must provide clubId)
  *   - COORDINATOR → can only invite MEMBER
  *   - MEMBER     → cannot invite anyone
  *
@@ -31,7 +31,7 @@ const ROLE_HIERARCHY = {
  * @returns {boolean}
  */
 function canInvite(inviterRole, targetRole) {
-  if (inviterRole === "ADMIN" && targetRole === "COORDINATOR") return true;
+  if (inviterRole === "ADMIN" && (targetRole === "COORDINATOR" || targetRole === "MEMBER")) return true;
   if (inviterRole === "COORDINATOR" && targetRole === "MEMBER") return true;
   return false;
 }
@@ -42,7 +42,7 @@ function canInvite(inviterRole, targetRole) {
  * @returns {string[]}
  */
 function getInvitableRoles(role) {
-  if (role === "ADMIN") return ["COORDINATOR"];
+  if (role === "ADMIN") return ["COORDINATOR", "MEMBER"];
   if (role === "COORDINATOR") return ["MEMBER"];
   return [];
 }
