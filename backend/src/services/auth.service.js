@@ -1,21 +1,28 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const fs = require("fs");
-const path = require("path");
 const prisma = require("../config/db");
 const { createError } = require("../middlewares/error.middleware");
 const { validateLink, consumeLink } = require("./invite-link.service");
 
+// C-03: Validate JWT_SECRET at startup — refuse to run with a weak or default secret.
+const JWT_SECRET = process.env.JWT_SECRET;
+const DEFAULT_JWT_SECRET = "your-jwt-secret-change-me";
+if (!JWT_SECRET || JWT_SECRET.length < 32 || JWT_SECRET === DEFAULT_JWT_SECRET) {
+  throw new Error(
+    "[SECURITY] JWT_SECRET is missing, too short (< 32 chars), or still set to the default value. " +
+    "Generate a strong secret (e.g. `openssl rand -hex 32`) and set it in your .env file."
+  );
+}
+
+// C-02: Read admin emails from ADMIN_EMAILS env var (comma-separated) once at module load.
+// Example: ADMIN_EMAILS=admin@example.com,other@example.com
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
+  .split(",")
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
+
 function getAdminEmails() {
-  try {
-    const listPath = path.join(__dirname, '../config/admin-list.json');
-    if (fs.existsSync(listPath)) {
-      return JSON.parse(fs.readFileSync(listPath, 'utf-8'));
-    }
-  } catch (e) {
-    console.error("Could not read admin-list.json:", e.message);
-  }
-  return [];
+  return ADMIN_EMAILS;
 }
 
 const SALT_ROUNDS = 10;
@@ -241,7 +248,7 @@ async function loginWithGoogle(code, inviteToken = null) {
 function generateToken(user) {
   return jwt.sign(
     { id: user.id, email: user.email, role: user.role },
-    process.env.JWT_SECRET,
+    JWT_SECRET,
     { expiresIn: "7d" }
   );
 }

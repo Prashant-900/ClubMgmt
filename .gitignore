@@ -81,6 +81,7 @@ Thumbs.db
 *.pem
 *.key
 *.crt
+backend/src/config/admin-list.json
 
 # ==========================
 # Package Managers

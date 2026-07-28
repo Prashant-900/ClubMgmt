@@ -29,7 +29,7 @@ Install `express-rate-limit`. Apply aggressive limits to `/api/auth/*` (e.g., 10
 
 ---
 
-### C-02: Admin Email List Committed to Git
+### ~~C-02: Admin Email List Committed to Git~~ ✅ FIXED
 
 **Description:**  
 `backend/src/config/admin-list.json` contains the hardcoded admin email address. This file is tracked by git and visible in repository history to anyone with repo access.
@@ -49,7 +49,7 @@ Move admin emails to `ADMIN_EMAILS` environment variable (comma-separated). Pars
 
 ---
 
-### C-03: Weak or Default JWT Secret
+### ~~C-03: Weak or Default JWT Secret~~ ✅ FIXED
 
 **Description:**  
 The example `.env` shows `JWT_SECRET=your-jwt-secret-change-me`. If this value or any short/guessable secret is used in deployment, JWTs can be forged, giving anyone ADMIN access to the entire system.
