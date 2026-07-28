@@ -1,3 +1,4 @@
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { Navbar } from "@/components/layout/Navbar";
@@ -7,10 +8,30 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-export const metadata = {
-  title: "ClubMgmt — Member Management",
-  description:
-    "Role-based club management system. Manage members, coordinators, and admins with hierarchical permissions.",
+const APP_DESCRIPTION =
+  "Track and approve club contributions across your college organization. " +
+  "ClubMgmt gives admins, coordinators, and members a shared, role-based view " +
+  "of who is contributing, how much, and when.";
+
+export const metadata: Metadata = {
+  title: {
+    default: "ClubMgmt",
+    template: "%s · ClubMgmt",
+  },
+  description: APP_DESCRIPTION,
+  applicationName: "ClubMgmt",
+  openGraph: {
+    type: "website",
+    siteName: "ClubMgmt",
+    title: "ClubMgmt",
+    description: APP_DESCRIPTION,
+  },
+};
+
+// themeColor / colorScheme belong in the viewport export, not metadata
+export const viewport: Viewport = {
+  themeColor: "#0d1117",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({

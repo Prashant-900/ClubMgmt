@@ -6,8 +6,9 @@ async function list(req, res, next) {
 
     const result = await memberService.listMembers({
       role,
-      page: page ? parseInt(page) : undefined,
-      limit: limit ? parseInt(limit) : undefined,
+      // Radix 10 explicitly; the service clamps NaN/out-of-range values (L-07).
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
       clubId,
       search,
       clubStatus,

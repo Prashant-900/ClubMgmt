@@ -1,7 +1,7 @@
 # ClubMgmt — Product Vision & Roadmap
 
 **Document type:** Master vision document  
-**Last updated:** 2026-07-24
+**Last updated:** 2026-07-28
 
 ---
 
@@ -48,29 +48,29 @@ Everything required before the **first real deployment** to a real club.
 ### Authentication
 - [x] Google OAuth login
 - [x] Invite-only registration (email or Google)
-- [x] JWT auth, 7-day sessions
-- [ ] Refresh tokens (extend sessions without re-login)
-- [ ] Minimum-entropy JWT secret enforcement
-- [ ] HttpOnly cookie token storage (replace localStorage)
+- [x] JWT auth — short-lived access token (default 1h) via `ACCESS_TOKEN_TTL`
+- [x] Refresh tokens (extend sessions without re-login) — service built (30-day opaque token, SHA-256 hashed in DB, rotation + reuse detection); NOTE: `POST /api/auth/refresh` + `POST /api/auth/logout` routes NOT yet wired in auth.routes.js
+- [x] Minimum-entropy JWT secret enforcement
+- [~] HttpOnly cookie token storage (replace localStorage) — backend sets HttpOnly refresh cookie `clubmgmt.refresh`; frontend still reads access token from localStorage (migration pending)
 
 ### Security
-- [ ] Rate limiting (auth endpoints: 10/15min, global: 100/min)
-- [ ] Admin email list moved to environment variable (out of git)
-- [ ] Attachment URL scheme validation (only http/https allowed)
-- [ ] Input length limits on all text fields
-- [ ] Server-side date validation (no future contributions)
-- [ ] Page/limit parameter clamping
+- [x] Rate limiting (auth endpoints: 10/15min, global: 100/min; analytics: 30/min)
+- [x] Admin email list moved to environment variable (out of git)
+- [x] Attachment URL scheme validation (only http/https allowed)
+- [x] Input length limits on all text fields
+- [x] Server-side date validation (no future contributions)
+- [x] Page/limit parameter clamping
 
 ### Clubs
 - [x] Create, list, delete clubs
 - [ ] Edit club name
-- [ ] Club description (optional, up to 500 chars)
+- [~] Club description (optional, up to 500 chars) — schema + service support done; UI pending
 
 ### Members
 - [x] Invite and register members via link
 - [x] List, promote, assign, remove members
 - [x] Role-scoped visibility (COORDINATOR sees own club only)
-- [ ] Fix: COORDINATOR should be able to remove MEMBER via route (L-07 from bugs)
+- [x] Fix: COORDINATOR should be able to remove MEMBER via route (L-07/H-04 from bugs)
 - [ ] Member profile page (own profile view)
 - [ ] Coordinator-accessible member detail view
 
@@ -79,29 +79,29 @@ Everything required before the **first real deployment** to a real club.
 - [x] Approval queue for coordinators
 - [x] Leaderboard (weekly/monthly/semester/all-time)
 - [x] Club analytics
-- [ ] Edit contribution (member edits their PENDING contribution)
-- [ ] Fix: minimum hours validation (0.25 minimum)
-- [ ] Coordinator notification when new contribution submitted (email or in-app)
+- [x] Edit contribution (member edits their PENDING contribution) — PATCH /api/contributions/:id wired (backend); UI pending
+- [x] Fix: minimum hours validation (0.25 minimum)
+- [~] Coordinator notification when new contribution submitted (email or in-app) — in-app pending-count badge done; email pending
 
 ### Frontend
 - [x] GitHub-inspired dark design system
 - [x] Responsive layout (desktop + mobile)
-- [ ] Fix: undefined `bg-glass` CSS classes
-- [ ] Consistent design language across all pages
-- [ ] Global 401 interceptor → redirect to login with message
-- [ ] Logout should redirect to /login
-- [ ] Proper confirm modals (no browser alert/confirm)
-- [ ] Error boundaries
-- [ ] Loading states for all async operations (already mostly done)
-- [ ] Favicon
+- [x] Fix: undefined `bg-glass` CSS classes — `--color-glass` / `--color-glass-border` tokens added to globals.css @theme (M-05)
+- [~] Consistent design language across all pages — mostly standardized on GitHub tokens; one violet/indigo component (`ClubDashboard.tsx`) remains (L-03)
+- [x] Global 401 interceptor → redirect to login with message — `handleUnauthorized` in `lib/api/client.ts` (H-05)
+- [x] Logout should redirect to /login
+- [x] Proper confirm modals (no browser alert/confirm) — reusable `ConfirmModal` component (L-01)
+- [x] Error boundaries — `app/error.tsx` + `app/global-error.tsx` (L-08)
+- [x] Loading states for all async operations (skeletons throughout)
+- [x] Favicon — `app/icon.svg` (L-02)
 
 ### Backend
-- [ ] Fix: N+1 API calls — enriched clubs endpoint
-- [ ] Fix: admin email list disk read — cache at module load
-- [ ] Debounced search (already client-side, needs limit reduction)
-- [ ] Database indexes on Contribution and User queried fields
-- [ ] Input validation middleware (Zod or Joi)
-- [ ] CORS support for multiple origins (React Native prep)
+- [x] Fix: N+1 API calls — enriched clubs endpoint (`listClubs({ enriched: true })` returns memberCount/coordinatorName in one query) (H-01)
+- [x] Fix: admin email list disk read — now parsed from ADMIN_EMAILS env var once at module load (C-02)
+- [x] Debounced search — `useDebouncedValue` hook (300ms) + server-side pagination (M-06/H-02)
+- [x] Database indexes on Contribution and User queried fields (M-07)
+- [x] Input validation middleware (hand-rolled `utils/validate.js` — Zod unavailable, registry blocked)
+- [x] CORS support for multiple origins (React Native prep) (H-07)
 
 ### Infrastructure
 - [ ] Production deployment documented (Render, Railway, or VPS)
@@ -390,17 +390,17 @@ These are the outcomes that define whether the product is working, not just ship
 
 ## Completion Estimates
 
-### Backend Completion: ~55%
-Core CRUD and auth are solid. Missing: events, announcements, notifications, rate limiting, security hardening, token refresh, advanced admin tooling.
+### Backend Completion: ~70%
+Core CRUD and auth are solid, and MVP security hardening is largely done: rate limiting (10/15min auth, 100/min global, 30/min analytics), admin emails via env var, JWT entropy validation, hand-rolled input validation middleware, attachment URL validation, server-side date validation, page/limit clamping, DB indexes (M-07), cascade deletes (M-09), server-side heatmap (M-08), weekly trend by datePerformed (M-10), CORS multi-origin (H-07), and a built refresh-token service. Remaining gaps: wire `POST /refresh` + `POST /logout` routes; events, announcements, notifications, advanced admin tooling.
 
 ### Frontend Completion: ~45%
-Core views built and functional. Missing: events, notifications, mobile polish, member profiles, edit flows, consistent design system, search, onboarding.
+Core views built and functional. Missing: events, notifications, mobile polish, member profiles, edit-contribution UI (backend route exists), consistent design system, search, onboarding, error boundaries, and the localStorage→HttpOnly-cookie migration.
 
-### Overall Product Completion: ~30%
-The foundation (auth, clubs, members, contributions, basic analytics) is working. But everything that makes it a product people choose over WhatsApp is missing: events, announcements, notifications, mobile app, export, search, achievement system.
+### Overall Product Completion: ~35%
+The foundation (auth, clubs, members, contributions, basic analytics) is working and hardened. But everything that makes it a product people choose over WhatsApp is still missing: events, announcements, notifications, mobile app, export, search, achievement system.
 
-### Deployment Readiness: ~20%
-Cannot be deployed to production in current state. Security blockers (no rate limiting, localStorage JWT, weak secret validation, git-committed admin list) must be resolved first. No production infrastructure documented.
+### Deployment Readiness: ~40%
+Not yet deployable. Remaining blockers: frontend still stores the access token in localStorage (C-04 half done — backend cookie ready), refresh/logout routes not wired, and no production infrastructure docs (`.env.example`, docker credentials, backup/deploy docs).
 
-### Production Readiness: ~15%
-Well below production standard. Needs security hardening, performance fixes (N+1 queries, no DB indexes), error monitoring, test coverage, mobile app, and core feature parity with "what WhatsApp currently provides."
+### Production Readiness: ~25%
+Below production standard. Still needs the frontend token migration, error monitoring, test coverage, mobile app, and core feature parity with "what WhatsApp currently provides."

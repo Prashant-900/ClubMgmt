@@ -1,6 +1,6 @@
 # ClubMgmt — Current Bugs & Issues
 
-**Generated:** 2026-07-24  
+**Last updated:** 2026-07-28
 **Source:** Full codebase audit (all backend and frontend files read)
 
 ---
@@ -11,79 +11,42 @@
 
 ### ~~C-01: No Rate Limiting on Any Endpoint~~ ✅ FIXED
 
-**Description:**  
-Zero rate limiting exists across the entire API surface. The authentication endpoints (login, register, Google callback), invite link validation, and every other route are completely unprotected against brute-force and abuse. An attacker can attempt unlimited password guesses or spam the registration endpoint.
-
-**Affected Files:**
-
-- `backend/src/index.js` — no rate limiter middleware registered
-- `backend/src/routes/auth.routes.js`
-
-**Root Cause:**  
-`express-rate-limit` or equivalent was never added.
-
-**Suggested Fix:**  
-Install `express-rate-limit`. Apply aggressive limits to `/api/auth/*` (e.g., 10 req/15min per IP). Apply moderate limits (100 req/min) globally.
-
-**Estimated Difficulty:** Easy (30 min)
+**Status:** Fixed. `express-rate-limit` is active via `backend/src/middlewares/rate-limit.middleware.js`.
+- Auth endpoints: 10 req/15min per IP (applied per-route in `auth.routes.js`, `skipSuccessfulRequests: true`)
+- Global API: 100 req/min per IP
+- Analytics/leaderboard/heatmap: 30 req/min per IP
 
 ---
 
 ### ~~C-02: Admin Email List Committed to Git~~ ✅ FIXED
 
-**Description:**  
-`backend/src/config/admin-list.json` contains the hardcoded admin email address. This file is tracked by git and visible in repository history to anyone with repo access.
-
-**Affected Files:**
-
-- `backend/src/config/admin-list.json`
-- `backend/src/services/auth.service.js` (getAdminEmails())
-
-**Root Cause:**  
-Admin emails stored as a flat JSON file inside the source tree with no `.gitignore` entry.
-
-**Suggested Fix:**  
-Move admin emails to `ADMIN_EMAILS` environment variable (comma-separated). Parse in `getAdminEmails()`. Add `admin-list.json` to `.gitignore`. Consider removing from git history.
-
-**Estimated Difficulty:** Easy (20 min)
+**Status:** Fixed. Admin emails now read from `ADMIN_EMAILS` environment variable (comma-separated), parsed once at module load in `auth.service.js`. The old `admin-list.json` approach is gone.
 
 ---
 
 ### ~~C-03: Weak or Default JWT Secret~~ ✅ FIXED
 
-**Description:**  
-The example `.env` shows `JWT_SECRET=your-jwt-secret-change-me`. If this value or any short/guessable secret is used in deployment, JWTs can be forged, giving anyone ADMIN access to the entire system.
-
-**Affected Files:**
-
-- `backend/src/services/auth.service.js` (generateToken — no secret validation)
-
-**Root Cause:**  
-No startup check that `JWT_SECRET` meets minimum entropy requirements.
-
-**Suggested Fix:**  
-Add startup validation: if `JWT_SECRET.length < 32` or equals the default string, throw and refuse to start. Document minimum requirements in README.
-
-**Estimated Difficulty:** Easy (15 min)
+**Status:** Fixed. `auth.service.js` validates `JWT_SECRET` at startup — rejects if missing, <32 chars, or equals the default placeholder. Server refuses to start with a weak secret.
 
 ---
 
-### C-04: JWT Stored in localStorage (XSS Accessible)
+### C-04: JWT Stored in localStorage (XSS Accessible) — ⚠️ PARTIAL
 
-**Description:**  
-The JWT token is stored in `localStorage` under key `clubmgmt.auth.token`. Any XSS vulnerability — including one introduced via the unvalidated `attachmentUrl` field — can steal this token and allow full account takeover.
+**Description:**
+The access token is stored in `localStorage` under key `clubmgmt.auth.token`. Any XSS vulnerability could steal this token and allow account takeover.
+
+**Status:** Partially addressed.
+- **Backend (done):** refresh tokens are issued as opaque, HttpOnly, rotated cookies (`clubmgmt.refresh`) — never exposed to JavaScript. `auth.service.js` has `refreshSession` and `logout` built. The M-01 attachment-URL XSS vector this bug referenced is closed (see M-01).
+- **Frontend (pending):** the short-lived *access* token is still read from and written to `localStorage` in `AuthProvider.tsx` (`clubmgmt.auth.token`, lines 15/52/68/86). Migrating the access token off localStorage onto the cookie flow is still open.
+- **Route gap:** `POST /api/auth/refresh` and `POST /api/auth/logout` are **not yet wired** in `auth.routes.js`, so the frontend cannot exercise the rotation flow even though the service supports it.
 
 **Affected Files:**
 
 - `frontend/components/providers/AuthProvider.tsx`
-- `frontend/app/auth/callback/page.tsx`
-- `frontend/app/(standalone)/register/[token]/page.tsx`
+- `backend/src/routes/auth.routes.js` (refresh/logout routes not wired)
 
-**Root Cause:**  
-Design decision to use localStorage for token storage. Acceptable for a closed internal dev tool, unacceptable for production.
-
-**Suggested Fix:**  
-For production: switch to `HttpOnly`, `SameSite=Strict`, `Secure` cookies set by the backend on the OAuth callback redirect. The JWT never touches JavaScript. This requires backend+frontend coordination.
+**Suggested Fix:**
+Wire the `/refresh` + `/logout` routes, then switch the frontend to rely on the HttpOnly cookie so the access token never touches JavaScript.
 
 **Estimated Difficulty:** Hard (2-4 hours)
 
@@ -93,138 +56,48 @@ For production: switch to `HttpOnly`, `SameSite=Strict`, `Secure` cookies set by
 
 ---
 
-### H-01: N+1 API Calls on Admin Home Page
+### ~~H-01: N+1 API Calls on Admin Home Page~~ ✅ FIXED
 
-**Description:**  
-`AdminHome` fetches all clubs, then for each club makes 2 additional API calls (member count + coordinator lookup). With N clubs this is `2 + 2N` API calls on a single page load. With 20 clubs: 42 parallel requests. This will fail visibly with any real data.
-
-**Affected Files:**
-
-- `frontend/app/page.tsx` (AdminHome component, `loadData` function, ~lines 368-408)
-
-**Root Cause:**  
-No server-side aggregation endpoint for club list with metadata. Frontend compensates by firing per-club requests.
-
-**Suggested Fix:**  
-Add `GET /api/clubs?enriched=true` backend endpoint that returns clubs with `memberCount` and `coordinatorName` in a single query using Prisma `_count` and `include`. Replace per-club fetches with one call.
-
-**Estimated Difficulty:** Medium (2-3 hours)
+**Status:** Fixed. `club.service.js` `listClubs({ enriched: true })` returns each club with `memberCount`, `contributionCount`, and `coordinatorName` in a single Prisma query using `_count` and `include`. `AdminHome`/`ClubDrilldown` now make one `listEnrichedClubs()` call instead of `2 + 2N` per-club requests.
 
 ---
 
-### H-02: AdminMembersOverview Fetches 1000 Members Without Virtualization
+### ~~H-02: AdminMembersOverview Fetches 1000 Members Without Virtualization~~ ✅ FIXED
 
-**Description:**  
-`AdminMembersOverview.tsx` fetches `{ limit: 1000 }` for both assigned and pending members. Rendering 2000 DOM nodes without virtual scrolling will freeze browsers. The API response will also be large and slow.
-
-**Affected Files:**
-
-- `frontend/components/members/AdminMembersOverview.tsx` (lines 25-26)
-
-**Root Cause:**  
-Pagination was not implemented in this component; `limit: 1000` is a lazy workaround.
-
-**Suggested Fix:**  
-Implement server-side pagination with page controls. Reduce default `limit` to 50. Optionally add virtual scrolling with `react-window` for very large lists.
-
-**Estimated Difficulty:** Medium (2-4 hours)
+**Status:** Fixed. `AdminMembersOverview.tsx` now uses server-side pagination with a `PAGE_SIZE` limit and separate `assignedPage`/`pendingPage` controls, plus a debounced search term. The `limit: 1000` workaround is gone.
 
 ---
 
-### H-03: Admin Email List Read from Disk on Every Google Login
+### H-03: Admin Email List Read from Disk on Every Google Login ✅ FIXED
 
-**Description:**  
-`getAdminEmails()` in `auth.service.js` reads and `JSON.parse`s `admin-list.json` synchronously on every Google OAuth callback invocation. This is a blocking, synchronous file-system read on the hot authentication path.
+**Description:**
+~~`getAdminEmails()` read and `JSON.parse`d `admin-list.json` on every Google OAuth callback.~~
 
-**Affected Files:**
-
-- `backend/src/services/auth.service.js` (getAdminEmails, lines 9-19)
-
-**Root Cause:**  
-No caching or environment-variable-based approach.
-
-**Suggested Fix:**  
-Cache at module load time: `const ADMIN_EMAILS = getAdminEmails()` outside the function. Or move to `ADMIN_EMAILS` environment variable entirely.
-
-**Estimated Difficulty:** Easy (15 min)
+**Status:** Fixed. Admin emails are now read from `ADMIN_EMAILS` env var and parsed once at module load time. No file system reads on the auth path.
 
 ---
 
-### H-04: Coordinator Cannot Remove Members (Route Blocks Them)
+### ~~H-04: Coordinator Cannot Remove Members (Route Blocks Them)~~ ✅ FIXED
 
-**Description:**  
-`DELETE /api/members/:id` is protected by `authorize("ADMIN")` at the route level. The `removeMember` service function has full club-scoping logic for COORDINATORs (lines 132-136), but it is completely unreachable because the route rejects any non-ADMIN request first.
-
-**Affected Files:**
-
-- `backend/src/routes/member.routes.js` (line 23)
-- `backend/src/services/member.service.js` (removeMember — dead code for COORDINATOR)
-
-**Root Cause:**  
-Route-level authorization is more restrictive than the service layer intends.
-
-**Suggested Fix:**  
-Change route to `authorize("ADMIN", "COORDINATOR")`. The service layer already enforces the club-scope restriction. No service changes needed.
-
-**Estimated Difficulty:** Trivial (5 min)
+**Status:** Fixed. `DELETE /api/members/:id` route now uses `authorize("ADMIN", "COORDINATOR")` (`member.routes.js` line 29). The coarse route guard admits coordinators; `member.service.js` `removeMember` enforces the fine-grained rule (a coordinator may only remove MEMBERs within their own club, and a coordinator targeting an admin or another club still gets a 403).
 
 ---
 
-### H-05: 401 Token Expiry Not Handled Globally
+### ~~H-05: 401 Token Expiry Not Handled Globally~~ ✅ FIXED
 
-**Description:**  
-JWTs expire after 7 days. When this happens mid-session, any API call returns 401. Each component handles this independently as a generic error message. There is no global interceptor to redirect the user to `/login` with a meaningful message like "Your session has expired."
-
-**Affected Files:**
-
-- `frontend/lib/api/client.ts` (apiRequest — no 401 interception)
-- `frontend/components/providers/AuthProvider.tsx`
-
-**Root Cause:**  
-No global API response interceptor pattern.
-
-**Suggested Fix:**  
-In `apiRequest`, when response status is 401, call `localStorage.removeItem('clubmgmt.auth.token')` and `window.location.replace('/login?reason=expired')`. Or use React Context to expose a `handleUnauthorized` callback.
-
-**Estimated Difficulty:** Medium (1-2 hours)
+**Status:** Fixed. `frontend/lib/api/client.ts` now has a global `handleUnauthorized(endpoint)` handler: when a response returns 401 (outside the credential-check endpoints where 401 just means "wrong credentials"), it clears the stored token and redirects to login. A module-level guard ensures several concurrent 401s only trigger one redirect.
 
 ---
 
-### H-06: MemberCard Promote Allows Cross-Club Promotion Silently
+### ~~H-06: MemberCard Promote Allows Cross-Club Promotion Silently~~ ✅ FIXED
 
-**Description:**  
-In `MemberCard`, the club dropdown for promotion defaults to the member's current club but allows selecting any club. An ADMIN could accidentally promote a member to coordinator of a different club than intended, with no confirmation of the cross-club change.
-
-**Affected Files:**
-
-- `frontend/components/members/MemberCard.tsx` (handlePromote, selectedClubId state)
-
-**Root Cause:**  
-UI design decision unclear — intentional or oversight.
-
-**Suggested Fix:**  
-If cross-club promotion is intentional: add a warning message when selected club differs from member's current club. If not intentional: default the dropdown to the member's current club and disable changing it.
-
-**Estimated Difficulty:** Easy (30 min)
+**Status:** Fixed. `MemberCard.tsx` now computes `isCrossClubPromotion` (selected club differs from the member's current club) and requires an explicit confirmation (`confirmCrossClub`) before promoting someone out of their current club. The move is no longer silent.
 
 ---
 
-### H-07: CORS Single-Origin — React Native Will Be Blocked
+### ~~H-07: CORS Single-Origin — React Native Will Be Blocked~~ ✅ FIXED
 
-**Description:**  
-CORS is configured to accept only `FRONTEND_URL` (a single string). The React Native app (planned) will need a different origin, which will be blocked. There is no mechanism for multiple allowed origins.
-
-**Affected Files:**
-
-- `backend/src/index.js` (cors configuration, lines 12-19)
-
-**Root Cause:**  
-Single-origin CORS assumption baked in from initial implementation.
-
-**Suggested Fix:**  
-Support `CORS_ORIGINS` as comma-separated env var. Parse into array and use origin callback: `origin: (origin, cb) => cb(null, allowedOrigins.includes(origin))`.
-
-**Estimated Difficulty:** Easy (30 min)
+**Status:** Fixed. `index.js` now parses a comma-separated `CORS_ORIGINS` env var into an `allowedOrigins` array and uses an origin callback (`allowedOrigins.includes(origin)`), allowing multiple front-ends. Requests with no `Origin` header (e.g. server-to-server) are permitted; unlisted origins are rejected with a CORS error.
 
 ---
 
@@ -232,182 +105,63 @@ Support `CORS_ORIGINS` as comma-separated env var. Parse into array and use orig
 
 ---
 
-### M-01: Unvalidated Attachment URL (Potential XSS Vector)
+### ~~M-01: Unvalidated Attachment URL (Potential XSS Vector)~~ ✅ FIXED
 
-**Description:**  
-The `attachmentUrl` field in contributions accepts any string. A `javascript:alert(1)` URI or `data:` URI could be stored and rendered as a clickable link in the contribution detail page, potentially enabling XSS combined with the localStorage token theft (C-04).
-
-**Affected Files:**
-
-- `backend/src/services/contribution.service.js` (createContribution)
-- `frontend/app/contributions/[id]/page.tsx` (attachment `<a>` link)
-
-**Suggested Fix:**  
-Server-side: validate URL scheme is `http:` or `https:` using `URL` constructor. Frontend: also validate before rendering. Add `rel="noopener noreferrer"` (already present).
-
-**Estimated Difficulty:** Easy (30 min)
+**Status:** Fixed. `contribution.service.js` validates `attachmentUrl` through `validateHttpUrl()` (utils/validate.js), which rejects anything that isn't an `http:`/`https:` URL — so `javascript:` and `data:` URLs are blocked server-side. Length is also capped at `LIMITS.contribution.attachmentUrl` (2048).
 
 ---
 
-### M-02: Future Date Contributions Allowed
+### ~~M-02: Future Date Contributions Allowed~~ ✅ FIXED
 
-**Description:**  
-`datePerformed` can be set to any future date. Users can log contributions for events that haven't happened yet.
-
-**Affected Files:**
-
-- `backend/src/services/contribution.service.js` (createContribution)
-
-**Suggested Fix:**  
-`if (new Date(datePerformed) > new Date()) throw createError('Date performed cannot be in the future', 400)`
-
-**Estimated Difficulty:** Trivial (5 min)
+**Status:** Fixed. `contribution.service.js` validates `datePerformed` via `validateDate(..., { allowFuture: false })`, rejecting any future date server-side.
 
 ---
 
-### M-03: No Input Length Limits on Text Fields
+### ~~M-03: No Input Length Limits on Text Fields~~ ✅ FIXED
 
-**Description:**  
-`title`, `description`, and `club name` have no server-side maximum length. A 100KB title would be accepted and stored.
-
-**Affected Files:**
-
-- `backend/src/services/contribution.service.js`
-- `backend/src/services/club.service.js`
-
-**Suggested Fix:**  
-Add max-length checks: title ≤ 200, description ≤ 2000, club name ≤ 100. Use Zod or Joi for structured validation.
-
-**Estimated Difficulty:** Easy (1 hour)
+**Status:** Fixed. `utils/validate.js` defines a `LIMITS` table (contribution title ≤ 200, description ≤ 2000, attachmentUrl ≤ 2048; club name and description ≤ 500) and the contribution/club services validate against it. (Implemented with a hand-rolled validator rather than Zod/Joi, because the npm registry is unavailable in this environment.)
 
 ---
 
-### M-04: Contribution `hours` Minimum Validation Off
+### ~~M-04: Contribution `hours` Minimum Validation Off~~ ✅ FIXED
 
-**Description:**  
-Backend rejects `hours <= 0`, so `0` is rejected but `0.001` is accepted. Frontend minimum is `0.25`. Direct API calls can bypass frontend validation.
-
-**Affected Files:**
-
-- `backend/src/services/contribution.service.js` (line 95)
-
-**Suggested Fix:**  
-Change to `hours < 0.25 || hours > 24`. This also prevents submissions below meaningful granularity.
-
-**Estimated Difficulty:** Trivial (5 min)
+**Status:** Fixed. `hours` is now validated against `LIMITS.contribution.hoursMin` (0.25) and `hoursMax` (24), so sub-granularity values like `0.001` are rejected server-side and direct API calls can no longer bypass the frontend minimum.
 
 ---
 
-### M-05: `bg-glass` and `border-glass-border` CSS Classes Undefined
+### ~~M-05: `bg-glass` and `border-glass-border` CSS Classes Undefined~~ ✅ FIXED
 
-**Description:**  
-Multiple components use `bg-glass` and `border-glass-border` Tailwind classes that do not exist in `globals.css` or the Tailwind theme. These components render without background or border styles.
-
-**Affected Files:**
-
-- `frontend/components/contributions/GlobalDashboard.tsx` (lines 21, 141, 172, 201, 231)
-- `frontend/app/contributions/[id]/page.tsx` (lines 129, 219)
-
-**Root Cause:**  
-CSS classes planned but never implemented.
-
-**Suggested Fix:**  
-Add to `globals.css`:
-
-```css
-.bg-glass {
-  background-color: rgba(22, 27, 34, 0.85);
-}
-.border-glass-border {
-  border-color: rgba(48, 54, 61, 0.6);
-}
-```
-
-**Estimated Difficulty:** Trivial (10 min)
+**Status:** Fixed. `globals.css` now defines `--color-glass` (`rgb(22 27 34 / 0.72)`) and `--color-glass-border` (`rgb(48 54 61 / 0.8)`) in the `@theme` block, so Tailwind v4 generates the `bg-glass` / `border-glass-border` utilities.
 
 ---
 
-### M-06: Search Input Causes API Blast (No Debouncing)
+### ~~M-06: Search Input Causes API Blast (No Debouncing)~~ ✅ FIXED
 
-**Description:**  
-`AdminMembersOverview` fires 3 API calls on every keystroke in the search input, because `searchTerm` is a `useCallback` dependency that triggers `fetchData`. Typing a 10-character search fires 30 API calls.
-
-**Affected Files:**
-
-- `frontend/components/members/AdminMembersOverview.tsx` (fetchData useCallback + useEffect)
-
-**Suggested Fix:**  
-Debounce the search input state update by 300ms before it propagates to `searchTerm`. Use a `useDebouncedValue` hook.
-
-**Estimated Difficulty:** Easy (30 min)
+**Status:** Fixed. A reusable `useDebouncedValue` hook (`lib/hooks/useDebouncedValue.ts`) debounces search input by 300ms. `AdminMembersOverview.tsx`, `ClubGrid.tsx`, and `MemberGrid.tsx` all fetch off the debounced value, so keystrokes no longer fire a request each.
 
 ---
 
-### M-07: Missing Database Indexes on Queried Fields
+### ~~M-07: Missing Database Indexes on Queried Fields~~ ✅ FIXED
 
-**Description:**  
-The schema has no explicit indexes beyond `@id` and `@unique`. Frequently queried fields are unindexed: `Contribution.userId`, `Contribution.clubId`, `Contribution.status`, `Contribution.datePerformed`, `User.clubId`, `User.role`.
-
-**Affected Files:**
-
-- `backend/prisma/schema.prisma`
-
-**Suggested Fix:**  
-Add to Contribution model: `@@index([userId])`, `@@index([clubId, status])`, `@@index([datePerformed])`.  
-Add to User model: `@@index([clubId])`.  
-Create a new migration.
-
-**Estimated Difficulty:** Easy (30 min + migration)
+**Status:** Fixed (schema + migration). `schema.prisma` now has, on Contribution: `@@index([userId])`, `@@index([clubId, status])`, `@@index([datePerformed])`, `@@index([createdAt])`; and on User: `@@index([clubId])`, `@@index([role])`.
 
 ---
 
-### M-08: Admin Home Fetches 500 Contributions for Heatmap
+### ~~M-08: Admin Home Fetches 500 Contributions for Heatmap~~ ✅ FIXED
 
-**Description:**  
-`AdminHome` calls `listContributions({ limit: 500 })` to compute the global heatmap and total hours. This is an arbitrary hard limit that will silently miss data when more than 500 contributions exist.
-
-**Affected Files:**
-
-- `frontend/app/page.tsx` (AdminHome, loadData, ~line 376)
-
-**Suggested Fix:**  
-Add a dedicated `/api/contributions/heatmap` endpoint that returns pre-aggregated `{ date, count, hours }[]` data. Remove the large frontend fetch.
-
-**Estimated Difficulty:** Medium (2-3 hours)
+**Status:** Fixed. A dedicated `GET /api/contributions/heatmap` endpoint returns pre-aggregated per-day `{ date, count, hours }` data (backed by a `to_char("datePerformed", 'YYYY-MM-DD')` group-by in `contribution.service.js`). `ClubDrilldown` now loads a single enriched club request and no longer pulls 500 contributions for a heatmap that wasn't rendered.
 
 ---
 
-### M-09: Club Deletion Does Not Use Database Cascade
+### ~~M-09: Club Deletion Does Not Use Database Cascade~~ ✅ FIXED
 
-**Description:**  
-`deleteClub` manually deletes contributions and invite links via `$transaction`. However, `Contribution.clubId` has no `onDelete: Cascade` in the schema. If the database is manipulated directly or the transaction fails partway, orphaned contributions could exist pointing to a deleted club.
-
-**Affected Files:**
-
-- `backend/src/services/club.service.js` (deleteClub)
-- `backend/prisma/schema.prisma` (Contribution.club relation)
-
-**Suggested Fix:**  
-Add `onDelete: Cascade` to `Contribution.club` and `InviteLink.club` relations. Remove manual deleteMany from the service. Create a migration.
-
-**Estimated Difficulty:** Easy (15 min + migration)
+**Status:** Fixed (schema + migration `cascade_delete`). `schema.prisma` sets `onDelete: Cascade` on `InviteLink.club`, `Contribution.club`, `Contribution.user`, and `RefreshToken.user`, so deleting a club/user cascades at the DB level instead of via manual `deleteMany`.
 
 ---
 
-### M-10: Heatmap Date Source Inconsistency
+### ~~M-10: Heatmap Date Source Inconsistency~~ ✅ FIXED
 
-**Description:**  
-Frontend heatmap builds from `datePerformed` (when work was done). Backend weekly trend SQL uses `createdAt` (when it was submitted). Contributions logged retroactively will appear in different weeks/dates across these two displays.
-
-**Affected Files:**
-
-- `frontend/app/page.tsx` (buildHeatmap — uses datePerformed)
-- `backend/src/services/contribution.service.js` (weeklyTrend raw SQL — uses createdAt)
-
-**Suggested Fix:**  
-Decide canonical date. `datePerformed` is semantically correct for "when was this contribution made." Update weeklyTrend SQL to `DATE_TRUNC('week', "datePerformed")`.
-
-**Estimated Difficulty:** Easy (30 min)
+**Status:** Fixed. The weekly-trend SQL in `contribution.service.js` now uses `DATE_TRUNC('week', "datePerformed")` (and filters on `datePerformed`), matching the frontend heatmap. Retroactively logged contributions land in the same week on both.
 
 ---
 
@@ -415,87 +169,93 @@ Decide canonical date. `datePerformed` is semantically correct for "when was thi
 
 ---
 
-### L-01: `window.confirm()` and `window.alert()` for Destructive Actions
+### ~~L-01: `window.confirm()` and `window.alert()` for Destructive Actions~~ ✅ FIXED
 
-**Affected Files:** `frontend/app/page.tsx`, `frontend/components/members/AdminMembersOverview.tsx`, `frontend/components/members/InviteForm.tsx`  
-**Fix:** Implement a reusable ConfirmModal component using React Portal.  
-**Difficulty:** Medium (2-3 hours)
+**Status:** Fixed. A reusable `ConfirmModal` component (`components/ui/ConfirmModal.tsx`) replaces native `window.confirm`/`window.alert` for destructive actions (e.g. `AdminMembersOverview.tsx` uses it for member removal).
 
 ---
 
-### L-02: No Favicon Configured
+### ~~L-02: No Favicon Configured~~ ✅ FIXED
 
-**Affected Files:** `frontend/app/layout.tsx`  
-**Fix:** Add `favicon.ico` to `/public` or create `app/icon.tsx`.  
-**Difficulty:** Trivial (10 min)
+**Status:** Fixed. `app/icon.svg` is present, so Next.js serves it as the app icon/favicon.
 
 ---
 
-### L-03: Inconsistent Design Language (Two Separate Systems)
+### L-03: Inconsistent Design Language (Two Separate Systems) — ⚠️ MOSTLY FIXED
 
-**Description:**  
-Main app uses GitHub-inspired tokens (`gh-*` classes, `#0d1117` backgrounds). Several components use a different violet/indigo glassmorphism style. Visually inconsistent to users.
+**Description:** Main app uses GitHub-inspired tokens (`gh-*` classes). Most of the earlier violet/indigo glassmorphism components have been standardized onto the GitHub-inspired system; a few violet/indigo utility usages remain (notably `components/contributions/ClubDashboard.tsx`).
 
-**Affected Files:** `ContributionForm.tsx`, `GlobalDashboard.tsx`, `contributions/[id]/page.tsx`, `register/[token]/page.tsx`  
-**Fix:** Standardize on one system throughout.  
-**Difficulty:** Medium (4-8 hours)
+**Affected Files:** `components/contributions/ClubDashboard.tsx` (remaining)
+**Fix:** Replace the last violet/indigo utilities with the `gh-*` tokens for full consistency.
+**Difficulty:** Easy (remaining scope is small)
 
 ---
 
 ### L-04: No Per-Page SEO Metadata
 
-**Affected Files:** `app/contributions/page.tsx`, `app/invite/page.tsx`, `app/login/page.tsx`  
-**Fix:** Export `metadata` or `generateMetadata` from each page.  
+**Affected Files:** `app/contributions/page.tsx`, `app/invite/page.tsx`, `app/login/page.tsx`
+**Fix:** Export `metadata` or `generateMetadata` from each page.
 **Difficulty:** Trivial (30 min)
 
 ---
 
 ### L-05: Docker Compose Uses Default Credentials
 
-**Affected Files:** `docker-compose.yaml`  
-**Fix:** Use environment variables from a `.env` file. Document that production requires strong credentials.  
+**Affected Files:** `docker-compose.yaml`
+**Fix:** Use environment variables from a `.env` file. Document that production requires strong credentials.
 **Difficulty:** Trivial (10 min)
 
 ---
 
 ### L-06: Events Tab Is a Placeholder with No Content
 
-**Affected Files:** `frontend/app/page.tsx` (ClubDrilldown), `frontend/components/layout/Navbar.tsx`  
-**Fix:** Remove tab until the feature is built, or implement basic event listing.  
+**Affected Files:** `frontend/app/page.tsx` (ClubDrilldown), `frontend/components/layout/Navbar.tsx`
+**Fix:** Remove tab until the feature is built, or implement basic event listing.
 **Difficulty:** N/A (feature not yet built)
 
 ---
 
-### L-07: No Input Validation on `page`/`limit` Query Params
+### ~~L-07: No Input Validation on `page`/`limit` Query Params~~ ✅ FIXED
 
-**Affected Files:** `backend/src/controllers/member.controller.js`, `backend/src/controllers/contribution.controller.js`  
-**Fix:** Clamp: `page = Math.max(1, page)`, `limit = Math.min(100, Math.max(1, limit))`.  
-**Difficulty:** Trivial (10 min)
+**Status:** Fixed. `page`/`limit` are clamped in the service layer via `clampPagination()` (utils/validate.js), used by `member.service.js` and `contribution.service.js` (list, scoped list, and leaderboard). Clamping lives in the service so every caller — including direct API calls — is covered.
 
 ---
 
-### L-08: No React Error Boundary
+### ~~L-08: No React Error Boundary~~ ✅ FIXED
 
-**Affected Files:** `frontend/app/layout.tsx`  
-**Fix:** Wrap app in a global `ErrorBoundary`. Add `error.tsx` at route segment level.  
-**Difficulty:** Easy (30-60 min)
+**Status:** Fixed. `app/error.tsx` (route-segment error boundary) and `app/global-error.tsx` (root-level boundary) are both present.
 
 ---
 
-### L-09: Admin Home Has No Loading State for Individual Club Enrichment
+### ~~L-09: Admin Home Has No Loading State for Individual Club Enrichment~~ ✅ FIXED
 
-**Description:**  
-While club enrichment is loading (member counts, coordinator names), the entire clubs grid shows skeleton cards. But if enrichment of one club fails, the entire Promise.all rejects and no clubs render.
-
-**Affected Files:** `frontend/app/page.tsx` (AdminHome, loadData)  
-**Fix:** Use `Promise.allSettled` instead of `Promise.all` for individual club enrichment.  
-**Difficulty:** Easy (30 min)
+**Status:** Fixed. `AdminHome`/`loadData` now uses `Promise.allSettled` (not `Promise.all`) for the independent club-grid and sidebar-counter requests, so one failing request no longer blanks the whole view. (The N+1 enrichment that motivated this bug is also gone — see H-01.)
 
 ---
 
-### L-10: No Logout Redirect
+### ~~L-10: No Logout Redirect~~ ✅ FIXED
 
-**Affected Files:** `frontend/components/providers/AuthProvider.tsx` (logout)  
-**Description:** `logout()` clears the token and nulls the user but does not redirect. The user stays on the current page, which may show an infinite spinner or empty state until they navigate manually.  
-**Fix:** Add `window.location.replace('/login')` or use `router.replace('/login')` in the logout callback.  
-**Difficulty:** Trivial (5 min)
+**Status:** Fixed. `AuthProvider.tsx` `logout()` now calls `router.replace("/login")` after clearing the token.
+
+---
+
+## Summary
+
+| Severity | Total | Fixed | Partial | Open | N/A |
+|----------|-------|-------|---------|------|-----|
+| CRITICAL | 4     | 3     | 1       | 0    | 0   |
+| HIGH     | 7     | 7     | 0       | 0    | 0   |
+| MEDIUM   | 10    | 10    | 0       | 0    | 0   |
+| LOW      | 10    | 6     | 1       | 2    | 1   |
+| **Total** | **31** | **26** | **2**  | **2** | **1** |
+
+- **Partial:** C-04 (backend HttpOnly refresh cookie done; frontend access token still on localStorage), L-03 (one violet/indigo component — `ClubDashboard.tsx` — remains).
+- **Open:** L-04 (per-page SEO metadata), L-05 (docker-compose default credentials).
+- **N/A:** L-06 (Events tab — feature not built; intentionally out of MVP scope).
+
+### Remaining Known Gaps (verified against source)
+1. **Auth routes not wired:** `POST /api/auth/refresh` and `POST /api/auth/logout` are not registered in `backend/src/routes/auth.routes.js`, even though `auth.service.js` implements `refreshSession` and `logout`. (An edit to wire these was previously declined — left as a deliberate next step.)
+2. **Frontend token storage:** the access token still lives in `localStorage` (`clubmgmt.auth.token`) in `AuthProvider.tsx`; the migration onto the HttpOnly cookie flow depends on gap #1.
+3. **L-04 / L-05:** minor production-polish items (SEO metadata, docker credentials) still open.
+
+These three gaps are the only material differences between the docs and the code; `status.md` and `goal.md` describe the same state.

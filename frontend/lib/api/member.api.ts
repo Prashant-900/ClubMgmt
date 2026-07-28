@@ -1,5 +1,5 @@
 import { apiRequest } from "./client";
-import type { User, PaginatedResponse } from "@/types";
+import type { User, PaginatedResponse, MemberProfile } from "@/types";
 
 /**
  * List members with optional role filter and pagination.
@@ -27,6 +27,18 @@ export async function listMembers(
  */
 export async function getMemberById(id: string, token?: string) {
   return apiRequest<User>(`/members/${id}`, { token });
+}
+
+/**
+ * Get a member's full profile, including their contribution stats and the
+ * most recent contributions they submitted.
+ *
+ * Access is enforced server-side: admins may view anyone, coordinators and
+ * members may only view people in their own club, and everyone may always
+ * view themselves. Rejects with status 403 otherwise, 404 for unknown ids.
+ */
+export async function getMemberProfile(id: string, token?: string) {
+  return apiRequest<MemberProfile>(`/members/${id}`, { token });
 }
 
 /**

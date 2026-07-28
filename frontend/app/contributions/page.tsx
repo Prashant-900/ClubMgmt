@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AuthGuard } from "@/components/providers/AuthGuard";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { ContributionList } from "@/components/contributions/ContributionList";
@@ -13,6 +13,7 @@ import { MemberGrid } from "@/components/members/MemberGrid";
 import { PageTabs } from "@/components/ui/PageTabs";
 import { RoleGate } from "@/components/ui/RoleGate";
 import { listClubs } from "@/lib/api/club.api";
+import { getApiErrorMessage } from "@/lib/hooks/apiError";
 import type { Club } from "@/types";
 import Link from "next/link";
 
@@ -22,17 +23,27 @@ function ContributionsContent() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>("mine");
   const [clubs, setClubs] = useState<Club[]>([]);
+  const [clubsError, setClubsError] = useState<string | null>(null);
 
   const isAdmin = user?.role === "ADMIN";
   const isCoordinator = user?.role === "COORDINATOR";
 
-  useEffect(() => {
-    if (isAdmin) {
-      listClubs().then((res) => {
-        if (res.data) setClubs(res.data as Club[]);
-      });
+  // Only the global-analytics tab needs the club list; a failure there must not
+  // take the rest of the page with it.
+  const loadClubs = useCallback(async () => {
+    setClubsError(null);
+    try {
+      const res = await listClubs();
+      setClubs(res.data ?? []);
+    } catch (err: unknown) {
+      setClubs([]);
+      setClubsError(getApiErrorMessage(err, "Failed to load clubs"));
     }
-  }, [isAdmin]);
+  }, []);
+
+  useEffect(() => {
+    if (isAdmin) loadClubs();
+  }, [isAdmin, loadClubs]);
 
   if (!user) return null;
 
@@ -118,7 +129,21 @@ function ContributionsContent() {
 
         {activeTab === "global" && (
           <RoleGate allowedRoles={["ADMIN"]}>
-            <GlobalDashboard clubs={clubs} />
+            <div className="space-y-4">
+              {clubsError && (
+                <div className="px-4 py-3 rounded-md bg-[rgba(248,81,73,0.1)] border border-[rgba(248,81,73,0.3)] text-sm text-[#f85149] flex items-center justify-between gap-4">
+                  <span>{clubsError} — the club filter is unavailable.</span>
+                  <button
+                    type="button"
+                    onClick={loadClubs}
+                    className="gh-btn gh-btn-default gh-btn-sm min-h-[36px] shrink-0"
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
+              <GlobalDashboard clubs={clubs} />
+            </div>
           </RoleGate>
         )}
 

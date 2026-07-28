@@ -1,11 +1,12 @@
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Inter } from "next/font/google";
 import "../globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata = {
-  title: "Join ClubMgmt — Register",
+export const metadata: Metadata = {
+  title: "Join a club",
   description: "Register with your invite link to join a club.",
 };
 

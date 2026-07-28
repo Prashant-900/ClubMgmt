@@ -5,6 +5,28 @@ export type Role = "ADMIN" | "COORDINATOR" | "MEMBER";
 export interface Club {
   id: string;
   name: string;
+  /** Optional blurb, up to 500 chars. Absent on the lightweight public list. */
+  description?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/**
+ * Club as returned by `GET /api/clubs?enriched=true`.
+ *
+ * The enriched variant exists so the club grid can render member counts and
+ * coordinator names from a single request instead of one request per card.
+ */
+export interface EnrichedClub extends Club {
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
+  memberCount: number;
+  contributionCount: number;
+  coordinators: Pick<User, "id" | "name" | "email">[];
+  /** Display name of the first coordinator, or null when the club has none. */
+  coordinatorName: string | null;
+  coordinatorCount: number;
 }
 
 // ── User model ──
@@ -52,6 +74,48 @@ export interface Pagination {
 export interface PaginatedResponse<T> {
   members: T[];
   pagination: Pagination;
+}
+
+/**
+ * Contribution summary attached to a member profile by
+ * `GET /api/members/:id`.
+ */
+export interface MemberStats {
+  totalContributions: number;
+  pendingCount: number;
+  approvedCount: number;
+  rejectedCount: number;
+  approvedHours: number;
+  recentContributions: Pick<
+    Contribution,
+    "id" | "title" | "category" | "hours" | "status" | "datePerformed" | "createdAt"
+  >[];
+}
+
+/** A single member's detail view, including their contribution record. */
+export interface MemberProfile extends User {
+  stats: MemberStats;
+}
+
+/**
+ * One cell of the contribution heatmap, from
+ * `GET /api/contributions/heatmap`.
+ */
+export interface HeatmapDay {
+  /** ISO date, `YYYY-MM-DD`. */
+  date: string;
+  count: number;
+  hours: number;
+}
+
+export interface HeatmapResponse {
+  days: HeatmapDay[];
+  totalContributions: number;
+  totalHours: number;
+  /** Highest single-day hours in the window — use it to scale the colour ramp. */
+  maxHours: number;
+  startDate: string;
+  endDate: string;
 }
 
 // ── Generic API response wrapper ──

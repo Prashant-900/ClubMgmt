@@ -2,12 +2,15 @@
 
 // MemberCard.tsx — GitHub contributor list row
 import { useState } from "react";
+import Link from "next/link";
 import type { User, Club } from "@/types";
 import { RoleGate } from "@/components/ui/RoleGate";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { promoteMember, assignMember } from "@/lib/api/member.api";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { Avatar } from "@/components/ui/Avatar";
 import { RoleBadge } from "@/components/ui/Badge";
+import { getApiErrorMessage } from "@/lib/hooks/apiError";
 
 interface MemberCardProps {
   member: User;
@@ -25,12 +28,25 @@ export function MemberCard({ member, onRemove, onRefresh, clubs = [], index = 0 
   const [assigning, setAssigning] = useState(false);
   const [showActions, setShowActions] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  // Set when the admin is about to promote someone into a *different* club
+  const [confirmCrossClub, setConfirmCrossClub] = useState(false);
 
   const canPromote = user?.role === "ADMIN" && member.role !== "ADMIN" && !!member.club;
   const canAssign = user?.role === "ADMIN" && member.role !== "ADMIN" && !member.club;
 
+  const displayName = member.name ?? member.email;
+  const currentClub = member.club ?? null;
+  const targetClub = clubs.find((c) => c.id === selectedClubId) ?? null;
+  /**
+   * Promoting into another club silently moves the member out of their
+   * current one — never do that without an explicit confirmation.
+   */
+  const isCrossClubPromotion =
+    !!currentClub && !!selectedClubId && selectedClubId !== currentClub.id;
+
   const handlePromote = async () => {
     if (!selectedClubId) return;
+    setConfirmCrossClub(false);
     setPromoting(true);
     setActionError(null);
     try {
@@ -38,13 +54,19 @@ export function MemberCard({ member, onRemove, onRefresh, clubs = [], index = 0 
       if (onRefresh) onRefresh();
       else window.location.reload();
     } catch (err: unknown) {
-      const msg = err && typeof err === "object" && "message" in err
-        ? (err as { message: string }).message
-        : "Failed to promote member";
-      setActionError(msg);
+      setActionError(getApiErrorMessage(err, "Failed to promote member"));
     } finally {
       setPromoting(false);
     }
+  };
+
+  const requestPromote = () => {
+    if (!selectedClubId) return;
+    if (isCrossClubPromotion) {
+      setConfirmCrossClub(true);
+      return;
+    }
+    handlePromote();
   };
 
   const handleAssign = async () => {
@@ -56,10 +78,7 @@ export function MemberCard({ member, onRemove, onRefresh, clubs = [], index = 0 
       if (onRefresh) onRefresh();
       else window.location.reload();
     } catch (err: unknown) {
-      const msg = err && typeof err === "object" && "message" in err
-        ? (err as { message: string }).message
-        : "Failed to assign member";
-      setActionError(msg);
+      setActionError(getApiErrorMessage(err, "Failed to assign member"));
     } finally {
       setAssigning(false);
     }
@@ -78,9 +97,12 @@ export function MemberCard({ member, onRemove, onRefresh, clubs = [], index = 0 
         {/* Identity */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-medium text-[#e6edf3] truncate">
+            <Link
+              href={`/members/${member.id}`}
+              className="text-sm font-medium text-[#e6edf3] truncate hover:text-[#58a6ff] hover:underline"
+            >
               {member.name ?? "Pending setup"}
-            </span>
+            </Link>
             <RoleBadge role={member.role} />
             {member.isVerified && (
               <span className="text-[10px] text-[#3fb950]">✓ verified</span>
@@ -177,6 +199,7 @@ export function MemberCard({ member, onRemove, onRefresh, clubs = [], index = 0 
                 <select
                   value={selectedClubId}
                   onChange={(e) => setSelectedClubId(e.target.value)}
+                  aria-label="Club to coordinate"
                   className="gh-select text-xs flex-1 min-w-[120px]"
                 >
                   {clubs.map((club) => (
@@ -184,13 +207,22 @@ export function MemberCard({ member, onRemove, onRefresh, clubs = [], index = 0 
                   ))}
                 </select>
                 <button
-                  onClick={handlePromote}
+                  onClick={requestPromote}
                   disabled={promoting || !selectedClubId}
                   className="gh-btn gh-btn-default gh-btn-sm disabled:opacity-50"
                 >
                   {promoting ? "Promoting…" : "Make coordinator"}
                 </button>
               </div>
+
+              {/* Cross-club move warning — visible before the confirm step */}
+              {isCrossClubPromotion && currentClub && (
+                <p className="text-xs text-[#d29922] bg-[rgba(187,128,9,0.15)] border border-[rgba(187,128,9,0.3)] rounded px-2 py-1.5">
+                  <span className="font-medium">Different club.</span>{" "}
+                  {displayName} is currently in {currentClub.name} — promoting them
+                  here will move them out of it.
+                </p>
+              )}
             </div>
           )}
 
@@ -208,6 +240,31 @@ export function MemberCard({ member, onRemove, onRefresh, clubs = [], index = 0 
           )}
         </div>
       )}
+
+      {/* Cross-club promotion needs an explicit yes — it moves the member */}
+      <ConfirmModal
+        open={confirmCrossClub}
+        title="Move member to another club?"
+        message={
+          <>
+            <span className="text-gh-text-primary font-medium">{displayName}</span> is
+            currently in{" "}
+            <span className="text-gh-text-primary font-medium">{currentClub?.name}</span>.
+            Promoting them to Coordinator of{" "}
+            <span className="text-gh-text-primary font-medium">
+              {targetClub?.name ?? "the selected club"}
+            </span>{" "}
+            will move them out of{" "}
+            <span className="text-gh-text-primary font-medium">{currentClub?.name}</span>.
+          </>
+        }
+        confirmLabel="Move and promote"
+        cancelLabel="Cancel"
+        variant="danger"
+        loading={promoting}
+        onConfirm={handlePromote}
+        onCancel={() => setConfirmCrossClub(false)}
+      />
     </div>
   );
 }

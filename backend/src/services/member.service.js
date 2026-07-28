@@ -1,14 +1,29 @@
 const prisma = require("../config/db");
 const { createError } = require("../middlewares/error.middleware");
 const { canRemove, getRemovableRoles } = require("../utils/roles");
+const { LIMITS, clampPagination, validateEnum } = require("../utils/validate");
+
+const ROLES = ["ADMIN", "COORDINATOR", "MEMBER"];
 
 /**
  * List members, optionally filtered by role.
+ *
+ * L-07: page and limit are clamped here rather than in the controller so every
+ * caller gets the protection — an unbounded `?limit=100000` would otherwise let
+ * one request pull the entire user table into memory.
  */
-async function listMembers({ role, page = 1, limit = 20, clubId, search, clubStatus }, requester) {
+async function listMembers(
+  { role, page, limit, clubId, search, clubStatus } = {},
+  requester
+) {
+  const { page: safePage, limit: safeLimit } = clampPagination(page, limit, {
+    maxLimit: LIMITS.pagination.maxLimit,
+    defaultLimit: LIMITS.pagination.defaultLimit,
+  });
+
   const where = {};
   if (role) {
-    where.role = role;
+    where.role = validateEnum(role, "role", ROLES);
   }
 
   if (search && typeof search === "string" && search.trim()) {
@@ -51,8 +66,8 @@ async function listMembers({ role, page = 1, limit = 20, clubId, search, clubSta
         createdAt: true,
       },
       orderBy: { createdAt: "desc" },
-      skip: (page - 1) * limit,
-      take: limit,
+      skip: (safePage - 1) * safeLimit,
+      take: safeLimit,
     }),
     prisma.user.count({ where }),
   ]);
@@ -60,16 +75,25 @@ async function listMembers({ role, page = 1, limit = 20, clubId, search, clubSta
   return {
     members,
     pagination: {
-      page,
-      limit,
+      page: safePage,
+      limit: safeLimit,
       total,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(total / safeLimit),
     },
   };
 }
 
 /**
- * Get a single member by ID.
+ * Get a single member by ID, together with their contribution summary.
+ *
+ * Two things were broken here:
+ *
+ *  1. `clubId` was missing from the `select`, so `member.clubId` was always
+ *     `undefined` and the club-scope comparison below was always true. Every
+ *     coordinator therefore got a 403 on every member detail view — which made
+ *     the coordinator-accessible member profile impossible to build.
+ *  2. Nobody could see a member's actual contribution record, which is the whole
+ *     point of a profile page.
  */
 async function getMemberById(id, requester) {
   const member = await prisma.user.findUnique({
@@ -81,6 +105,8 @@ async function getMemberById(id, requester) {
       phone: true,
       role: true,
       isVerified: true,
+      // Required for the club-scope check below.
+      clubId: true,
       club: { select: { id: true, name: true } },
       invitedBy: {
         select: { id: true, email: true, name: true, role: true },
@@ -96,13 +122,68 @@ async function getMemberById(id, requester) {
     throw createError("Member not found", 404);
   }
 
-  if (requester?.role === "COORDINATOR" || requester?.role === "MEMBER") {
+  // Everyone can always see their own profile, regardless of club scoping.
+  const isSelf = requester?.id === member.id;
+
+  if (!isSelf && (requester?.role === "COORDINATOR" || requester?.role === "MEMBER")) {
     if (!requester.clubId || member.clubId !== requester.clubId) {
       throw createError("You can only view members from your own club", 403);
     }
   }
 
-  return member;
+  const stats = await getContributionStats(member.id);
+
+  return { ...member, stats };
+}
+
+/**
+ * Contribution summary for a member profile: counts per status, approved hours,
+ * and the most recent submissions.
+ *
+ * Runs as three parallel queries rather than pulling every contribution row and
+ * reducing in JavaScript, which would not survive a member with a long history.
+ */
+async function getContributionStats(userId) {
+  const [byStatus, approvedHours, recent] = await Promise.all([
+    prisma.contribution.groupBy({
+      by: ["status"],
+      where: { userId },
+      _count: { _all: true },
+    }),
+    prisma.contribution.aggregate({
+      where: { userId, status: "APPROVED" },
+      _sum: { hours: true },
+    }),
+    prisma.contribution.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        title: true,
+        category: true,
+        hours: true,
+        status: true,
+        datePerformed: true,
+        createdAt: true,
+      },
+      orderBy: { datePerformed: "desc" },
+      take: 5,
+    }),
+  ]);
+
+  const counts = { PENDING: 0, APPROVED: 0, REJECTED: 0 };
+  for (const row of byStatus) {
+    counts[row.status] = row._count._all;
+  }
+
+  return {
+    totalContributions: counts.PENDING + counts.APPROVED + counts.REJECTED,
+    pendingCount: counts.PENDING,
+    approvedCount: counts.APPROVED,
+    rejectedCount: counts.REJECTED,
+    // Float sums can land on values like 12.299999999999999.
+    approvedHours: Math.round((approvedHours._sum.hours || 0) * 100) / 100,
+    recentContributions: recent,
+  };
 }
 
 /**

@@ -26,6 +26,21 @@ router.get(
   ctrl.leaderboard
 );
 
+// GET /contributions/heatmap — activity grid for a member or club.
+// Scoping is enforced in the service (own club only for non-admins).
+router.get(
+  "/heatmap",
+  authorize("ADMIN", "COORDINATOR", "MEMBER"),
+  ctrl.heatmap
+);
+
+// GET /contributions/pending-count — badge count for the "needs review" nav item.
+router.get(
+  "/pending-count",
+  authorize("ADMIN", "COORDINATOR", "MEMBER"),
+  ctrl.pendingCount
+);
+
 // ── My contributions ─────────────────────────────────────────────────────────
 
 // GET /contributions/me — all roles (returns own contributions only)
@@ -56,6 +71,14 @@ router.get(
   "/:id",
   authorize("ADMIN", "COORDINATOR", "MEMBER"),
   ctrl.getById
+);
+
+// PATCH /contributions/:id — owner edits their own PENDING contribution.
+// Ownership + PENDING-only rules live in the service.
+router.patch(
+  "/:id",
+  authorize("ADMIN", "COORDINATOR", "MEMBER"),
+  ctrl.update
 );
 
 // PATCH /contributions/:id/approve

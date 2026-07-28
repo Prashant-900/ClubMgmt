@@ -3,8 +3,8 @@
 import { AuthGuard } from "@/components/providers/AuthGuard";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Suspense, useEffect, useState, useCallback, useRef } from "react";
-import { ContributionHeatmap, type HeatmapDay } from "@/components/ui/ContributionHeatmap";
+import { Suspense, useEffect, useState, useCallback } from "react";
+import { type HeatmapDay } from "@/components/ui/ContributionHeatmap";
 import { Avatar } from "@/components/ui/Avatar";
 import { RoleBadge, StatusBadge, CategoryBadge } from "@/components/ui/Badge";
 import { PageTabs } from "@/components/ui/PageTabs";
@@ -13,10 +13,17 @@ import { ContributionList } from "@/components/contributions/ContributionList";
 import { ClubDashboard } from "@/components/contributions/ClubDashboard";
 import { Leaderboard } from "@/components/contributions/Leaderboard";
 import { AdminMembersOverview } from "@/components/members/AdminMembersOverview";
-import { listMyContributions, listContributions, getLeaderboard } from "@/lib/api/contribution.api";
-import { listClubs, createClub, deleteClub } from "@/lib/api/club.api";
+import { ClubGrid } from "@/components/clubs/ClubGrid";
+import {
+  listMyContributions,
+  listContributions,
+  getLeaderboard,
+  getGlobalAnalytics,
+} from "@/lib/api/contribution.api";
 import { listMembers } from "@/lib/api/member.api";
-import type { Contribution, Club, User } from "@/types";
+import { useClubApi } from "@/lib/hooks/useClubApi";
+import { getApiErrorMessage } from "@/lib/hooks/apiError";
+import type { Contribution, Club, EnrichedClub, User } from "@/types";
 import Link from "next/link";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -38,11 +45,31 @@ function buildHeatmap(contributions: Contribution[]): HeatmapDay[] {
 
 // ── Quick stat card ────────────────────────────────────────────────────────────
 
-function StatItem({ label, value }: { label: string; value: string | number }) {
+/** One sidebar statistic. `error`/`onRetry` let a single failed stat degrade alone. */
+interface SidebarStat {
+  label: string;
+  value: string | number;
+  error?: string | null;
+  onRetry?: () => void;
+}
+
+function StatItem({ label, value, error, onRetry }: SidebarStat) {
   return (
     <div>
       <dt className="text-xs text-[#8b949e]">{label}</dt>
-      <dd className="text-sm font-semibold text-[#e6edf3] mt-0.5">{value}</dd>
+      <dd className="text-sm font-semibold text-[#e6edf3] mt-0.5 flex items-center gap-2">
+        {value}
+        {error && onRetry && (
+          <button
+            type="button"
+            onClick={onRetry}
+            title={error}
+            className="text-[11px] font-normal text-[#58a6ff] hover:underline cursor-pointer"
+          >
+            retry
+          </button>
+        )}
+      </dd>
     </div>
   );
 }
@@ -71,7 +98,7 @@ function ContributionRow({ c }: { c: Contribution }) {
 
 interface ProfileSidebarProps {
   user: User;
-  stats: { label: string; value: string | number }[];
+  stats: SidebarStat[];
   heatmapData: HeatmapDay[];
   heatmapLabel?: string;
 }
@@ -116,7 +143,13 @@ function ProfileSidebar({ user, stats, heatmapData, heatmapLabel }: ProfileSideb
         </h2>
         <dl className="space-y-2">
           {stats.map((s) => (
-            <StatItem key={s.label} label={s.label} value={s.value} />
+            <StatItem
+              key={s.label}
+              label={s.label}
+              value={s.value}
+              error={s.error}
+              onRetry={s.onRetry}
+            />
           ))}
         </dl>
       </div>
@@ -130,25 +163,47 @@ function ProfileSidebar({ user, stats, heatmapData, heatmapLabel }: ProfileSideb
 function MemberHome() {
   const { user, token } = useAuth();
   const [contributions, setContributions] = useState<Contribution[]>([]);
+  const [contributionsError, setContributionsError] = useState<string | null>(null);
   const [rank, setRank] = useState<number | null>(null);
+  const [rankError, setRankError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const loadData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    Promise.all([
-      listMyContributions({ limit: 200 }, token ?? undefined),
+    setContributionsError(null);
+    setRankError(null);
+
+    // allSettled: a failing leaderboard must not blank the contribution list,
+    // and vice versa — the two are unrelated.
+    const [contribRes, lbRes] = await Promise.allSettled([
+      listMyContributions({ limit: 100 }, token ?? undefined),
       getLeaderboard({ period: "all", limit: 100 }, token ?? undefined),
-    ])
-      .then(([contribRes, lbRes]) => {
-        const list = contribRes.data?.contributions ?? [];
-        setContributions(list);
-        // Find my rank
-        const entry = lbRes.data?.entries.find((e) => e.user?.id === user.id);
-        if (entry) setRank(entry.rank);
-      })
-      .finally(() => setLoading(false));
+    ]);
+
+    if (contribRes.status === "fulfilled") {
+      setContributions(contribRes.value.data?.contributions ?? []);
+    } else {
+      setContributions([]);
+      setContributionsError(
+        getApiErrorMessage(contribRes.reason, "Failed to load your contributions")
+      );
+    }
+
+    if (lbRes.status === "fulfilled") {
+      const entry = lbRes.value.data?.entries.find((e) => e.user?.id === user.id);
+      setRank(entry?.rank ?? null);
+    } else {
+      setRank(null);
+      setRankError(getApiErrorMessage(lbRes.reason, "Rank unavailable"));
+    }
+
+    setLoading(false);
   }, [user, token]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   if (!user) return null;
 
@@ -160,11 +215,23 @@ function MemberHome() {
     .sort((a, b) => new Date(b.datePerformed).getTime() - new Date(a.datePerformed).getTime())
     .slice(0, 8);
 
-  const stats = [
-    { label: "Total Hours", value: totalHours % 1 === 0 ? `${totalHours}h` : `${totalHours.toFixed(1)}h` },
-    { label: "Approved", value: approved.length },
-    { label: "Pending", value: pending.length },
-    { label: "Club Rank", value: rank != null ? `#${rank}` : "—" },
+  const stats: SidebarStat[] = [
+    {
+      label: "Total Hours",
+      value: contributionsError
+        ? "—"
+        : totalHours % 1 === 0
+        ? `${totalHours}h`
+        : `${totalHours.toFixed(1)}h`,
+    },
+    { label: "Approved", value: contributionsError ? "—" : approved.length },
+    { label: "Pending", value: contributionsError ? "—" : pending.length },
+    {
+      label: "Club Rank",
+      value: rank != null ? `#${rank}` : "—",
+      error: rankError,
+      onRetry: rankError ? loadData : undefined,
+    },
   ];
 
   return (
@@ -203,6 +270,17 @@ function MemberHome() {
                     <div key={i} className="h-8 skeleton rounded" />
                   ))}
                 </div>
+              ) : contributionsError ? (
+                <div className="py-6 flex flex-col sm:flex-row items-center justify-center gap-3 text-center">
+                  <p className="text-sm text-[#f85149]">{contributionsError}</p>
+                  <button
+                    type="button"
+                    onClick={loadData}
+                    className="gh-btn gh-btn-default gh-btn-sm min-h-[36px]"
+                  >
+                    Retry
+                  </button>
+                </div>
               ) : recent.length === 0 ? (
                 <div className="py-8 text-center text-sm text-[#8b949e]">
                   No contributions yet.{" "}
@@ -237,224 +315,136 @@ function MemberHome() {
   );
 }
 
-// ── ADMIN — Club card ─────────────────────────────────────────────────────────
-
-interface ClubWithMeta extends Club {
-  memberCount?: number;
-  coordinatorName?: string;
-  totalHours?: number;
-}
-
-interface ClubRepoCardProps {
-  club: ClubWithMeta;
-  onDelete: (club: Club) => void;
-  deleting: boolean;
-}
-
-function ClubRepoCard({ club, onDelete, deleting }: ClubRepoCardProps) {
-  const router = useRouter();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [menuOpen]);
-
-  return (
-    <div
-      className="bg-[#161b22] border border-[#30363d] rounded-md p-4 hover:border-[#8b949e] transition-colors group"
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div
-          className="flex-1 min-w-0 cursor-pointer"
-          onClick={() => router.push(`/?clubId=${club.id}`)}
-        >
-          <div className="flex items-center gap-2">
-            {/* Repo icon */}
-            <svg className="w-4 h-4 text-[#8b949e] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-            </svg>
-            <span className="text-sm font-semibold text-[#58a6ff] group-hover:underline truncate">
-              {club.name}
-            </span>
-          </div>
-          <p className="text-xs text-[#8b949e] mt-2 line-clamp-2 leading-relaxed">
-            {club.coordinatorName
-              ? `Coordinated by ${club.coordinatorName}`
-              : "No coordinator assigned"}
-          </p>
-        </div>
-
-        {/* Three-dot menu */}
-        <div className="relative shrink-0" ref={menuRef}>
-          <button
-            onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
-            className="w-7 h-7 flex items-center justify-center text-[#6e7681] hover:text-[#e6edf3] hover:bg-[#21262d] rounded-md transition-colors cursor-pointer"
-          >
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M8 9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM1.5 9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Zm13 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" />
-            </svg>
-          </button>
-          {menuOpen && (
-            <div className="absolute right-0 top-full mt-1 w-44 bg-[#161b22] border border-[#30363d] rounded-md shadow-lg z-20 animate-scale-in py-1">
-              <button
-                onClick={() => { router.push(`/?clubId=${club.id}`); setMenuOpen(false); }}
-                className="w-full text-left px-4 py-2 text-sm text-[#e6edf3] hover:bg-[#21262d] transition-colors cursor-pointer"
-              >
-                View Club
-              </button>
-              <div className="border-t border-[#21262d] my-1" />
-              <button
-                disabled={deleting}
-                onClick={() => { onDelete(club); setMenuOpen(false); }}
-                className="w-full text-left px-4 py-2 text-sm text-[#f85149] hover:bg-[rgba(248,81,73,0.1)] transition-colors cursor-pointer disabled:opacity-50"
-              >
-                {deleting ? "Deleting…" : "Delete Club"}
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Footer stats */}
-      <div className="flex items-center gap-4 mt-4 text-xs text-[#8b949e]">
-        {club.memberCount != null && (
-          <span className="flex items-center gap-1">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            {club.memberCount} member{club.memberCount !== 1 ? "s" : ""}
-          </span>
-        )}
-        {club.totalHours != null && club.totalHours > 0 && (
-          <span className="flex items-center gap-1">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {club.totalHours % 1 === 0 ? club.totalHours : club.totalHours.toFixed(1)}h logged
-          </span>
-        )}
-        <span className="ml-auto flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-[#3fb950]" />
-          Active
-        </span>
-      </div>
-    </div>
-  );
-}
-
 // ── ADMIN home view ─────────────────────────────────────────────────────────────
 
 function AdminHome() {
   const { user, token } = useAuth();
-  const [clubs, setClubs] = useState<ClubWithMeta[]>([]);
-  const [allContributions, setAllContributions] = useState<Contribution[]>([]);
-  const [totalMembers, setTotalMembers] = useState(0);
-  const [pendingUsersCount, setPendingUsersCount] = useState(0);
-  const [pendingCount, setPendingCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [newClubName, setNewClubName] = useState("");
-  const [creating, setCreating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const { listEnrichedClubs } = useClubApi();
+
+  const [clubs, setClubs] = useState<EnrichedClub[]>([]);
+  const [clubsError, setClubsError] = useState<string | null>(null);
+  const [clubsLoading, setClubsLoading] = useState(true);
+
+  const [totalMembers, setTotalMembers] = useState<number | null>(null);
+  const [pendingUsersCount, setPendingUsersCount] = useState<number | null>(null);
+  const [pendingCount, setPendingCount] = useState<number | null>(null);
+  const [totalHours, setTotalHours] = useState<number | null>(null);
+  const [recentContributions, setRecentContributions] = useState<Contribution[]>([]);
+  const [statsError, setStatsError] = useState<string | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+
   const [activeSection, setActiveSection] = useState<"clubs" | "members">("clubs");
 
   const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [clubsRes, membersRes, pendingUsersRes, pendingRes, contribRes] = await Promise.all([
-        listClubs(),
+    setClubsLoading(true);
+    setStatsLoading(true);
+    setClubsError(null);
+    setStatsError(null);
+
+    // allSettled — the club grid and each sidebar counter are independent, so a
+    // single failing endpoint must not blank the entire dashboard.
+    // The club cards come from ONE enriched request (no per-club follow-ups).
+    const [clubsRes, membersRes, pendingUsersRes, pendingApprovalsRes, analyticsRes] =
+      await Promise.allSettled([
+        listEnrichedClubs(),
         listMembers({ limit: 1 }, token ?? undefined),
         listMembers({ clubStatus: "pending", limit: 1 }, token ?? undefined),
         listContributions({ status: "PENDING", limit: 1 }, token ?? undefined),
-        listContributions({ limit: 500 }, token ?? undefined),
+        getGlobalAnalytics(undefined, token ?? undefined),
       ]);
 
-      const rawClubs: Club[] = clubsRes.data ?? [];
-      setTotalMembers(membersRes.data?.pagination.total ?? 0);
-      setPendingUsersCount(pendingUsersRes.data?.pagination.total ?? 0);
-      setPendingCount(pendingRes.data?.pagination.total ?? 0);
-      const allC = contribRes.data?.contributions ?? [];
-      setAllContributions(allC);
-
-      // Enrich clubs with member counts
-      const enriched: ClubWithMeta[] = await Promise.all(
-        rawClubs.map(async (club) => {
-          const mRes = await listMembers({ clubId: club.id, limit: 1 }, token ?? undefined);
-          const count = mRes.data?.pagination.total ?? 0;
-          // Find coordinator from members
-          const membersRes2 = await listMembers({ clubId: club.id, role: "COORDINATOR", limit: 1 }, token ?? undefined);
-          const coord = membersRes2.data?.members?.[0];
-          const clubHours = allC
-            .filter((c) => c.club?.id === club.id && c.status === "APPROVED")
-            .reduce((s, c) => s + c.hours, 0);
-          return {
-            ...club,
-            memberCount: count,
-            coordinatorName: coord?.name ?? coord?.email ?? undefined,
-            totalHours: clubHours,
-          };
-        })
-      );
-      setClubs(enriched);
-    } finally {
-      setLoading(false);
+    if (clubsRes.status === "fulfilled") {
+      setClubs(clubsRes.value.data ?? []);
+    } else {
+      setClubs([]);
+      setClubsError(getApiErrorMessage(clubsRes.reason, "Failed to load clubs"));
     }
-  }, [token]);
+    setClubsLoading(false);
 
-  useEffect(() => { loadData(); }, [loadData]);
+    let anyStatFailed = false;
 
-  const handleDelete = async (club: Club) => {
-    if (!confirm(`Delete "${club.name}"? This will remove the club, unassign its members, and delete related invite links and contributions.`)) return;
-    setDeletingId(club.id);
-    try {
-      await deleteClub(club.id, token ?? undefined);
-      await loadData();
-    } finally {
-      setDeletingId(null);
+    if (membersRes.status === "fulfilled") {
+      setTotalMembers(membersRes.value.data?.pagination.total ?? 0);
+    } else {
+      setTotalMembers(null);
+      anyStatFailed = true;
     }
-  };
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const name = newClubName.trim();
-    if (!name) return;
-    setCreating(true);
-    setError(null);
-    try {
-      const res = await createClub(name, token ?? undefined);
-      if (res.success) {
-        setNewClubName("");
-        setShowCreateForm(false);
-        await loadData();
-      }
-    } catch (err: unknown) {
-      const msg = err && typeof err === "object" && "message" in err ? (err as { message: string }).message : "Failed to create club";
-      setError(msg);
-    } finally {
-      setCreating(false);
+    if (pendingUsersRes.status === "fulfilled") {
+      setPendingUsersCount(pendingUsersRes.value.data?.pagination.total ?? 0);
+    } else {
+      setPendingUsersCount(null);
+      anyStatFailed = true;
     }
-  };
+
+    if (pendingApprovalsRes.status === "fulfilled") {
+      setPendingCount(pendingApprovalsRes.value.data?.pagination.total ?? 0);
+    } else {
+      setPendingCount(null);
+      anyStatFailed = true;
+    }
+
+    if (analyticsRes.status === "fulfilled") {
+      setTotalHours(analyticsRes.value.data?.stats.totalApprovedHours ?? 0);
+      setRecentContributions(analyticsRes.value.data?.recentContributions ?? []);
+    } else {
+      setTotalHours(null);
+      setRecentContributions([]);
+      anyStatFailed = true;
+    }
+
+    setStatsError(anyStatFailed ? "Could not be loaded" : null);
+    setStatsLoading(false);
+  }, [token, listEnrichedClubs]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  /** Merge an edited club back into the list in place — no refetch. */
+  const handleClubUpdated = useCallback((updated: Club) => {
+    setClubs((prev) =>
+      prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c))
+    );
+  }, []);
 
   if (!user) return null;
 
-  const heatmapData = buildHeatmap(allContributions);
-  const totalHours = allContributions
-    .filter((c) => c.status === "APPROVED")
-    .reduce((s, c) => s + c.hours, 0);
+  const heatmapData = buildHeatmap(recentContributions);
+  const formatHours = (h: number) => (h % 1 === 0 ? `${h}h` : `${h.toFixed(1)}h`);
 
-  const sidebarStats = [
-    { label: "Total Clubs",      value: clubs.length },
-    { label: "Total Members",    value: totalMembers },
-    { label: "Pending Users",    value: pendingUsersCount },
-    { label: "Pending Approvals",value: pendingCount },
-    { label: "Total Hours",      value: totalHours % 1 === 0 ? `${totalHours}h` : `${totalHours.toFixed(1)}h` },
+  // Each stat degrades on its own: a failed fetch shows "—" plus a retry link.
+  const sidebarStats: SidebarStat[] = [
+    {
+      label: "Total Clubs",
+      value: clubsError ? "—" : clubs.length,
+      error: clubsError,
+      onRetry: clubsError ? loadData : undefined,
+    },
+    {
+      label: "Total Members",
+      value: totalMembers ?? "—",
+      error: totalMembers == null ? statsError : null,
+      onRetry: totalMembers == null ? loadData : undefined,
+    },
+    {
+      label: "Pending Users",
+      value: pendingUsersCount ?? "—",
+      error: pendingUsersCount == null ? statsError : null,
+      onRetry: pendingUsersCount == null ? loadData : undefined,
+    },
+    {
+      label: "Pending Approvals",
+      value: pendingCount ?? "—",
+      error: pendingCount == null ? statsError : null,
+      onRetry: pendingCount == null ? loadData : undefined,
+    },
+    {
+      label: "Total Hours",
+      value: totalHours == null ? "—" : formatHours(totalHours),
+      error: totalHours == null ? statsError : null,
+      onRetry: totalHours == null ? loadData : undefined,
+    },
   ];
 
   return (
@@ -462,7 +452,7 @@ function AdminHome() {
       <div className="flex flex-col md:flex-row gap-8">
         {/* Left sidebar */}
         <div className="md:w-[260px] shrink-0">
-          {loading ? (
+          {statsLoading ? (
             <div className="space-y-4">
               <div className="w-20 h-20 rounded-full skeleton mx-auto md:mx-0" />
               <div className="h-5 w-32 skeleton" />
@@ -491,7 +481,9 @@ function AdminHome() {
               }`}
             >
               Clubs
-              <span className="ml-1.5 text-xs text-[#8b949e] font-normal">{clubs.length}</span>
+              <span className="ml-1.5 text-xs text-[#8b949e] font-normal">
+                {clubsLoading ? "…" : clubs.length}
+              </span>
             </button>
             <button
               onClick={() => setActiveSection("members")}
@@ -502,89 +494,25 @@ function AdminHome() {
               }`}
             >
               Members
-              {pendingUsersCount > 0 && (
+              {(pendingUsersCount ?? 0) > 0 && (
                 <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold rounded-full bg-[#e3b341] text-[#0d1117] px-1">
                   {pendingUsersCount}
                 </span>
               )}
             </button>
           </div>
+
           {activeSection === "clubs" && (
-            <>
-              {/* Clubs header */}
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-semibold text-[#e6edf3]">
-                  Clubs
-                  <span className="ml-2 text-xs text-[#8b949e] font-normal">{clubs.length}</span>
-                </h2>
-                <button
-                  onClick={() => setShowCreateForm(!showCreateForm)}
-                  className="gh-btn gh-btn-primary gh-btn-sm"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                  </svg>
-                  New Club
-                </button>
-              </div>
-
-              {/* Create club form */}
-              {showCreateForm && (
-                <form
-                  onSubmit={handleCreate}
-                  className="bg-[#161b22] border border-[#30363d] rounded-md p-4 mb-4 animate-fade-in"
-                >
-                  <label className="block mb-2">
-                    <span className="text-xs text-[#8b949e] font-medium">Club name</span>
-                    <input
-                      value={newClubName}
-                      onChange={(e) => setNewClubName(e.target.value)}
-                      placeholder="e.g. GDG on Campus"
-                      className="gh-input mt-1.5"
-                      autoFocus
-                    />
-                  </label>
-                  {error && <p className="text-xs text-[#f85149] mb-2">{error}</p>}
-                  <div className="flex gap-2 mt-3">
-                    <button type="submit" disabled={creating} className="gh-btn gh-btn-primary gh-btn-sm">
-                      {creating ? "Creating…" : "Create club"}
-                    </button>
-                    <button type="button" onClick={() => setShowCreateForm(false)} className="gh-btn gh-btn-default gh-btn-sm">
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              )}
-
-              {/* Club cards grid */}
-              {loading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="h-32 skeleton rounded-md" />
-                  ))}
-                </div>
-              ) : clubs.length === 0 ? (
-                <div className="bg-[#161b22] border border-[#30363d] rounded-md p-12 text-center">
-                  <p className="text-sm text-[#8b949e]">No clubs yet. Create one to get started.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {clubs.map((club) => (
-                    <ClubRepoCard
-                      key={club.id}
-                      club={club}
-                      onDelete={handleDelete}
-                      deleting={deletingId === club.id}
-                    />
-                  ))}
-                </div>
-              )}
-            </>
+            <ClubGrid
+              clubs={clubs}
+              loading={clubsLoading}
+              error={clubsError}
+              onRefresh={loadData}
+              onClubUpdated={handleClubUpdated}
+            />
           )}
 
-          {activeSection === "members" && (
-            <AdminMembersOverview />
-          )}
+          {activeSection === "members" && <AdminMembersOverview />}
         </div>
       </div>
     </div>
@@ -596,28 +524,34 @@ function AdminHome() {
 type ClubTab = "overview" | "members" | "contributions" | "analytics" | "events";
 
 function ClubDrilldown({ clubId }: { clubId: string }) {
-  const { token } = useAuth();
   const router = useRouter();
+  const { listEnrichedClubs } = useClubApi();
   const [activeTab, setActiveTab] = useState<ClubTab>("overview");
-  const [club, setClub] = useState<Club | null>(null);
-  const [memberCount, setMemberCount] = useState(0);
-  const [heatmapData, setHeatmapData] = useState<HeatmapDay[]>([]);
+  const [club, setClub] = useState<EnrichedClub | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  // One enriched request covers the club record *and* its member count; the
+  // old version also pulled 500 contributions to build a heatmap nothing rendered.
+  const loadClub = useCallback(async () => {
     setLoading(true);
-    Promise.all([
-      listClubs(),
-      listMembers({ clubId, limit: 1 }, token ?? undefined),
-      listContributions({ clubId, limit: 500 }, token ?? undefined),
-    ]).then(([clubsRes, membersRes, contribRes]) => {
-      const foundClub = (clubsRes.data ?? []).find((c) => c.id === clubId);
-      setClub(foundClub ?? null);
-      setMemberCount(membersRes.data?.pagination.total ?? 0);
-      const contributions = contribRes.data?.contributions ?? [];
-      setHeatmapData(buildHeatmap(contributions));
-    }).finally(() => setLoading(false));
-  }, [clubId, token]);
+    setError(null);
+    try {
+      const res = await listEnrichedClubs();
+      setClub((res.data ?? []).find((c) => c.id === clubId) ?? null);
+    } catch (err: unknown) {
+      setClub(null);
+      setError(getApiErrorMessage(err, "Failed to load club"));
+    } finally {
+      setLoading(false);
+    }
+  }, [clubId, listEnrichedClubs]);
+
+  useEffect(() => {
+    loadClub();
+  }, [loadClub]);
+
+  const memberCount = club?.memberCount ?? 0;
 
   const TABS: { id: ClubTab; label: string }[] = [
     { id: "overview",      label: "Overview" },
@@ -646,6 +580,17 @@ function ClubDrilldown({ clubId }: { clubId: string }) {
             <div className="h-7 w-48 skeleton rounded" />
             <div className="h-4 w-64 skeleton rounded" />
           </div>
+        ) : error ? (
+          <div className="px-4 py-3 rounded-md bg-[rgba(248,81,73,0.1)] border border-[rgba(248,81,73,0.3)] text-sm text-[#f85149] flex items-center justify-between gap-4">
+            <span>{error}</span>
+            <button
+              type="button"
+              onClick={loadClub}
+              className="gh-btn gh-btn-default gh-btn-sm min-h-[36px] shrink-0"
+            >
+              Retry
+            </button>
+          </div>
         ) : (
           <div className="flex flex-wrap items-start gap-4">
             <div>
@@ -655,6 +600,9 @@ function ClubDrilldown({ clubId }: { clubId: string }) {
                 </svg>
                 <h1 className="text-xl font-bold text-[#e6edf3]">{club?.name ?? "Club"}</h1>
               </div>
+              {club?.description && (
+                <p className="text-sm text-[#8b949e] mt-1.5 max-w-2xl">{club.description}</p>
+              )}
               <div className="flex items-center gap-4 mt-2 text-xs text-[#8b949e]">
                 <span className="flex items-center gap-1">
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
