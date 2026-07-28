@@ -4,6 +4,7 @@ import type {
   ContributionListResponse,
   ClubAnalytics,
   GlobalAnalytics,
+  HeatmapResponse,
   LeaderboardResponse,
   LeaderboardPeriod,
 } from "@/types";
@@ -78,6 +79,38 @@ export async function getContributionById(id: string, token?: string) {
   return apiRequest<Contribution>(`/contributions/${id}`, { token });
 }
 
+// ── Update ────────────────────────────────────────────────────────────────────
+
+/**
+ * Fields a member may change on their own contribution. Every field is
+ * optional — only what is sent gets updated.
+ */
+export interface UpdateContributionPayload {
+  title?: string;
+  description?: string;
+  category?: string;
+  hours?: number;
+  datePerformed?: string;
+  attachmentUrl?: string;
+}
+
+/**
+ * Edit a contribution. Only the owner may do this, and only while the
+ * contribution is still PENDING — the server answers 403 for a non-owner and
+ * 400 once the contribution has been approved or rejected.
+ */
+export async function updateContribution(
+  id: string,
+  data: UpdateContributionPayload,
+  token?: string
+) {
+  return apiRequest<Contribution>(`/contributions/${id}`, {
+    method: "PATCH",
+    body: data as unknown as Record<string, unknown>,
+    token,
+  });
+}
+
 // ── Approve / Reject ──────────────────────────────────────────────────────────
 
 export async function approveContribution(id: string, token?: string) {
@@ -122,6 +155,29 @@ export async function getGlobalAnalytics(clubId?: string, token?: string) {
   return apiRequest<GlobalAnalytics>(`/contributions/analytics/global${q}`, {
     token,
   });
+}
+
+// ── Heatmap ───────────────────────────────────────────────────────────────────
+
+/**
+ * Daily contribution counts for a GitHub-style heatmap.
+ *
+ * `days` covers every day in the window, zero days included. Omitting both
+ * `userId` and `clubId` scopes the response to the caller's own record.
+ */
+export async function getContributionHeatmap(
+  params: { userId?: string; clubId?: string; days?: number } = {},
+  token?: string
+) {
+  const q = new URLSearchParams();
+  if (params.userId) q.set("userId", params.userId);
+  if (params.clubId) q.set("clubId", params.clubId);
+  if (params.days) q.set("days", String(params.days));
+  const query = q.toString();
+  return apiRequest<HeatmapResponse>(
+    `/contributions/heatmap${query ? `?${query}` : ""}`,
+    { token }
+  );
 }
 
 // ── Leaderboard ───────────────────────────────────────────────────────────────

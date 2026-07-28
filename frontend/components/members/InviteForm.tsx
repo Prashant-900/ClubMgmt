@@ -10,6 +10,7 @@ import {
 import { listClubs } from "@/lib/api/club.api";
 import { RoleGate } from "@/components/ui/RoleGate";
 import { RoleBadge } from "@/components/ui/Badge";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import type { Role, InviteLink, Club } from "@/types";
 
 function isExpired(expiresAt: string): boolean {
@@ -41,6 +42,9 @@ export function InviteLinkForm() {
   const [linksLoading, setLinksLoading] = useState(true);
   // Track which link was just copied (by id)
   const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
+  // Invite link awaiting revoke confirmation
+  const [revokeTargetId, setRevokeTargetId] = useState<string | null>(null);
+  const [revoking, setRevoking] = useState(false);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -133,17 +137,25 @@ export function InviteLinkForm() {
     });
   };
 
-  const handleRevoke = async (id: string) => {
-    if (!confirm("Revoke this invite link?")) return;
+  const handleRevoke = (id: string) => setRevokeTargetId(id);
+
+  const confirmRevoke = async () => {
+    if (!revokeTargetId) return;
+    setRevoking(true);
+    setError(null);
     try {
-      await revokeInviteLink(id, token ?? undefined);
+      await revokeInviteLink(revokeTargetId, token ?? undefined);
+      setRevokeTargetId(null);
       fetchLinks();
     } catch (err: unknown) {
       const message =
         err && typeof err === "object" && "message" in err
           ? (err as { message: string }).message
           : "Failed to revoke link";
-      alert(message);
+      setError(message);
+      setRevokeTargetId(null);
+    } finally {
+      setRevoking(false);
     }
   };
 
@@ -403,6 +415,16 @@ export function InviteLinkForm() {
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        open={revokeTargetId !== null}
+        title="Revoke invite link"
+        message="Anyone holding this link will no longer be able to register with it. This cannot be undone."
+        confirmLabel="Revoke link"
+        loading={revoking}
+        onConfirm={confirmRevoke}
+        onCancel={() => setRevokeTargetId(null)}
+      />
     </RoleGate>
   );
 }

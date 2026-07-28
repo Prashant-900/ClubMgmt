@@ -1,4 +1,9 @@
 const authService = require("../services/auth.service");
+const {
+  setRefreshCookie,
+  clearRefreshCookie,
+  readRefreshCookie,
+} = require("../middlewares/cookie.middleware");
 
 async function register(req, res, next) {
   try {
@@ -11,17 +16,25 @@ async function register(req, res, next) {
       });
     }
 
-    const result = await authService.register({
-      inviteToken,
-      email,
-      password,
-      name,
-      phone,
-    });
+    const result = await authService.register(
+      {
+        inviteToken,
+        email,
+        password,
+        name,
+        phone,
+      },
+      { userAgent: req.headers["user-agent"] }
+    );
+
+    // Deliver the refresh token as an HttpOnly cookie (C-04) rather than in the
+    // JSON body, so client-side JS can never read it.
+    const { refreshToken, refreshMaxAgeSeconds, ...safe } = result;
+    setRefreshCookie(res, refreshToken, refreshMaxAgeSeconds);
 
     res.status(201).json({
       success: true,
-      data: result,
+      data: safe,
     });
   } catch (error) {
     next(error);
@@ -39,11 +52,17 @@ async function login(req, res, next) {
       });
     }
 
-    const result = await authService.login({ email, password });
+    const result = await authService.login(
+      { email, password },
+      { userAgent: req.headers["user-agent"] }
+    );
+
+    const { refreshToken, refreshMaxAgeSeconds, ...safe } = result;
+    setRefreshCookie(res, refreshToken, refreshMaxAgeSeconds);
 
     res.status(200).json({
       success: true,
-      data: result,
+      data: safe,
     });
   } catch (error) {
     next(error);
@@ -94,7 +113,12 @@ async function googleCallback(req, res, next) {
     }
 
     const inviteToken = typeof state === "string" && state ? state : null;
-    const result = await authService.loginWithGoogle(code, inviteToken);
+    const result = await authService.loginWithGoogle(code, inviteToken, {
+      userAgent: req.headers["user-agent"],
+    });
+
+    setRefreshCookie(res, result.refreshToken, result.refreshMaxAgeSeconds);
+
     const callbackUrl = new URL("/auth/callback", frontendUrl);
     callbackUrl.searchParams.set("token", result.token);
 
@@ -104,4 +128,49 @@ async function googleCallback(req, res, next) {
   }
 }
 
-module.exports = { register, login, getProfile, googleLogin, googleCallback };
+/**
+ * Rotate the refresh-token cookie and hand back a fresh access token.
+ * On any failure the cookie is cleared so a bad/stolen token can't linger.
+ */
+async function refresh(req, res, next) {
+  try {
+    const rawToken = readRefreshCookie(req);
+
+    const result = await authService.refreshSession(rawToken, {
+      userAgent: req.headers["user-agent"],
+    });
+
+    const { refreshToken, refreshMaxAgeSeconds, ...safe } = result;
+    setRefreshCookie(res, refreshToken, refreshMaxAgeSeconds);
+
+    res.status(200).json({ success: true, data: safe });
+  } catch (error) {
+    clearRefreshCookie(res);
+    next(error);
+  }
+}
+
+/**
+ * Revoke the current session's refresh token and clear the cookie.
+ * Always succeeds from the client's perspective — logging out is idempotent.
+ */
+async function logout(req, res, next) {
+  try {
+    const rawToken = readRefreshCookie(req);
+    await authService.logout(rawToken);
+    clearRefreshCookie(res);
+    res.status(200).json({ success: true, message: "Logged out" });
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = {
+  register,
+  login,
+  getProfile,
+  googleLogin,
+  googleCallback,
+  refresh,
+  logout,
+};

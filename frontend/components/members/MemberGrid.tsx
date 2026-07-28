@@ -6,6 +6,10 @@ import { listMembers, removeMember } from "@/lib/api/member.api";
 import { listClubs } from "@/lib/api/club.api";
 import { MemberCard } from "@/components/members/MemberCard";
 import { RoleGate } from "@/components/ui/RoleGate";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { Pagination } from "@/components/ui/Pagination";
+import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
+import { getApiErrorMessage } from "@/lib/hooks/apiError";
 import type { User, Role, Club } from "@/types";
 
 type FilterTab = "ALL" | Role;
@@ -15,6 +19,9 @@ const FILTER_TABS: { label: string; value: FilterTab }[] = [
   { label: "Coordinators", value: "COORDINATOR" },
   { label: "Members",      value: "MEMBER" },
 ];
+
+/** Rows per page. The API clamps `limit` to 100, so never ask for the world. */
+const PAGE_SIZE = 20;
 
 export function MemberGrid({ clubId }: { clubId?: string }) {
   const { token, user } = useAuth();
@@ -27,6 +34,11 @@ export function MemberGrid({ clubId }: { clubId?: string }) {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [removeTargetId, setRemoveTargetId] = useState<string | null>(null);
+  const [removing, setRemoving] = useState(false);
+
+  // Typing stays instant; only the debounced value drives requests.
+  const debouncedSearch = useDebouncedValue(searchTerm, 300);
 
   useEffect(() => {
     if (user?.role !== "ADMIN") return;
@@ -35,18 +47,29 @@ export function MemberGrid({ clubId }: { clubId?: string }) {
       .catch(() => setClubs([]));
   }, [user?.role]);
 
+  // Any change to the query itself must start again from page 1
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, activeFilter, clubId]);
+
   const fetchMembers = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const params: Record<string, unknown> = { page, limit: 30 };
-      if (activeFilter !== "ALL") params.role = activeFilter;
-      if (clubId) params.clubId = clubId;
-      if (searchTerm.trim()) params.search = searchTerm.trim();
+      const search = debouncedSearch.trim();
+      const res = await listMembers(
+        {
+          page,
+          limit: PAGE_SIZE,
+          ...(activeFilter !== "ALL" ? { role: activeFilter } : {}),
+          ...(clubId ? { clubId } : {}),
+          ...(search ? { search } : {}),
+        },
+        token ?? undefined
+      );
 
-      const res = await listMembers(params as Parameters<typeof listMembers>[0], token ?? undefined);
       if (res.success && res.data) {
-        // Sort: coordinators first, then by name
+        // Sort within the page: coordinators first, then by name
         const sorted = [...res.data.members].sort((a, b) => {
           if (a.role === "COORDINATOR" && b.role !== "COORDINATOR") return -1;
           if (b.role === "COORDINATOR" && a.role !== "COORDINATOR") return 1;
@@ -57,32 +80,29 @@ export function MemberGrid({ clubId }: { clubId?: string }) {
         setTotal(res.data.pagination.total);
       }
     } catch (err: unknown) {
-      const msg = err && typeof err === "object" && "message" in err
-        ? (err as { message: string }).message
-        : "Failed to fetch members";
-      setError(msg);
+      setError(getApiErrorMessage(err, "Failed to fetch members"));
     } finally {
       setLoading(false);
     }
-  }, [token, activeFilter, page, clubId, searchTerm]);
+  }, [token, activeFilter, page, clubId, debouncedSearch]);
 
   useEffect(() => { fetchMembers(); }, [fetchMembers]);
 
-  const handleRemove = async (id: string) => {
-    if (!confirm("Are you sure you want to remove this member?")) return;
+  const handleRemove = (id: string) => setRemoveTargetId(id);
+
+  const confirmRemove = async () => {
+    if (!removeTargetId) return;
+    setRemoving(true);
     try {
-      await removeMember(id, token ?? undefined);
+      await removeMember(removeTargetId, token ?? undefined);
+      setRemoveTargetId(null);
       fetchMembers();
     } catch (err: unknown) {
-      const msg = err && typeof err === "object" && "message" in err
-        ? (err as { message: string }).message : "Failed to remove member";
-      alert(msg);
+      setError(getApiErrorMessage(err, "Failed to remove member"));
+      setRemoveTargetId(null);
+    } finally {
+      setRemoving(false);
     }
-  };
-
-  const handleFilterChange = (filter: FilterTab) => {
-    setActiveFilter(filter);
-    setPage(1);
   };
 
   return (
@@ -96,8 +116,9 @@ export function MemberGrid({ clubId }: { clubId?: string }) {
           </svg>
           <input
             value={searchTerm}
-            onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
+            onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search members…"
+            aria-label="Search members"
             className="gh-input pl-9"
           />
         </div>
@@ -108,7 +129,7 @@ export function MemberGrid({ clubId }: { clubId?: string }) {
             {FILTER_TABS.map((tab) => (
               <button
                 key={tab.value}
-                onClick={() => handleFilterChange(tab.value)}
+                onClick={() => setActiveFilter(tab.value)}
                 className={`px-3 py-1.5 font-medium transition-colors cursor-pointer border-r border-[#30363d] last:border-r-0 whitespace-nowrap ${
                   activeFilter === tab.value
                     ? "bg-[#21262d] text-[#e6edf3]"
@@ -120,17 +141,13 @@ export function MemberGrid({ clubId }: { clubId?: string }) {
             ))}
           </div>
         </RoleGate>
-
-        <span className="text-xs text-[#8b949e] sm:ml-auto">
-          {total} {total === 1 ? "member" : "members"}
-        </span>
       </div>
 
       {/* Error */}
       {error && (
         <div className="px-4 py-3 rounded-md bg-[rgba(248,81,73,0.1)] border border-[rgba(248,81,73,0.3)] text-sm text-[#f85149] flex items-center justify-between">
           <span>{error}</span>
-          <button onClick={fetchMembers} className="gh-btn gh-btn-default gh-btn-sm ml-4">Retry</button>
+          <button onClick={fetchMembers} className="gh-btn gh-btn-default gh-btn-sm min-h-[36px] ml-4">Retry</button>
         </div>
       )}
 
@@ -160,7 +177,9 @@ export function MemberGrid({ clubId }: { clubId?: string }) {
         ) : members.length === 0 ? (
           <div className="py-16 text-center">
             <p className="text-sm text-[#8b949e]">
-              {activeFilter !== "ALL"
+              {debouncedSearch.trim()
+                ? `No members match “${debouncedSearch.trim()}”`
+                : activeFilter !== "ALL"
                 ? `No ${activeFilter.toLowerCase()}s found`
                 : "No members found. Invite members to get started."}
             </p>
@@ -172,6 +191,7 @@ export function MemberGrid({ clubId }: { clubId?: string }) {
                 key={member.id}
                 member={member}
                 onRemove={handleRemove}
+                onRefresh={fetchMembers}
                 clubs={clubs}
                 index={i}
               />
@@ -180,26 +200,24 @@ export function MemberGrid({ clubId }: { clubId?: string }) {
         )}
       </div>
 
-      {/* Pagination */}
-      {!loading && totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 pt-2">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className="gh-btn gh-btn-default gh-btn-sm disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            ← Previous
-          </button>
-          <span className="text-xs text-[#8b949e]">{page} / {totalPages}</span>
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-            className="gh-btn gh-btn-default gh-btn-sm disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            Next →
-          </button>
-        </div>
-      )}
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        onPageChange={setPage}
+        busy={loading}
+        itemLabel="member"
+      />
+
+      <ConfirmModal
+        open={removeTargetId !== null}
+        title="Remove member"
+        message="This member will lose access to the club. You can invite them again later."
+        confirmLabel="Remove member"
+        loading={removing}
+        onConfirm={confirmRemove}
+        onCancel={() => setRemoveTargetId(null)}
+      />
     </div>
   );
 }

@@ -1,5 +1,30 @@
 const prisma = require("../config/db");
+// `Prisma.sql` / `Prisma.join` let the heatmap build a parameterised WHERE clause
+// from a variable number of filters without ever concatenating user input.
+const { Prisma } = require("@prisma/client");
 const { createError } = require("../middlewares/error.middleware");
+const {
+  LIMITS,
+  clampPagination,
+  validateDate,
+  validateEnum,
+  validateHttpUrl,
+  validateNumber,
+  validateString,
+} = require("../utils/validate");
+
+const CATEGORIES = [
+  "DEVELOPMENT",
+  "WORKSHOP",
+  "PRESENTATION",
+  "DESIGN",
+  "EVENT_SUPPORT",
+  "DOCUMENTATION",
+  "MEETING",
+  "OTHER",
+];
+
+const STATUSES = ["PENDING", "APPROVED", "REJECTED"];
 
 // ── Shared select shape for a contribution ──────────────────────────────────
 const contributionSelect = {
@@ -77,7 +102,75 @@ function getStartOfSemester() {
   return d;
 }
 
+/** Midnight UTC on the same calendar day as `date`. */
+function startOfUtcDay(date) {
+  const d = new Date(date);
+  d.setUTCHours(0, 0, 0, 0);
+  return d;
+}
+
 // ── CRUD ─────────────────────────────────────────────────────────────────────
+
+/**
+ * Validate and normalise the user-supplied fields of a contribution.
+ *
+ * Shared by create and update so the two paths can never drift apart.
+ *
+ * Covers several bugs at once:
+ *   M-01  attachmentUrl must be http/https — `javascript:` and `data:` URLs were
+ *         accepted and then rendered as a link, which is a stored-XSS vector
+ *   M-02  datePerformed may not be in the future
+ *   M-03  every text field has a length limit
+ *   M-04  hours has a 0.25 minimum (the old check only rejected `<= 0`, so 0.001
+ *         hours was a valid contribution)
+ *
+ * @param {object} data raw payload
+ * @param {{ partial?: boolean }} [options] when `partial`, only validate the keys
+ *   that are actually present — used by the update path so a PATCH that changes
+ *   only the title doesn't require every other field.
+ */
+function normalizeContributionInput(data = {}, { partial = false } = {}) {
+  const out = {};
+  const has = (key) => data[key] !== undefined;
+
+  if (!partial || has("title")) {
+    out.title = validateString(data.title, "title", {
+      max: LIMITS.contribution.title,
+    });
+  }
+
+  if (!partial || has("description")) {
+    out.description = validateString(data.description, "description", {
+      max: LIMITS.contribution.description,
+      required: false,
+    });
+  }
+
+  if (!partial || has("category")) {
+    out.category = validateEnum(data.category, "category", CATEGORIES);
+  }
+
+  if (!partial || has("hours")) {
+    out.hours = validateNumber(data.hours, "hours", {
+      min: LIMITS.contribution.hoursMin,
+      max: LIMITS.contribution.hoursMax,
+    });
+  }
+
+  if (!partial || has("datePerformed")) {
+    out.datePerformed = validateDate(data.datePerformed, "datePerformed", {
+      allowFuture: false,
+    });
+  }
+
+  if (!partial || has("attachmentUrl")) {
+    out.attachmentUrl = validateHttpUrl(data.attachmentUrl, "attachmentUrl", {
+      max: LIMITS.contribution.attachmentUrl,
+    });
+  }
+
+  return out;
+}
 
 /**
  * Create a new contribution.
@@ -85,19 +178,10 @@ function getStartOfSemester() {
  * COORDINATOR / ADMIN → status = APPROVED (auto)
  */
 async function createContribution(data, requester) {
-  const { title, description, category, hours, datePerformed, attachmentUrl, clubId } =
-    data;
-
-  if (!title || !category || !hours || !datePerformed) {
-    throw createError("title, category, hours, and datePerformed are required", 400);
-  }
-
-  if (hours <= 0 || hours > 24) {
-    throw createError("hours must be between 0 and 24", 400);
-  }
+  const fields = normalizeContributionInput(data);
 
   // Determine which club to use
-  let resolvedClubId = clubId;
+  let resolvedClubId = data.clubId;
   if (requester.role !== "ADMIN") {
     // Non-admins always contribute to their own club
     if (!requester.clubId) {
@@ -123,12 +207,7 @@ async function createContribution(data, requester) {
     data: {
       userId: requester.id,
       clubId: resolvedClubId,
-      title,
-      description: description || null,
-      category,
-      hours: parseFloat(hours),
-      datePerformed: new Date(datePerformed),
-      attachmentUrl: attachmentUrl || null,
+      ...fields,
       ...statusData,
     },
     select: contributionSelect,
@@ -136,27 +215,81 @@ async function createContribution(data, requester) {
 }
 
 /**
+ * Update a contribution.
+ *
+ * Deliberately narrow: only the owner, and only while the contribution is still
+ * PENDING. Once a coordinator has approved or rejected it, the record is part of
+ * the club's audit trail — letting a member silently rewrite an approved entry
+ * would make approved hours meaningless.
+ *
+ * Passing `attachmentUrl: null` (or an empty string) clears the attachment.
+ */
+async function updateContribution(id, data, requester) {
+  const existing = await prisma.contribution.findUnique({
+    where: { id },
+    select: { id: true, userId: true, status: true, clubId: true },
+  });
+
+  if (!existing) {
+    throw createError("Contribution not found", 404);
+  }
+
+  if (existing.userId !== requester.id) {
+    throw createError("You can only edit your own contributions", 403);
+  }
+
+  if (existing.status !== "PENDING") {
+    throw createError(
+      `This contribution has already been ${existing.status.toLowerCase()} and can no longer be edited`,
+      400
+    );
+  }
+
+  const fields = normalizeContributionInput(data, { partial: true });
+
+  if (Object.keys(fields).length === 0) {
+    throw createError("Provide at least one field to update", 400);
+  }
+
+  return prisma.contribution.update({
+    where: { id },
+    data: fields,
+    select: contributionSelect,
+  });
+}
+
+/**
  * Get contributions for the requesting user only.
  */
-async function listMyContributions({ status, category, page = 1, limit = 20 }, requester) {
+async function listMyContributions({ status, category, page, limit } = {}, requester) {
+  const { page: safePage, limit: safeLimit } = clampPagination(page, limit, {
+    maxLimit: LIMITS.pagination.maxLimit,
+    defaultLimit: LIMITS.pagination.defaultLimit,
+  });
+
   const where = { userId: requester.id };
-  if (status) where.status = status;
-  if (category) where.category = category;
+  if (status) where.status = validateEnum(status, "status", STATUSES);
+  if (category) where.category = validateEnum(category, "category", CATEGORIES);
 
   const [contributions, total] = await Promise.all([
     prisma.contribution.findMany({
       where,
       select: contributionSelect,
       orderBy: { createdAt: "desc" },
-      skip: (page - 1) * limit,
-      take: limit,
+      skip: (safePage - 1) * safeLimit,
+      take: safeLimit,
     }),
     prisma.contribution.count({ where }),
   ]);
 
   return {
     contributions,
-    pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    pagination: {
+      page: safePage,
+      limit: safeLimit,
+      total,
+      totalPages: Math.ceil(total / safeLimit),
+    },
   };
 }
 
@@ -167,9 +300,14 @@ async function listMyContributions({ status, category, page = 1, limit = 20 }, r
  * MEMBER → own contributions only (use listMyContributions instead)
  */
 async function listContributions(
-  { status, category, clubId, userId, page = 1, limit = 20 },
+  { status, category, clubId, userId, page, limit } = {},
   requester
 ) {
+  const { page: safePage, limit: safeLimit } = clampPagination(page, limit, {
+    maxLimit: LIMITS.pagination.maxLimit,
+    defaultLimit: LIMITS.pagination.defaultLimit,
+  });
+
   const where = {};
 
   if (requester.role === "COORDINATOR") {
@@ -177,28 +315,40 @@ async function listContributions(
       throw createError("You must belong to a club to view contributions", 403);
     }
     where.clubId = requester.clubId;
+    // A coordinator may still narrow to one member inside their own club.
+    if (userId) where.userId = userId;
   } else if (requester.role === "ADMIN") {
     if (clubId) where.clubId = clubId;
     if (userId) where.userId = userId;
+  } else {
+    // MEMBER — never allowed to see anyone else's submissions through this
+    // endpoint. Without this branch the `where` stayed empty for members and
+    // the query returned every contribution in the college.
+    where.userId = requester.id;
   }
 
-  if (status) where.status = status;
-  if (category) where.category = category;
+  if (status) where.status = validateEnum(status, "status", STATUSES);
+  if (category) where.category = validateEnum(category, "category", CATEGORIES);
 
   const [contributions, total] = await Promise.all([
     prisma.contribution.findMany({
       where,
       select: contributionSelect,
       orderBy: { createdAt: "desc" },
-      skip: (page - 1) * limit,
-      take: limit,
+      skip: (safePage - 1) * safeLimit,
+      take: safeLimit,
     }),
     prisma.contribution.count({ where }),
   ]);
 
   return {
     contributions,
-    pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    pagination: {
+      page: safePage,
+      limit: safeLimit,
+      total,
+      totalPages: Math.ceil(total / safeLimit),
+    },
   };
 }
 
@@ -368,12 +518,16 @@ async function getClubAnalytics(clubId, requester) {
     // Weekly trend — last 8 weeks
     prisma.$queryRaw`
       SELECT
-        DATE_TRUNC('week', "createdAt") AS week,
+        -- M-10: bucket by when the work was actually done, not when it was
+        -- typed in. Backdated entries were landing in the week they were
+        -- submitted, which made the trend chart disagree with the leaderboard
+        -- (which has always filtered on "datePerformed").
+        DATE_TRUNC('week', "datePerformed") AS week,
         COUNT(*)::int AS count,
         COALESCE(SUM(CASE WHEN status = 'APPROVED' THEN hours ELSE 0 END), 0) AS hours
       FROM contributions
       WHERE "clubId" = ${resolvedClubId}
-        AND "createdAt" >= NOW() - INTERVAL '8 weeks'
+        AND "datePerformed" >= NOW() - INTERVAL '8 weeks'
       GROUP BY week
       ORDER BY week ASC
     `,
@@ -477,22 +631,30 @@ async function getGlobalAnalytics(clubId) {
     clubId
       ? prisma.$queryRaw`
           SELECT
-            DATE_TRUNC('week', "createdAt") AS week,
+            -- M-10: bucket by when the work was actually done, not when it was
+        -- typed in. Backdated entries were landing in the week they were
+        -- submitted, which made the trend chart disagree with the leaderboard
+        -- (which has always filtered on "datePerformed").
+        DATE_TRUNC('week', "datePerformed") AS week,
             COUNT(*)::int AS count,
             COALESCE(SUM(CASE WHEN status = 'APPROVED' THEN hours ELSE 0 END), 0) AS hours
           FROM contributions
           WHERE "clubId" = ${clubId}
-            AND "createdAt" >= NOW() - INTERVAL '8 weeks'
+            AND "datePerformed" >= NOW() - INTERVAL '8 weeks'
           GROUP BY week
           ORDER BY week ASC
         `
       : prisma.$queryRaw`
           SELECT
-            DATE_TRUNC('week', "createdAt") AS week,
+            -- M-10: bucket by when the work was actually done, not when it was
+        -- typed in. Backdated entries were landing in the week they were
+        -- submitted, which made the trend chart disagree with the leaderboard
+        -- (which has always filtered on "datePerformed").
+        DATE_TRUNC('week', "datePerformed") AS week,
             COUNT(*)::int AS count,
             COALESCE(SUM(CASE WHEN status = 'APPROVED' THEN hours ELSE 0 END), 0) AS hours
           FROM contributions
-          WHERE "createdAt" >= NOW() - INTERVAL '8 weeks'
+          WHERE "datePerformed" >= NOW() - INTERVAL '8 weeks'
           GROUP BY week
           ORDER BY week ASC
         `,
@@ -550,14 +712,26 @@ async function getGlobalAnalytics(clubId) {
  * Leaderboard — ranked by total approved hours within a time window.
  * period: "weekly" | "monthly" | "semester" | "all"
  */
-async function getLeaderboard({ period = "all", clubId, page = 1, limit = 20 }, requester) {
+async function getLeaderboard({ period = "all", clubId, page, limit } = {}, requester) {
+  const safePeriod = validateEnum(period, "period", [
+    "weekly",
+    "monthly",
+    "semester",
+    "all",
+  ]);
+
+  const { page: safePage, limit: safeLimit } = clampPagination(page, limit, {
+    maxLimit: LIMITS.pagination.maxLimit,
+    defaultLimit: LIMITS.pagination.defaultLimit,
+  });
+
   let dateFilter = {};
 
-  if (period === "weekly") {
+  if (safePeriod === "weekly") {
     dateFilter = { datePerformed: { gte: getStartOfWeek() } };
-  } else if (period === "monthly") {
+  } else if (safePeriod === "monthly") {
     dateFilter = { datePerformed: { gte: getStartOfMonth() } };
-  } else if (period === "semester") {
+  } else if (safePeriod === "semester") {
     dateFilter = { datePerformed: { gte: getStartOfSemester() } };
   }
 
@@ -580,8 +754,8 @@ async function getLeaderboard({ period = "all", clubId, page = 1, limit = 20 }, 
     _sum: { hours: true },
     _count: { _all: true },
     orderBy: { _sum: { hours: "desc" } },
-    skip: (page - 1) * limit,
-    take: limit,
+    skip: (safePage - 1) * safeLimit,
+    take: safeLimit,
   });
 
   const total = await prisma.contribution.groupBy({
@@ -602,7 +776,7 @@ async function getLeaderboard({ period = "all", clubId, page = 1, limit = 20 }, 
   });
   const userMap = Object.fromEntries(users.map((u) => [u.id, u]));
 
-  const offset = (page - 1) * limit;
+  const offset = (safePage - 1) * safeLimit;
   const entries = grouped.map((g, i) => ({
     rank: offset + i + 1,
     user: userMap[g.userId],
@@ -611,19 +785,181 @@ async function getLeaderboard({ period = "all", clubId, page = 1, limit = 20 }, 
   }));
 
   return {
-    period,
+    period: safePeriod,
     entries,
     pagination: {
-      page,
-      limit,
+      page: safePage,
+      limit: safeLimit,
       total: total.length,
-      totalPages: Math.ceil(total.length / limit),
+      totalPages: Math.ceil(total.length / safeLimit),
     },
+  };
+}
+
+// ── Heatmap ───────────────────────────────────────────────────────────────────
+
+/**
+ * Contribution heatmap — one bucket per calendar day.
+ *
+ * M-08: the profile heatmap used to be built client-side by fetching up to a
+ * year of contribution rows and reducing them in the browser. That transferred
+ * thousands of records to render ~365 small squares. This aggregates in the
+ * database and returns one row per day instead.
+ *
+ * REJECTED contributions are excluded — a rejected submission is not activity
+ * worth celebrating on a profile. `hours` is therefore the total hours of
+ * *non-rejected* contributions that day, which is deliberately not the same
+ * number as the "approved hours" stat on the profile header.
+ *
+ * @param {{ userId?: string, clubId?: string, days?: number|string }} filters
+ * @param {{ id: string, role: string, clubId: string|null }} requester
+ */
+async function getHeatmap({ userId, clubId, days } = {}, requester) {
+  const windowDays = validateNumber(days === undefined ? 365 : days, "days", {
+    min: 1,
+    max: 366,
+  });
+
+  // Default to the caller's own activity when no filter is given.
+  const targetUserId = userId || (clubId ? null : requester.id);
+  const targetClubId = clubId || null;
+
+  await assertHeatmapScope({ userId: targetUserId, clubId: targetClubId }, requester);
+
+  // Work in UTC: `datePerformed` is stored as a timestamp without timezone at
+  // midnight UTC, so building the series in local time would shift every bucket.
+  const end = startOfUtcDay(new Date());
+  const start = new Date(end);
+  start.setUTCDate(start.getUTCDate() - (windowDays - 1));
+
+  // One day past `end` so today's rows are included regardless of their time part.
+  const endExclusive = new Date(end);
+  endExclusive.setUTCDate(endExclusive.getUTCDate() + 1);
+
+  const conditions = [
+    Prisma.sql`"datePerformed" >= ${start}`,
+    Prisma.sql`"datePerformed" < ${endExclusive}`,
+    Prisma.sql`status <> 'REJECTED'::"ContributionStatus"`,
+  ];
+
+  if (targetUserId) {
+    conditions.push(Prisma.sql`"userId" = ${targetUserId}`);
+  }
+  if (targetClubId) {
+    conditions.push(Prisma.sql`"clubId" = ${targetClubId}`);
+  }
+
+  const rows = await prisma.$queryRaw`
+    SELECT
+      to_char("datePerformed", 'YYYY-MM-DD') AS date,
+      COUNT(*)::int AS count,
+      COALESCE(SUM(hours), 0)::float8 AS hours
+    FROM contributions
+    WHERE ${Prisma.join(conditions, " AND ")}
+    GROUP BY 1
+    ORDER BY 1 ASC
+  `;
+
+  const byDate = new Map(rows.map((row) => [row.date, row]));
+
+  // Fill the gaps so the client can render a dense grid without doing date maths.
+  const series = [];
+  let totalContributions = 0;
+  let totalHours = 0;
+  let maxHours = 0;
+
+  for (let i = 0; i < windowDays; i += 1) {
+    const cursor = new Date(start);
+    cursor.setUTCDate(cursor.getUTCDate() + i);
+    const key = cursor.toISOString().slice(0, 10);
+
+    const row = byDate.get(key);
+    const count = row ? row.count : 0;
+    const hours = row ? Math.round(row.hours * 100) / 100 : 0;
+
+    totalContributions += count;
+    totalHours += hours;
+    if (hours > maxHours) maxHours = hours;
+
+    series.push({ date: key, count, hours });
+  }
+
+  return {
+    days: series,
+    totalContributions,
+    totalHours: Math.round(totalHours * 100) / 100,
+    maxHours,
+    startDate: start.toISOString().slice(0, 10),
+    endDate: end.toISOString().slice(0, 10),
+  };
+}
+
+/**
+ * Who is allowed to see whose heatmap.
+ * Mirrors the member-detail rules: admins see everyone, everyone else is
+ * confined to their own club (and can always see themselves).
+ */
+async function assertHeatmapScope({ userId, clubId }, requester) {
+  if (requester.role === "ADMIN") return;
+
+  if (clubId && clubId !== requester.clubId) {
+    throw createError("You can only view activity for your own club", 403);
+  }
+
+  if (userId && userId !== requester.id) {
+    const target = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { clubId: true },
+    });
+
+    if (!target) {
+      throw createError("Member not found", 404);
+    }
+
+    if (!requester.clubId || target.clubId !== requester.clubId) {
+      throw createError("You can only view activity for members of your own club", 403);
+    }
+  }
+}
+
+/**
+ * Number of contributions awaiting review, scoped to what the caller can act on.
+ *
+ * This backs the in-app "pending review" badge — goal.md asks for a coordinator
+ * notification when a contribution is submitted. Email delivery isn't wired up
+ * (no mail transport is available), so the in-app option is what ships: the
+ * badge is derived from live data, which means it can never go stale or fire a
+ * duplicate the way a stored notification queue can.
+ */
+async function getPendingReviewCount(requester) {
+  const where = { status: "PENDING" };
+
+  if (requester.role === "COORDINATOR") {
+    if (!requester.clubId) {
+      return { pendingCount: 0, scope: "none" };
+    }
+    where.clubId = requester.clubId;
+  } else if (requester.role !== "ADMIN") {
+    // Members only ever see their own pending submissions.
+    where.userId = requester.id;
+  }
+
+  const pendingCount = await prisma.contribution.count({ where });
+
+  return {
+    pendingCount,
+    scope:
+      requester.role === "ADMIN"
+        ? "all"
+        : requester.role === "COORDINATOR"
+          ? "club"
+          : "self",
   };
 }
 
 module.exports = {
   createContribution,
+  updateContribution,
   listMyContributions,
   listContributions,
   getContributionById,
@@ -633,4 +969,6 @@ module.exports = {
   getClubAnalytics,
   getGlobalAnalytics,
   getLeaderboard,
+  getHeatmap,
+  getPendingReviewCount,
 };

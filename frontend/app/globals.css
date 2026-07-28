@@ -47,6 +47,11 @@
   --color-role-member:         #3fb950;
   --color-role-member-bg:      rgba(63, 185, 80, 0.15);
 
+  /* Translucent "glass" panel surface — matches the #161b22 / #30363d pair.
+     Used as `bg-glass` / `border-glass-border`, always with a backdrop blur. */
+  --color-glass:               rgb(22 27 34 / 0.72);
+  --color-glass-border:        rgb(48 54 61 / 0.8);
+
   /* Heatmap scale (GitHub green palette) */
   --color-heatmap-0: #161b22;
   --color-heatmap-1: #0e4429;

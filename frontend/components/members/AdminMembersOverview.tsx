@@ -5,50 +5,150 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { listMembers, removeMember } from "@/lib/api/member.api";
 import { listClubs } from "@/lib/api/club.api";
 import { MemberCard } from "@/components/members/MemberCard";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { Pagination } from "@/components/ui/Pagination";
+import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
+import { getApiErrorMessage } from "@/lib/hooks/apiError";
 import type { Club, User } from "@/types";
+
+/** Rows per page, per section. The API clamps `limit` to 100. */
+const PAGE_SIZE = 20;
+
+/** Small inline failure notice so one dead section doesn't blank the page. */
+function SectionError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="px-4 py-3 rounded-md bg-[rgba(248,81,73,0.1)] border border-[rgba(248,81,73,0.3)] text-sm text-[#f85149] flex items-center justify-between gap-4">
+      <span>{message}</span>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="gh-btn gh-btn-default gh-btn-sm min-h-[36px] shrink-0"
+      >
+        Retry
+      </button>
+    </div>
+  );
+}
+
+function MemberRowsSkeleton({ rows = 6 }: { rows?: number }) {
+  return (
+    <div className="border border-[#30363d] rounded-md overflow-hidden">
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="flex items-center gap-3 px-4 py-3 border-b border-[#21262d] last:border-b-0">
+          <div className="w-8 h-8 rounded-full skeleton shrink-0" />
+          <div className="flex-1 space-y-1.5">
+            <div className="h-4 w-32 skeleton rounded" />
+            <div className="h-3 w-48 skeleton rounded" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function AdminMembersOverview() {
   const { token } = useAuth();
   const [clubs, setClubs] = useState<Club[]>([]);
+  const [clubsError, setClubsError] = useState<string | null>(null);
+
   const [assignedMembers, setAssignedMembers] = useState<User[]>([]);
+  const [assignedPage, setAssignedPage] = useState(1);
+  const [assignedTotal, setAssignedTotal] = useState(0);
+  const [assignedTotalPages, setAssignedTotalPages] = useState(1);
+  const [assignedError, setAssignedError] = useState<string | null>(null);
+
   const [pendingMembers, setPendingMembers] = useState<User[]>([]);
+  const [pendingPage, setPendingPage] = useState(1);
+  const [pendingTotal, setPendingTotal] = useState(0);
+  const [pendingTotalPages, setPendingTotalPages] = useState(1);
+  const [pendingError, setPendingError] = useState<string | null>(null);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [removeError, setRemoveError] = useState<string | null>(null);
+  const [removeTargetId, setRemoveTargetId] = useState<string | null>(null);
+  const [removing, setRemoving] = useState(false);
+
+  // Input stays instant; requests wait for a 300ms lull.
+  const debouncedSearch = useDebouncedValue(searchTerm, 300);
+
+  // A new search term invalidates both paginations
+  useEffect(() => {
+    setAssignedPage(1);
+    setPendingPage(1);
+  }, [debouncedSearch]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    setError(null);
-    try {
-      const [clubsResponse, assignedResponse, pendingResponse] = await Promise.all([
-        listClubs(),
-        listMembers({ clubStatus: "assigned", limit: 1000, search: searchTerm.trim() || undefined }, token ?? undefined),
-        listMembers({ clubStatus: "pending", limit: 1000, search: searchTerm.trim() || undefined }, token ?? undefined),
-      ]);
-      if (clubsResponse.success && clubsResponse.data) setClubs(clubsResponse.data);
-      if (assignedResponse.success && assignedResponse.data) setAssignedMembers(assignedResponse.data.members);
-      if (pendingResponse.success && pendingResponse.data) setPendingMembers(pendingResponse.data.members);
-    } catch (err: unknown) {
-      const message = err && typeof err === "object" && "message" in err
-        ? (err as { message: string }).message
-        : "Failed to fetch members";
-      setError(message);
-    } finally {
-      setLoading(false);
+    setClubsError(null);
+    setAssignedError(null);
+    setPendingError(null);
+
+    const search = debouncedSearch.trim() || undefined;
+
+    // allSettled — the club dropdown data and each member section are
+    // independent; one failure must only take down its own section.
+    const [clubsResponse, assignedResponse, pendingResponse] = await Promise.allSettled([
+      listClubs(),
+      listMembers(
+        { clubStatus: "assigned", page: assignedPage, limit: PAGE_SIZE, search },
+        token ?? undefined
+      ),
+      listMembers(
+        { clubStatus: "pending", page: pendingPage, limit: PAGE_SIZE, search },
+        token ?? undefined
+      ),
+    ]);
+
+    if (clubsResponse.status === "fulfilled") {
+      setClubs(clubsResponse.value.data ?? []);
+    } else {
+      setClubs([]);
+      setClubsError(
+        getApiErrorMessage(clubsResponse.reason, "Failed to load clubs — assign and promote are unavailable")
+      );
     }
-  }, [token, searchTerm]);
+
+    if (assignedResponse.status === "fulfilled") {
+      const data = assignedResponse.value.data;
+      setAssignedMembers(data?.members ?? []);
+      setAssignedTotal(data?.pagination.total ?? 0);
+      setAssignedTotalPages(data?.pagination.totalPages ?? 1);
+    } else {
+      setAssignedMembers([]);
+      setAssignedError(getApiErrorMessage(assignedResponse.reason, "Failed to load members"));
+    }
+
+    if (pendingResponse.status === "fulfilled") {
+      const data = pendingResponse.value.data;
+      setPendingMembers(data?.members ?? []);
+      setPendingTotal(data?.pagination.total ?? 0);
+      setPendingTotalPages(data?.pagination.totalPages ?? 1);
+    } else {
+      setPendingMembers([]);
+      setPendingError(getApiErrorMessage(pendingResponse.reason, "Failed to load pending members"));
+    }
+
+    setLoading(false);
+  }, [token, debouncedSearch, assignedPage, pendingPage]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const handleRemove = async (id: string) => {
-    if (!confirm("Remove this member?")) return;
+  const handleRemove = (id: string) => setRemoveTargetId(id);
+
+  const confirmRemove = async () => {
+    if (!removeTargetId) return;
+    setRemoving(true);
     try {
-      await removeMember(id, token ?? undefined);
+      await removeMember(removeTargetId, token ?? undefined);
+      setRemoveTargetId(null);
+      setRemoveError(null);
       fetchData();
     } catch (err: unknown) {
-      const message = err && typeof err === "object" && "message" in err
-        ? (err as { message: string }).message : "Failed to remove member";
-      alert(message);
+      setRemoveError(getApiErrorMessage(err, "Failed to remove member"));
+      setRemoveTargetId(null);
+    } finally {
+      setRemoving(false);
     }
   };
 
@@ -63,29 +163,16 @@ export function AdminMembersOverview() {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Search members…"
+          aria-label="Search members"
           className="gh-input pl-9"
         />
       </div>
 
-      {error && (
-        <div className="px-4 py-3 rounded-md bg-[rgba(248,81,73,0.1)] border border-[rgba(248,81,73,0.3)] text-sm text-[#f85149] flex items-center justify-between">
-          <span>{error}</span>
-          <button onClick={fetchData} className="gh-btn gh-btn-default gh-btn-sm ml-4">Retry</button>
-        </div>
-      )}
+      {removeError && <SectionError message={removeError} onRetry={fetchData} />}
+      {clubsError && <SectionError message={clubsError} onRetry={fetchData} />}
 
       {loading ? (
-        <div className="border border-[#30363d] rounded-md overflow-hidden">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-3 px-4 py-3 border-b border-[#21262d] last:border-b-0">
-              <div className="w-8 h-8 rounded-full skeleton shrink-0" />
-              <div className="flex-1 space-y-1.5">
-                <div className="h-4 w-32 skeleton rounded" />
-                <div className="h-3 w-48 skeleton rounded" />
-              </div>
-            </div>
-          ))}
-        </div>
+        <MemberRowsSkeleton />
       ) : (
         <>
           {/* Assigned members */}
@@ -93,40 +180,82 @@ export function AdminMembersOverview() {
             <div className="flex items-baseline justify-between">
               <h2 className="text-sm font-semibold text-[#e6edf3]">
                 Members
-                <span className="ml-2 text-xs text-[#8b949e] font-normal">{assignedMembers.length}</span>
+                <span className="ml-2 text-xs text-[#8b949e] font-normal">{assignedTotal}</span>
               </h2>
               <span className="text-xs text-[#6e7681]">Assigned to a club</span>
             </div>
-            <div className="border border-[#30363d] rounded-md overflow-hidden">
-              {assignedMembers.length === 0 ? (
-                <div className="py-8 text-center text-sm text-[#8b949e]">No assigned members found.</div>
-              ) : (
-                assignedMembers.map((m, i) => (
-                  <MemberCard key={m.id} member={m} onRemove={handleRemove} onRefresh={fetchData} clubs={clubs} index={i} />
-                ))
-              )}
-            </div>
+
+            {assignedError ? (
+              <SectionError message={assignedError} onRetry={fetchData} />
+            ) : (
+              <>
+                <div className="border border-[#30363d] rounded-md overflow-hidden">
+                  {assignedMembers.length === 0 ? (
+                    <div className="py-8 text-center text-sm text-[#8b949e]">
+                      No assigned members found.
+                    </div>
+                  ) : (
+                    assignedMembers.map((m, i) => (
+                      <MemberCard key={m.id} member={m} onRemove={handleRemove} onRefresh={fetchData} clubs={clubs} index={i} />
+                    ))
+                  )}
+                </div>
+                <Pagination
+                  page={assignedPage}
+                  totalPages={assignedTotalPages}
+                  total={assignedTotal}
+                  onPageChange={setAssignedPage}
+                  busy={loading}
+                  itemLabel="member"
+                />
+              </>
+            )}
           </section>
 
           {/* Pending members */}
-          {pendingMembers.length > 0 && (
+          {(pendingTotal > 0 || pendingError) && (
             <section className="space-y-3">
               <div className="flex items-baseline justify-between">
                 <h2 className="text-sm font-semibold text-[#e6edf3]">
                   Pending assignment
-                  <span className="ml-2 text-xs text-[#8b949e] font-normal">{pendingMembers.length}</span>
+                  <span className="ml-2 text-xs text-[#8b949e] font-normal">{pendingTotal}</span>
                 </h2>
                 <span className="text-xs text-[#6e7681]">Waiting for club assignment</span>
               </div>
-              <div className="border border-[#30363d] rounded-md overflow-hidden">
-                {pendingMembers.map((m, i) => (
-                  <MemberCard key={m.id} member={m} onRemove={handleRemove} onRefresh={fetchData} clubs={clubs} index={i} />
-                ))}
-              </div>
+
+              {pendingError ? (
+                <SectionError message={pendingError} onRetry={fetchData} />
+              ) : (
+                <>
+                  <div className="border border-[#30363d] rounded-md overflow-hidden">
+                    {pendingMembers.map((m, i) => (
+                      <MemberCard key={m.id} member={m} onRemove={handleRemove} onRefresh={fetchData} clubs={clubs} index={i} />
+                    ))}
+                  </div>
+                  <Pagination
+                    page={pendingPage}
+                    totalPages={pendingTotalPages}
+                    total={pendingTotal}
+                    onPageChange={setPendingPage}
+                    busy={loading}
+                    itemLabel="member"
+                  />
+                </>
+              )}
             </section>
           )}
         </>
       )}
+
+      <ConfirmModal
+        open={removeTargetId !== null}
+        title="Remove member"
+        message="This member will lose access to the club. You can invite them again later."
+        confirmLabel="Remove member"
+        loading={removing}
+        onConfirm={confirmRemove}
+        onCancel={() => setRemoveTargetId(null)}
+      />
     </div>
   );
 }
