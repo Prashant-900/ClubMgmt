@@ -13,10 +13,10 @@ router.get("/", authorize("ADMIN", "COORDINATOR", "MEMBER"), memberController.li
 // Get a specific member
 router.get("/:id", memberController.getById);
 
-// Promote a member to club lead (Admin only)
-router.post("/:id/promote", authorize("ADMIN"), memberController.promote);
+// Promote a member to club lead (Admin and Coordinator only)
+router.post("/:id/promote", authorize("ADMIN", "COORDINATOR"), memberController.promote);
 
-// Remove a member (Admin only)
-router.delete("/:id", authorize("ADMIN"), memberController.remove);
+// Remove a member (Admin and Coordinator only)
+router.delete("/:id", authorize("ADMIN", "COORDINATOR"), memberController.remove);
 
 module.exports = router;

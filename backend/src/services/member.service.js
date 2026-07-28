@@ -101,6 +101,16 @@ async function removeMember(id, requesterId, requesterRole, requesterClubId = nu
     throw createError("You cannot remove yourself", 400);
   }
 
+  if (requesterRole === "COORDINATOR") {
+    if (member.role !== "MEMBER") {
+      throw createError("Coordinators can only remove members", 403);
+    }
+
+    if (!requesterClubId || member.clubId !== requesterClubId) {
+      throw createError("You can only remove members from your own club", 403);
+    }
+  }
+
   // Hierarchy check — can only remove users below your level
   if (!canRemove(requesterRole, member.role)) {
     const allowed = getRemovableRoles(requesterRole);
@@ -108,12 +118,6 @@ async function removeMember(id, requesterId, requesterRole, requesterClubId = nu
       `As a ${requesterRole}, you can only remove: ${allowed.join(", ") || "nobody"}`,
       403
     );
-  }
-
-  if (requesterRole === "COORDINATOR") {
-    if (!requesterClubId || member.clubId !== requesterClubId) {
-      throw createError("You can only remove members from your own club", 403);
-    }
   }
 
   await prisma.user.delete({ where: { id } });

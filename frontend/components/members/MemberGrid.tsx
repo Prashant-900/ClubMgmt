@@ -112,6 +112,22 @@ export function MemberGrid() {
     setPage(1);
   };
 
+  const canRemoveMember = (member: User) => {
+    if (!user || user.id === member.id) {
+      return false;
+    }
+
+    if (user.role === "ADMIN") {
+      return true;
+    }
+
+    if (user.role === "COORDINATOR") {
+      return member.role === "MEMBER" && member.club?.id === user.clubId;
+    }
+
+    return false;
+  };
+
   return (
     <div className="space-y-6">
       {/* Filter tabs — visible to ADMIN only */}
@@ -172,7 +188,7 @@ export function MemberGrid() {
             <MemberCard
               key={member.id}
               member={member}
-              onRemove={handleRemove}
+              onRemove={canRemoveMember(member) ? handleRemove : undefined}
               clubs={clubs}
               index={i}
             />

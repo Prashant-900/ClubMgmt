@@ -57,13 +57,16 @@ export function MemberCard({ member, onRemove, clubs = [], index = 0 }: MemberCa
   const [promoting, setPromoting] = useState(false);
   const initials = getInitials(member.name, member.email);
 
-  const canPromote = user?.role === "ADMIN" && member.role !== "ADMIN";
+  const canPromote = (user?.role === "ADMIN" || user?.role === "COORDINATOR") && member.role === "MEMBER";
+  const isAdmin = user?.role === "ADMIN";
+  const isCoordinator = user?.role === "COORDINATOR";
 
   const handlePromote = async () => {
-    if (!selectedClubId) return;
+    const clubId = isCoordinator ? user?.clubId : selectedClubId;
+    if (!clubId) return;
     setPromoting(true);
     try {
-      await promoteMember(member.id, { clubId: selectedClubId }, token ?? undefined);
+      await promoteMember(member.id, { clubId }, token ?? undefined);
       window.location.reload();
     } finally {
       setPromoting(false);
@@ -152,8 +155,8 @@ export function MemberCard({ member, onRemove, clubs = [], index = 0 }: MemberCa
         </div>
       </div>
 
-      {/* Admin-only remove button */}
-      <RoleGate allowedRoles={["ADMIN"]}>
+      {/* Remove button for users with permission */}
+      <RoleGate allowedRoles={["ADMIN","COORDINATOR"]}>
         {onRemove && (
           <button
             onClick={() => onRemove(member.id)}
@@ -172,20 +175,22 @@ export function MemberCard({ member, onRemove, clubs = [], index = 0 }: MemberCa
           <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-wider">
             Promote to club lead
           </label>
-          <select
-            value={selectedClubId}
-            onChange={(e) => setSelectedClubId(e.target.value)}
-            className="w-full px-3 py-2 text-xs bg-white/[0.03] border border-white/[0.06] rounded-lg text-gray-200"
-          >
-            {clubs.map((club) => (
-              <option key={club.id} value={club.id} className="bg-[#0f0d1a] text-gray-100">
-                {club.name}
-              </option>
-            ))}
-          </select>
+          {isAdmin && (
+            <select
+              value={selectedClubId}
+              onChange={(e) => setSelectedClubId(e.target.value)}
+              className="w-full px-3 py-2 text-xs bg-white/[0.03] border border-white/[0.06] rounded-lg text-gray-200"
+            >
+              {clubs.map((club) => (
+                <option key={club.id} value={club.id} className="bg-[#0f0d1a] text-gray-100">
+                  {club.name}
+                </option>
+              ))}
+            </select>
+          )}
           <button
             onClick={handlePromote}
-            disabled={promoting || !selectedClubId}
+            disabled={promoting || (isAdmin && !selectedClubId) || (isCoordinator && !user?.clubId)}
             className="w-full py-1.5 text-xs font-medium text-cyan-300/90 bg-cyan-500/10 border border-cyan-500/20 rounded-lg hover:bg-cyan-500/15 disabled:opacity-50"
           >
             {promoting ? "Promoting..." : "Make club lead"}
