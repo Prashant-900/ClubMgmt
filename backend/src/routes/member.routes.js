@@ -13,12 +13,6 @@ router.get("/", authorize("ADMIN", "COORDINATOR", "MEMBER"), memberController.li
 // Get a specific member
 router.get("/:id", memberController.getById);
 
-<<<<<<< HEAD
-// Promote a member to club lead (Admin and Coordinator only)
-router.post("/:id/promote", authorize("ADMIN", "COORDINATOR"), memberController.promote);
-
-// Remove a member (Admin and Coordinator only)
-=======
 // Assign a pending member to a club (Admin only)
 router.post("/:id/assign", authorize("ADMIN"), memberController.assign);
 
@@ -32,7 +26,7 @@ router.post("/:id/promote", authorize("ADMIN"), memberController.promote);
 // hierarchy (a coordinator may remove MEMBERs, and only within their own club).
 // The route guard is now the coarse filter and the service keeps the fine-grained
 // rules — a coordinator who targets an admin or another club still gets a 403.
->>>>>>> 8867ea5f460448d17c5e94e6e0b19880246d6153
 router.delete("/:id", authorize("ADMIN", "COORDINATOR"), memberController.remove);
+
 
 module.exports = router;

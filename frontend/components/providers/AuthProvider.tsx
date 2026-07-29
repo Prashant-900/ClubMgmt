@@ -11,8 +11,8 @@ import {
 import { useRouter } from "next/navigation";
 import type { User, Role } from "@/types";
 import { getProfile } from "@/lib/api/auth.api";
-
-const TOKEN_STORAGE_KEY = "clubmgmt.auth.token";
+import { refreshSession, logout as logoutApi } from "@/lib/api/auth.api";
+import { setAccessToken } from "@/lib/api/client";
 
 interface AuthContextValue {
   user: User | null;
@@ -21,6 +21,12 @@ interface AuthContextValue {
   isCoordinator: boolean;
   isMember: boolean;
   hasRole: (...roles: Role[]) => boolean;
+  /**
+   * Seed the session after a successful login/register (or OAuth callback):
+   * stores the access token in memory and loads the full profile. The refresh
+   * cookie is already set by the backend at this point.
+   */
+  setSession: (token: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
 }
@@ -32,6 +38,7 @@ const defaultAuthContextValue: AuthContextValue = {
   isCoordinator: false,
   isMember: false,
   hasRole: () => false,
+  setSession: async () => {},
   logout: () => {},
   loading: true,
 };
@@ -48,30 +55,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  // On boot, try to recover a session from the HttpOnly refresh cookie. If a
+  // valid cookie exists the backend mints a fresh access token; otherwise this
+  // 401s quietly and we land as a signed-out visitor. The access token is never
+  // read from or written to localStorage.
   useEffect(() => {
-    const storedToken = window.localStorage.getItem(TOKEN_STORAGE_KEY);
+    let cancelled = false;
 
-    if (!storedToken) {
-      setUser(null);
-      setToken(null);
-      setLoading(false);
-      return;
-    }
+    async function restore() {
+      try {
+        const res = await refreshSession();
+        const freshToken = res.data?.token ?? null;
 
-    setToken(storedToken);
+        if (!freshToken) {
+          throw new Error("No session");
+        }
 
-    getProfile(storedToken)
-      .then((response) => {
-        setUser(response.data ?? null);
-      })
-      .catch(() => {
-        window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+        if (cancelled) return;
+
+        setAccessToken(freshToken);
+        setToken(freshToken);
+
+        // The refresh response carries a lightweight user; load the full
+        // profile (club, phone, etc.) for the app shell.
+        const profile = await getProfile(freshToken);
+        if (cancelled) return;
+        setUser(profile.data ?? null);
+      } catch {
+        if (cancelled) return;
+        setAccessToken(null);
         setUser(null);
         setToken(null);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    restore();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const setSession = useCallback(async (freshToken: string) => {
+    setAccessToken(freshToken);
+    setToken(freshToken);
+    try {
+      const profile = await getProfile(freshToken);
+      setUser(profile.data ?? null);
+    } catch {
+      // Profile load failed but we still have a token; leave user null and let
+      // the guards/refresh flow sort it out.
+      setUser(null);
+    }
   }, []);
 
   const hasRole = useCallback(
@@ -83,7 +119,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(() => {
-    window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+    // Best-effort server-side revoke; clear local state regardless of outcome.
+    logoutApi().catch(() => {
+      // Already-invalid session — nothing to recover.
+    });
+    setAccessToken(null);
     setUser(null);
     setToken(null);
     router.replace("/login");
@@ -96,6 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isCoordinator: user?.role === "COORDINATOR",
     isMember: user?.role === "MEMBER",
     hasRole,
+    setSession,
     logout,
     loading,
   };

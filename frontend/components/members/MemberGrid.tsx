@@ -105,12 +105,6 @@ export function MemberGrid({ clubId }: { clubId?: string }) {
     }
   };
 
-<<<<<<< HEAD
-  const handleFilterChange = (filter: FilterTab) => {
-    setActiveFilter(filter);
-    setPage(1);
-  };
-
   const canRemoveMember = (member: User) => {
     if (!user || user.id === member.id) {
       return false;
@@ -127,8 +121,7 @@ export function MemberGrid({ clubId }: { clubId?: string }) {
     return false;
   };
 
-=======
->>>>>>> 8867ea5f460448d17c5e94e6e0b19880246d6153
+
   return (
     <div className="space-y-4">
       {/* Toolbar */}
@@ -175,69 +168,12 @@ export function MemberGrid({ clubId }: { clubId?: string }) {
         </div>
       )}
 
-<<<<<<< HEAD
-      {/* Loading skeletons */}
-      {loading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <SkeletonCard key={i} />
-          ))}
-        </div>
-      )}
-
-      {/* Member grid */}
-      {!loading && !error && members.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {members.map((member, i) => (
-            <MemberCard
-              key={member.id}
-              member={member}
-              onRemove={canRemoveMember(member) ? handleRemove : undefined}
-              clubs={clubs}
-              index={i}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Empty state */}
-      {!loading && !error && members.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
-            <svg className="w-8 h-8 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
-            </svg>
-          </div>
-          <p className="text-gray-400 font-medium">No members found</p>
-          <p className="text-xs text-gray-600 mt-1">
-            {activeFilter !== "ALL"
-              ? `No ${activeFilter.toLowerCase()}s in the system`
-              : "Invite members to get started"}
-          </p>
-        </div>
-      )}
-
-      {/* Pagination */}
-      {!loading && totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 pt-4">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className="px-3 py-1.5 text-xs font-medium bg-white/5 border border-white/5 rounded-lg
-                       hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
-          >
-            ← Prev
-          </button>
-          <span className="text-xs text-gray-500 px-3">
-            {page} / {totalPages}
-=======
       {/* Contributor list container */}
       <div className="border border-[#30363d] rounded-md overflow-hidden">
         {/* List header */}
         <div className="flex items-center px-4 py-2 bg-[#161b22] border-b border-[#30363d]">
           <span className="text-xs font-medium text-[#8b949e]">
             {loading ? "Loading…" : `${total} ${total === 1 ? "member" : "members"}`}
->>>>>>> 8867ea5f460448d17c5e94e6e0b19880246d6153
           </span>
         </div>
 
@@ -271,7 +207,7 @@ export function MemberGrid({ clubId }: { clubId?: string }) {
               <MemberCard
                 key={member.id}
                 member={member}
-                onRemove={handleRemove}
+                onRemove={canRemoveMember(member) ? handleRemove : undefined}
                 onRefresh={fetchMembers}
                 clubs={clubs}
                 index={i}

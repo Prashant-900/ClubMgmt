@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-
-const TOKEN_STORAGE_KEY = "clubmgmt.auth.token";
+import { useAuth } from "@/components/providers/AuthProvider";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { setSession } = useAuth();
   const [message, setMessage] = useState("Completing sign-in...");
 
   useEffect(() => {
@@ -24,9 +24,10 @@ export default function AuthCallbackPage() {
       return;
     }
 
-    window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
-    router.replace("/");
-  }, [router, searchParams]);
+    // The backend has already set the HttpOnly refresh cookie; seed the access
+    // token into memory (never localStorage) and continue into the app.
+    setSession(token).finally(() => router.replace("/"));
+  }, [router, searchParams, setSession]);
 
   return (
     <div className="min-h-[calc(100vh-5rem)] px-4 sm:px-6 flex items-center justify-center">

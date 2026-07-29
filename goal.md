@@ -49,9 +49,9 @@ Everything required before the **first real deployment** to a real club.
 - [x] Google OAuth login
 - [x] Invite-only registration (email or Google)
 - [x] JWT auth — short-lived access token (default 1h) via `ACCESS_TOKEN_TTL`
-- [x] Refresh tokens (extend sessions without re-login) — service built (30-day opaque token, SHA-256 hashed in DB, rotation + reuse detection); NOTE: `POST /api/auth/refresh` + `POST /api/auth/logout` routes NOT yet wired in auth.routes.js
+- [x] Refresh tokens (extend sessions without re-login) — service built (30-day opaque token, SHA-256 hashed in DB, rotation + reuse detection); `POST /api/auth/refresh` + `POST /api/auth/logout` routes wired in auth.routes.js
 - [x] Minimum-entropy JWT secret enforcement
-- [~] HttpOnly cookie token storage (replace localStorage) — backend sets HttpOnly refresh cookie `clubmgmt.refresh`; frontend still reads access token from localStorage (migration pending)
+- [x] HttpOnly cookie token storage (replace localStorage) — backend sets HttpOnly refresh cookie `clubmgmt.refresh`; frontend uses `refreshSession()` on boot + `setSession()` for login/register (no localStorage)
 
 ### Security
 - [x] Rate limiting (auth endpoints: 10/15min, global: 100/min; analytics: 30/min)
@@ -63,7 +63,7 @@ Everything required before the **first real deployment** to a real club.
 
 ### Clubs
 - [x] Create, list, delete clubs
-- [ ] Edit club name
+- [x] Edit club name — PATCH /:id route + updateClub service
 - [~] Club description (optional, up to 500 chars) — schema + service support done; UI pending
 
 ### Members

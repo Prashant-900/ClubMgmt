@@ -220,16 +220,6 @@ async function removeMember(id, requesterId, requesterRole, requesterClubId = nu
     );
   }
 
-<<<<<<< HEAD
-  await prisma.user.delete({ where: { id } });
-  return { message: "Member removed successfully" };
-=======
-  if (requesterRole === "COORDINATOR") {
-    if (!requesterClubId || member.clubId !== requesterClubId) {
-      throw createError("You can only remove members from your own club", 403);
-    }
-  }
-
   try {
     // Rely on the database ON DELETE CASCADE and ON DELETE SET NULL for dependent records
     await prisma.user.delete({ where: { id } });
@@ -246,7 +236,7 @@ async function removeMember(id, requesterId, requesterRole, requesterClubId = nu
     }
     throw error;
   }
->>>>>>> 8867ea5f460448d17c5e94e6e0b19880246d6153
+
 }
 
 async function promoteMember(id, clubId) {

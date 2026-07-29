@@ -4,13 +4,12 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { validateInviteLink } from "@/lib/api/invite-link.api";
 import { register } from "@/lib/api/auth.api";
+import { useAuth } from "@/components/providers/AuthProvider";
 import { RoleBadge } from "@/components/ui/Badge";
 import type { InviteLink } from "@/types";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
-
-const TOKEN_STORAGE_KEY = "clubmgmt.auth.token";
 
 function GoogleIcon() {
   return (
@@ -38,6 +37,7 @@ function GoogleIcon() {
 export default function RegisterPage() {
   const params = useParams();
   const router = useRouter();
+  const { setSession } = useAuth();
   const inviteToken = params.token as string;
 
   const [link, setLink] = useState<InviteLink | null>(null);
@@ -102,8 +102,9 @@ export default function RegisterPage() {
         phone: phone.trim() || undefined,
       });
       if (res.success && res.data?.token) {
-        // Store the JWT so the user is immediately logged in
-        window.localStorage.setItem(TOKEN_STORAGE_KEY, res.data.token);
+        // Seed the in-memory session — the HttpOnly refresh cookie is already
+        // set by the backend response. No localStorage needed.
+        await setSession(res.data.token);
         setSuccess(true);
         // Redirect to dashboard after a brief success display
         setTimeout(() => router.push("/"), 1800);

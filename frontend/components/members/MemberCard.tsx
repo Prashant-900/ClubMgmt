@@ -31,15 +31,6 @@ export function MemberCard({ member, onRemove, onRefresh, clubs = [], index = 0 
   // Set when the admin is about to promote someone into a *different* club
   const [confirmCrossClub, setConfirmCrossClub] = useState(false);
 
-<<<<<<< HEAD
-  const canPromote = (user?.role === "ADMIN" || user?.role === "COORDINATOR") && member.role === "MEMBER";
-  const isAdmin = user?.role === "ADMIN";
-  const isCoordinator = user?.role === "COORDINATOR";
-
-  const handlePromote = async () => {
-    const clubId = isCoordinator ? user?.clubId : selectedClubId;
-    if (!clubId) return;
-=======
   const canPromote = user?.role === "ADMIN" && member.role !== "ADMIN" && !!member.club;
   const canAssign = user?.role === "ADMIN" && member.role !== "ADMIN" && !member.club;
 
@@ -56,20 +47,14 @@ export function MemberCard({ member, onRemove, onRefresh, clubs = [], index = 0 
   const handlePromote = async () => {
     if (!selectedClubId) return;
     setConfirmCrossClub(false);
->>>>>>> 8867ea5f460448d17c5e94e6e0b19880246d6153
     setPromoting(true);
     setActionError(null);
     try {
-<<<<<<< HEAD
-      await promoteMember(member.id, { clubId }, token ?? undefined);
-      window.location.reload();
-=======
       await promoteMember(member.id, { clubId: selectedClubId }, token ?? undefined);
       if (onRefresh) onRefresh();
       else window.location.reload();
     } catch (err: unknown) {
       setActionError(getApiErrorMessage(err, "Failed to promote member"));
->>>>>>> 8867ea5f460448d17c5e94e6e0b19880246d6153
     } finally {
       setPromoting(false);
     }
@@ -161,48 +146,6 @@ export function MemberCard({ member, onRemove, onRefresh, clubs = [], index = 0 
         </div>
       </div>
 
-<<<<<<< HEAD
-      {/* Remove button for users with permission */}
-      <RoleGate allowedRoles={["ADMIN","COORDINATOR"]}>
-        {onRemove && (
-          <button
-            onClick={() => onRemove(member.id)}
-            className="mt-3 w-full py-1.5 text-xs font-medium text-red-400/70 
-                       bg-red-500/5 border border-red-500/10 rounded-lg
-                       hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20
-                       transition-all duration-200 cursor-pointer opacity-0 group-hover:opacity-100"
-          >
-            Remove Member
-          </button>
-        )}
-      </RoleGate>
-
-      {canPromote && (
-        <div className="mt-3 space-y-2">
-          <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-wider">
-            Promote to club lead
-          </label>
-          {isAdmin && (
-            <select
-              value={selectedClubId}
-              onChange={(e) => setSelectedClubId(e.target.value)}
-              className="w-full px-3 py-2 text-xs bg-white/[0.03] border border-white/[0.06] rounded-lg text-gray-200"
-            >
-              {clubs.map((club) => (
-                <option key={club.id} value={club.id} className="bg-[#0f0d1a] text-gray-100">
-                  {club.name}
-                </option>
-              ))}
-            </select>
-          )}
-          <button
-            onClick={handlePromote}
-            disabled={promoting || (isAdmin && !selectedClubId) || (isCoordinator && !user?.clubId)}
-            className="w-full py-1.5 text-xs font-medium text-cyan-300/90 bg-cyan-500/10 border border-cyan-500/20 rounded-lg hover:bg-cyan-500/15 disabled:opacity-50"
-          >
-            {promoting ? "Promoting..." : "Make club lead"}
-          </button>
-=======
       {/* Expandable actions panel */}
       {showActions && (
         <div className="border-t border-[#21262d] px-4 pt-3 pb-3 space-y-2.5 bg-[#0d1117] animate-fade-in">
@@ -295,7 +238,6 @@ export function MemberCard({ member, onRemove, onRefresh, clubs = [], index = 0 
               </button>
             </div>
           )}
->>>>>>> 8867ea5f460448d17c5e94e6e0b19880246d6153
         </div>
       )}
 
