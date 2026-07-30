@@ -121,3 +121,58 @@ temp/
 
 # Ignore Prisma generated database
 # prisma/dev.db
+
+# ==========================
+# Mobile & React Native
+# ==========================
+# React Native
+.expo/
+*.jks
+*.p8
+*.p12
+*.mobileprovision
+*.orig.*
+.metro-health-check*
+.metro-cache/
+*.jsbundle
+
+# Android
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+bin/
+gen/
+local.properties
+.cxx/
+*.hprof
+*.keystore
+!debug.keystore
+android/app/release/
+android/app/build/
+android/build/
+.gradle/
+
+# iOS
+*.ipa
+*.dSYM.zip
+*.dSYM
+*.xcworkspace/
+!default.xcworkspace/
+xcuserdata/
+*.xccheckout
+*.moved-aside
+DerivedData/
+*.hmap
+*.xcuserstate
+ios/Pods/
+ios/.xcode.env.local
+
+# ==========================
+# Scratch & Testing Scripts
+# ==========================
+*scratch*.js
+test.js
+test_frontend.js
+twtest.mjs
