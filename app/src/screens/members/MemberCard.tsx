@@ -55,7 +55,7 @@ export function MemberCard({
   onChanged,
   onOpen,
 }: MemberCardProps) {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
 
   const [expanded, setExpanded] = useState(false);
   const [selectedClubId, setSelectedClubId] = useState(
@@ -69,7 +69,11 @@ export function MemberCard({
 
   const canPromote = isAdmin && member.role !== 'ADMIN' && !!member.club;
   const canAssign = isAdmin && member.role !== 'ADMIN' && !member.club;
-  const hasActions = canPromote || canAssign || canRemove;
+  // Defense-in-depth: never allow removing yourself, even if a parent passes
+  // canRemove={true}. The API also rejects self-removal, but this keeps the
+  // action out of the UI entirely.
+  const effectiveCanRemove = canRemove && user?.id !== member.id;
+  const hasActions = canPromote || canAssign || effectiveCanRemove;
 
   const displayName = member.name ?? member.email;
   const currentClub = member.club ?? null;
@@ -82,7 +86,7 @@ export function MemberCard({
     setBusy(true);
     setActionError(null);
     try {
-      await memberApi.promoteMember(member.id, selectedClubId);
+      await memberApi.promoteMember(member.id, { clubId: selectedClubId });
       setExpanded(false);
       onChanged?.();
     } catch (err) {
@@ -115,7 +119,10 @@ export function MemberCard({
     setBusy(true);
     setActionError(null);
     try {
-      await memberApi.assignMember(member.id, selectedClubId, selectedRole);
+      await memberApi.assignMember(member.id, {
+        clubId: selectedClubId,
+        role: selectedRole,
+      });
       setExpanded(false);
       onChanged?.();
     } catch (err) {
@@ -140,6 +147,9 @@ export function MemberCard({
   };
 
   const requestRemove = () => {
+    // Defense-in-depth: silently no-op if somehow invoked for the current user
+    if (member.id === user?.id) return;
+
     Alert.alert(
       'Remove member',
       'This member will lose access to the club. You can invite them again later.',
@@ -273,7 +283,7 @@ export function MemberCard({
             </View>
           ) : null}
 
-          {canRemove ? (
+          {effectiveCanRemove ? (
             <Button
               title="Remove member"
               onPress={requestRemove}

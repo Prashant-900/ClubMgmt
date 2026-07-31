@@ -4,7 +4,7 @@ import { AuthGuard } from "@/components/providers/AuthGuard";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense, useEffect, useState, useCallback } from "react";
-import { type HeatmapDay } from "@/components/ui/ContributionHeatmap";
+import { ContributionHeatmap, type HeatmapDay } from "@/components/ui/ContributionHeatmap";
 import { Avatar } from "@/components/ui/Avatar";
 import { RoleBadge, StatusBadge, CategoryBadge } from "@/components/ui/Badge";
 import { PageTabs } from "@/components/ui/PageTabs";
@@ -252,6 +252,18 @@ function MemberHome() {
 
         {/* Right content */}
         <div className="flex-1 min-w-0 space-y-6">
+          {/* Contribution activity heatmap */}
+          {!loading && !contributionsError && (
+            <section>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold text-[#e6edf3]">Contribution activity</h2>
+              </div>
+              <div className="bg-[#161b22] border border-[#30363d] rounded-md p-4 overflow-x-auto">
+                <ContributionHeatmap data={heatmapData} label="contributions" />
+              </div>
+            </section>
+          )}
+
           {/* Recent contributions */}
           <section>
             <div className="flex items-center justify-between mb-3">

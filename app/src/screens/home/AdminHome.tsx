@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import {
   BlockedState,
@@ -95,6 +95,46 @@ export function AdminHome() {
     setRefreshing(false);
   }, [load]);
 
+  const handleEditClub = useCallback(
+    (club: EnrichedClub) => {
+      navigation.navigate('ClubForm', {
+        mode: 'edit',
+        club: {
+          id: club.id,
+          name: club.name,
+          description: club.description ?? undefined,
+        },
+      });
+    },
+    [navigation],
+  );
+
+  const handleDeleteClub = useCallback((club: EnrichedClub) => {
+    Alert.alert(
+      'Delete club',
+      `Delete "${club.name}"? This removes the club and unassigns its members. This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await clubApi.deleteClub(club.id);
+              setData((prev) =>
+                prev
+                  ? { ...prev, clubs: prev.clubs.filter((c) => c.id !== club.id) }
+                  : prev,
+              );
+            } catch (err) {
+              Alert.alert('Error', getApiErrorMessage(err, 'Failed to delete club.'));
+            }
+          },
+        },
+      ],
+    );
+  }, []);
+
   if (loading) {
     return <Spinner fill label="Loading admin dashboard…" />;
   }
@@ -156,7 +196,18 @@ export function AdminHome() {
         />
       </View>
 
-      <SectionHeader title="Clubs" subtitle={`${data.clubs.length} total`} />
+      <SectionHeader
+        title="Clubs"
+        subtitle={`${data.clubs.length} total`}
+        action={
+          <Button
+            title="New club"
+            size="sm"
+            fullWidth={false}
+            onPress={() => navigation.navigate('ClubForm', { mode: 'create' })}
+          />
+        }
+      />
       {data.clubs.length === 0 ? (
         <BlockedState
           tone="neutral"
@@ -169,9 +220,9 @@ export function AdminHome() {
             key={club.id}
             style={styles.clubCard}
             onPress={() =>
-              navigation.navigate('Analytics', {
-                scope: 'club',
+              navigation.navigate('ClubDetail', {
                 clubId: club.id,
+                clubName: club.name,
               })
             }
           >
@@ -186,6 +237,22 @@ export function AdminHome() {
                 ? `Coordinator: ${club.coordinatorName}`
                 : 'No coordinator assigned'}
             </Text>
+            <View style={styles.clubActions}>
+              <Pressable
+                hitSlop={8}
+                onPress={() => handleEditClub(club)}
+                style={styles.clubAction}
+              >
+                <Text style={styles.clubActionText}>Edit</Text>
+              </Pressable>
+              <Pressable
+                hitSlop={8}
+                onPress={() => handleDeleteClub(club)}
+                style={styles.clubAction}
+              >
+                <Text style={styles.clubActionDanger}>Delete</Text>
+              </Pressable>
+            </View>
           </Card>
         ))
       )}
@@ -220,5 +287,26 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.textSubtle,
     marginTop: spacing.xs,
+  },
+  clubActions: {
+    flexDirection: 'row',
+    gap: spacing.lg,
+    marginTop: spacing.md,
+    paddingTop: spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
+  clubAction: {
+    paddingVertical: spacing.xs,
+  },
+  clubActionText: {
+    ...typography.small,
+    color: colors.accentEmphasis,
+    fontWeight: '600',
+  },
+  clubActionDanger: {
+    ...typography.small,
+    color: colors.dangerEmphasis,
+    fontWeight: '600',
   },
 });

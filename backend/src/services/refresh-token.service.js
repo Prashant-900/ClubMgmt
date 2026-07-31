@@ -8,14 +8,18 @@ const { createError } = require("../middlewares/error.middleware");
  * Design (MVP: "Refresh tokens" + "HttpOnly cookie token storage"):
  *   - The access JWT is short-lived (ACCESS_TOKEN_TTL, default 1h) so a leaked
  *     access token is only briefly useful.
- *   - A long-lived opaque refresh token (30d) is stored ONLY as a SHA-256 hash,
- *     so a database leak doesn't hand out usable credentials.
+ *   - A long-lived opaque refresh token is stored ONLY as a SHA-256 hash, so a
+ *     database leak doesn't hand out usable credentials.
  *   - Every refresh rotates the token: the old row is revoked and points at its
  *     replacement. If a already-rotated token is presented again, that's a sign
  *     it was stolen, so the whole session chain for that user is revoked.
+ *   - The token lifetime is effectively permanent (default 10 years) so a device
+ *     stays signed in until the user explicitly logs out. Because every refresh
+ *     rotates and re-issues with a fresh full TTL, an active device never lapses.
+ *     Override with REFRESH_TOKEN_TTL_DAYS.
  */
 
-const REFRESH_TOKEN_TTL_DAYS = 30;
+const REFRESH_TOKEN_TTL_DAYS = Number(process.env.REFRESH_TOKEN_TTL_DAYS) || 3650;
 const REFRESH_TOKEN_TTL_MS = REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000;
 const REFRESH_TOKEN_TTL_SECONDS = REFRESH_TOKEN_TTL_MS / 1000;
 

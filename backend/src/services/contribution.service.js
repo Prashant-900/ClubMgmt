@@ -367,7 +367,14 @@ async function getContributionById(id, requester) {
   }
 
   if (requester.role === "MEMBER" && contribution.user.id !== requester.id) {
-    throw createError("You can only view your own contributions", 403);
+    // Members may view approved contributions from their own club
+    if (
+      contribution.status !== "APPROVED" ||
+      !requester.clubId ||
+      contribution.club.id !== requester.clubId
+    ) {
+      throw createError("You can only view your own contributions", 403);
+    }
   }
 
   if (requester.role === "COORDINATOR") {

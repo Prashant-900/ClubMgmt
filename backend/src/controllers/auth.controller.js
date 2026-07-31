@@ -5,70 +5,6 @@ const {
   readRefreshCookie,
 } = require("../middlewares/cookie.middleware");
 
-async function register(req, res, next) {
-  try {
-    const { inviteToken, email, password, name, phone } = req.body;
-
-    if (!inviteToken || !email || !password || !name) {
-      return res.status(400).json({
-        success: false,
-        message: "inviteToken, email, password, and name are required",
-      });
-    }
-
-    const result = await authService.register(
-      {
-        inviteToken,
-        email,
-        password,
-        name,
-        phone,
-      },
-      { userAgent: req.headers["user-agent"] }
-    );
-
-    // Deliver the refresh token as an HttpOnly cookie (C-04) rather than in the
-    // JSON body, so client-side JS can never read it.
-    const { refreshToken, refreshMaxAgeSeconds, ...safe } = result;
-    setRefreshCookie(res, refreshToken, refreshMaxAgeSeconds);
-
-    res.status(201).json({
-      success: true,
-      data: safe,
-    });
-  } catch (error) {
-    next(error);
-  }
-}
-
-async function login(req, res, next) {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: "Email and password are required",
-      });
-    }
-
-    const result = await authService.login(
-      { email, password },
-      { userAgent: req.headers["user-agent"] }
-    );
-
-    const { refreshToken, refreshMaxAgeSeconds, ...safe } = result;
-    setRefreshCookie(res, refreshToken, refreshMaxAgeSeconds);
-
-    res.status(200).json({
-      success: true,
-      data: safe,
-    });
-  } catch (error) {
-    next(error);
-  }
-}
-
 async function getProfile(req, res, next) {
   try {
     const profile = await authService.getProfile(req.user.id);
@@ -229,8 +165,6 @@ async function logout(req, res, next) {
 }
 
 module.exports = {
-  register,
-  login,
   getProfile,
   googleLogin,
   googleCallback,

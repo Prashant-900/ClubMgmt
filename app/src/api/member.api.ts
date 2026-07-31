@@ -44,21 +44,20 @@ export function removeMember(id: string) {
   return apiRequest<null>(`/members/${id}`, { method: 'DELETE' });
 }
 
-export function promoteMember(id: string, clubId: string) {
+export function promoteMember(id: string, data: { clubId: string }) {
   return apiRequest<User>(`/members/${id}/promote`, {
     method: 'POST',
-    body: { clubId },
+    body: data,
   });
 }
 
 export function assignMember(
   id: string,
-  clubId: string,
-  role: 'COORDINATOR' | 'MEMBER',
+  data: { clubId: string; role: 'COORDINATOR' | 'MEMBER' },
 ) {
   return apiRequest<User>(`/members/${id}/assign`, {
     method: 'POST',
-    body: { clubId, role },
+    body: data,
   });
 }
 

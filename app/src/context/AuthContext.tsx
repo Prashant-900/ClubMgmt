@@ -16,6 +16,7 @@ import {
 import * as authApi from '../api/auth.api';
 import {
   parseCallbackUrl,
+  parseInviteUrl,
   signInWithGoogle,
   type GoogleAuthResult,
 } from '../auth/googleAuth';
@@ -57,6 +58,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Guards against setState after unmount during async bootstrap.
   const mounted = useRef(true);
+  // Mirrors `user` so the deep-link listener can read the latest auth state
+  // without re-subscribing on every profile change.
+  const userRef = useRef<User | null>(null);
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   const clearSession = useCallback(() => {
     setAccessToken(null);
@@ -148,31 +155,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Fallback deep-link listener: used when no Chrome Custom Tab is available and
-  // sign-in happens in the system browser, which routes clubmgmt://auth/callback
-  // back to the app process rather than resolving openAuth.
-  useEffect(() => {
-    async function handleUrl(url: string | null) {
-      if (!url) return;
-      const result = parseCallbackUrl(url);
-      if (result?.type === 'success') {
-        setSigningIn(true);
-        await setSession(result.token);
-        if (mounted.current) {
-          setSigningIn(false);
-        }
-      }
-    }
-
-    const sub = Linking.addEventListener('url', ({ url }) => {
-      handleUrl(url);
-    });
-    // Cold start via deep link.
-    Linking.getInitialURL().then(handleUrl);
-
-    return () => sub.remove();
-  }, [setSession]);
-
   const loginWithGoogle = useCallback(
     async (inviteToken?: string): Promise<GoogleAuthResult> => {
       setSigningIn(true);
@@ -190,6 +172,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     [setSession],
   );
+
+  // Deep-link listener, handling two kinds of clubmgmt:// links:
+  //   1. auth/callback?token=…  — the OAuth round trip returning via the system
+  //      browser (used when no Chrome Custom Tab is available).
+  //   2. invite/<token>         — a shared invite link opened while the app is
+  //      installed. We kick off Google sign-in pre-loaded with the invite token.
+  useEffect(() => {
+    async function handleUrl(url: string | null) {
+      if (!url) return;
+
+      const callback = parseCallbackUrl(url);
+      if (callback?.type === 'success') {
+        setSigningIn(true);
+        await setSession(callback.token);
+        if (mounted.current) {
+          setSigningIn(false);
+        }
+        return;
+      }
+
+      const inviteToken = parseInviteUrl(url);
+      if (inviteToken) {
+        // Only auto-start sign-in when signed out — an already-authenticated
+        // device shouldn't be bounced into a new OAuth flow by an invite link.
+        if (!mounted.current || userRef.current) return;
+        await loginWithGoogle(inviteToken);
+      }
+    }
+
+    const sub = Linking.addEventListener('url', ({ url }) => {
+      handleUrl(url);
+    });
+    // Cold start via deep link.
+    Linking.getInitialURL().then(handleUrl);
+
+    return () => sub.remove();
+  }, [setSession, loginWithGoogle]);
 
   const hasRole = useCallback(
     (...roles: Role[]) => (user ? roles.includes(user.role) : false),

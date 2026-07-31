@@ -5,6 +5,7 @@ import {
   BlockedState,
   Card,
   ContributionCard,
+  HeatmapGrid,
   SectionHeader,
   Screen,
   Spinner,
@@ -15,7 +16,7 @@ import { contributionApi } from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import { formatHours, getApiErrorMessage } from '../../utils/format';
 import type { AppNavigation } from '../../navigation/types';
-import type { Contribution, LeaderboardEntry } from '../../types';
+import type { Contribution, HeatmapResponse, LeaderboardEntry } from '../../types';
 import { StyleSheet, Text, View } from 'react-native';
 import { colors, spacing, typography } from '../../theme';
 
@@ -32,15 +33,19 @@ export function MemberHome() {
   const navigation = useNavigation<AppNavigation>();
   const { user } = useAuth();
   const [data, setData] = useState<MemberHomeData | null>(null);
+  const [heatmap, setHeatmap] = useState<HeatmapResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
-    const [contribRes, boardRes] = await Promise.allSettled([
+    const [contribRes, boardRes, heatmapRes] = await Promise.allSettled([
       contributionApi.listMyContributions({ limit: 100 }),
       contributionApi.getLeaderboard({ period: 'all', limit: 100 }),
+      user?.id
+        ? contributionApi.getContributionHeatmap({ userId: user.id })
+        : Promise.reject(new Error('No user')),
     ]);
 
     if (
@@ -52,6 +57,7 @@ export function MemberHome() {
         contribRes.status === 'rejected' ? contribRes.reason : contribRes.value;
       setError(getApiErrorMessage(reason, 'Could not load your dashboard.'));
       setData(null);
+      setHeatmap(null);
       return;
     }
 
@@ -79,6 +85,14 @@ export function MemberHome() {
       pendingCount: pending.length,
       rank,
     });
+
+    setHeatmap(
+      heatmapRes.status === 'fulfilled' &&
+        heatmapRes.value.success &&
+        heatmapRes.value.data
+        ? heatmapRes.value.data
+        : null,
+    );
   }, [user?.id]);
 
   useEffect(() => {
@@ -162,6 +176,15 @@ export function MemberHome() {
         />
       )}
 
+      {heatmap ? (
+        <>
+          <SectionHeader title="Your contribution activity" />
+          <Card style={styles.heatmapCard}>
+            <HeatmapGrid data={heatmap} subjectPrefix="you" />
+          </Card>
+        </>
+      ) : null}
+
       <SectionHeader title="Recent contributions" />
       {recent.length === 0 ? (
         <BlockedState
@@ -215,5 +238,8 @@ const styles = StyleSheet.create({
   clubName: {
     ...typography.h3,
     color: colors.text,
+  },
+  heatmapCard: {
+    marginBottom: spacing.lg,
   },
 });

@@ -226,8 +226,8 @@ export function MemberCard({ member, onRemove, onRefresh, clubs = [], index = 0 
             </div>
           )}
 
-          {/* REMOVE action */}
-          {onRemove && (
+          {/* REMOVE action — never offered for the current user's own row */}
+          {onRemove && member.id !== user?.id && (
             <div>
               <button
                 onClick={() => onRemove(member.id)}

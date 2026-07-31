@@ -11,10 +11,17 @@ export function listClubs(enriched = false) {
   return apiRequest<(Club | EnrichedClub)[]>(`/clubs${query}`);
 }
 
-export function createClub(name: string) {
+export function createClub(data: { name: string; description?: string }) {
   return apiRequest<Club>('/clubs', {
     method: 'POST',
-    body: { name },
+    body: data,
+  });
+}
+
+export function updateClub(id: string, data: { name: string; description?: string }) {
+  return apiRequest<Club>(`/clubs/${id}`, {
+    method: 'PATCH',
+    body: data,
   });
 }
 

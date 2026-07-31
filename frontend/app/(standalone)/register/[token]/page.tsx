@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { validateInviteLink } from "@/lib/api/invite-link.api";
-import { register } from "@/lib/api/auth.api";
-import { useAuth } from "@/components/providers/AuthProvider";
 import { RoleBadge } from "@/components/ui/Badge";
 import type { InviteLink } from "@/types";
 
@@ -34,26 +32,28 @@ function GoogleIcon() {
   );
 }
 
+function isMobileDevice(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
 export default function RegisterPage() {
   const params = useParams();
-  const router = useRouter();
-  const { setSession } = useAuth();
   const inviteToken = params.token as string;
 
   const [link, setLink] = useState<InviteLink | null>(null);
   const [validating, setValidating] = useState(true);
   const [linkError, setLinkError] = useState<string | null>(null);
+  const [attemptedAppOpen, setAttemptedAppOpen] = useState(false);
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [phone, setPhone] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const appDeepLink = `clubmgmt://invite/${encodeURIComponent(inviteToken)}`;
 
   const handleGoogleSignup = () => {
     window.location.href = `${API_BASE_URL}/auth/google?inviteToken=${encodeURIComponent(inviteToken)}`;
+  };
+
+  const tryOpenApp = () => {
+    window.location.href = appDeepLink;
   };
 
   // Validate invite link on mount
@@ -79,51 +79,17 @@ export default function RegisterPage() {
     validate();
   }, [inviteToken]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormError(null);
-
-    if (!name.trim() || !email.trim() || !password.trim()) {
-      setFormError("Name, email, and password are required.");
-      return;
+  // Auto-attempt to open the app on mobile after validation succeeds
+  useEffect(() => {
+    if (!validating && link && !linkError && isMobileDevice() && !attemptedAppOpen) {
+      setAttemptedAppOpen(true);
+      // Give the page a moment to render before the deep-link redirect
+      const timer = setTimeout(() => {
+        tryOpenApp();
+      }, 300);
+      return () => clearTimeout(timer);
     }
-    if (password.length < 6) {
-      setFormError("Password must be at least 6 characters.");
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      const res = await register({
-        inviteToken,
-        name: name.trim(),
-        email: email.trim(),
-        password,
-        phone: phone.trim() || undefined,
-      });
-      if (res.success && res.data?.token) {
-        // Seed the in-memory session — the HttpOnly refresh cookie is already
-        // set by the backend response. No localStorage needed.
-        await setSession(res.data.token);
-        setSuccess(true);
-        // Redirect to dashboard after a brief success display
-        setTimeout(() => router.push("/"), 1800);
-      }
-    } catch (err: unknown) {
-      const message =
-        err && typeof err === "object" && "message" in err
-          ? (err as { message: string }).message
-          : "Registration failed. Please try again.";
-      setFormError(message);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const errorId = "register-form-error";
-  const describedBy = formError ? errorId : undefined;
-  const inputClass = "gh-input py-2 disabled:opacity-60 disabled:cursor-not-allowed";
-  const labelClass = "block text-xs font-medium text-gh-text-secondary";
+  }, [validating, link, linkError, attemptedAppOpen, appDeepLink]);
 
   // ── Validating ──
   if (validating) {
@@ -136,13 +102,6 @@ export default function RegisterPage() {
           </div>
           <div className="bg-gh-canvas-subtle border border-gh-border-default rounded-md p-5 space-y-4">
             <div className="h-9 w-full rounded-md skeleton" />
-            <div className="h-3 w-24 rounded-md skeleton mx-auto" />
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="space-y-1.5">
-                <div className="h-3 w-24 rounded-md skeleton" />
-                <div className="h-8 w-full rounded-md skeleton" />
-              </div>
-            ))}
           </div>
           <p className="text-center text-xs text-gh-text-tertiary mt-6">
             Validating invite link…
@@ -177,37 +136,7 @@ export default function RegisterPage() {
     );
   }
 
-  // ── Success ──
-  if (success) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="w-full max-w-sm">
-          <div className="flex flex-col items-center mb-6">
-            <div className="w-12 h-12 rounded-full bg-gh-success-muted border border-gh-success-emphasis/40 flex items-center justify-center mb-4">
-              <svg className="w-6 h-6 text-gh-success-fg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <h1 className="text-xl font-semibold text-gh-text-primary">Welcome aboard</h1>
-          </div>
-
-          <div className="bg-gh-canvas-subtle border border-gh-border-default rounded-md p-5 space-y-3 text-center">
-            <p className="text-sm text-gh-text-secondary" role="status">
-              Your account has been created.
-              {link?.club && (
-                <> You&apos;ve joined <span className="text-gh-text-primary font-medium">{link.club.name}</span>.</>
-              )}
-            </p>
-            <p className="text-xs text-gh-text-tertiary">
-              You can now log in with your credentials.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Registration form ──
+  // ── Invite accept (Google-only) ──
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-sm">
@@ -227,11 +156,32 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        {/* Form card */}
-        <form
-          onSubmit={handleSubmit}
-          className="bg-gh-canvas-subtle border border-gh-border-default rounded-md p-5 space-y-4"
-        >
+        {/* Accept card */}
+        <div className="bg-gh-canvas-subtle border border-gh-border-default rounded-md p-5 space-y-4">
+          {isMobileDevice() && (
+            <>
+              <button
+                type="button"
+                onClick={tryOpenApp}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gh-accent-emphasis text-white text-sm font-semibold
+                           rounded-md cursor-pointer transition-colors hover:bg-gh-accent-emphasis/90
+                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gh-accent-emphasis
+                           focus-visible:ring-offset-2 focus-visible:ring-offset-gh-canvas-subtle"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                Open in app
+              </button>
+
+              <div className="flex items-center gap-3 text-xs text-gh-text-tertiary uppercase tracking-wider">
+                <span className="h-px flex-1 bg-gh-border-default" />
+                or continue on web
+                <span className="h-px flex-1 bg-gh-border-default" />
+              </div>
+            </>
+          )}
+
           {/*
             Google's brand guidelines require the light button treatment, so
             these values intentionally sit outside the gh-* dark palette.
@@ -248,108 +198,12 @@ export default function RegisterPage() {
             Continue with Google
           </button>
 
-          <div className="flex items-center gap-3 text-xs text-gh-text-tertiary uppercase tracking-wider">
-            <span className="h-px flex-1 bg-gh-border-default" />
-            or
-            <span className="h-px flex-1 bg-gh-border-default" />
-          </div>
-
-          {/* Name */}
-          <div className="space-y-1.5">
-            <label htmlFor="reg-name" className={labelClass}>
-              Full name <span className="text-gh-danger-fg">*</span>
-            </label>
-            <input
-              id="reg-name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="John Doe"
-              required
-              disabled={submitting}
-              aria-describedby={describedBy}
-              className={inputClass}
-            />
-          </div>
-
-          {/* Email */}
-          <div className="space-y-1.5">
-            <label htmlFor="reg-email" className={labelClass}>
-              Email address <span className="text-gh-danger-fg">*</span>
-            </label>
-            <input
-              id="reg-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-              disabled={submitting}
-              aria-describedby={describedBy}
-              className={inputClass}
-            />
-          </div>
-
-          {/* Password */}
-          <div className="space-y-1.5">
-            <label htmlFor="reg-password" className={labelClass}>
-              Password <span className="text-gh-danger-fg">*</span>
-            </label>
-            <input
-              id="reg-password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Min. 6 characters"
-              required
-              minLength={6}
-              disabled={submitting}
-              aria-describedby={describedBy}
-              className={inputClass}
-            />
-          </div>
-
-          {/* Phone (optional) */}
-          <div className="space-y-1.5">
-            <label htmlFor="reg-phone" className={labelClass}>
-              Phone <span className="text-gh-text-tertiary">(optional)</span>
-            </label>
-            <input
-              id="reg-phone"
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+91-9876543210"
-              disabled={submitting}
-              className={inputClass}
-            />
-          </div>
-
-          {/* Error */}
-          {formError && (
-            <div
-              id={errorId}
-              role="alert"
-              className="px-3 py-2 rounded-md bg-gh-danger-muted border border-gh-danger-emphasis/40 text-sm text-gh-danger-fg flex items-start gap-2"
-            >
-              <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-              {formError}
-            </div>
-          )}
-
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={submitting}
-            className="gh-btn gh-btn-primary w-full justify-center py-2 disabled:opacity-50 disabled:cursor-not-allowed
-                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gh-accent-emphasis
-                       focus-visible:ring-offset-2 focus-visible:ring-offset-gh-canvas-subtle"
-          >
-            {submitting ? "Creating account…" : "Create account"}
-          </button>
-        </form>
+          <p className="text-center text-xs text-gh-text-tertiary">
+            {isMobileDevice()
+              ? "If the app is installed, it will open automatically. Otherwise sign in here."
+              : "Sign in with the Google account you want to use for this club."}
+          </p>
+        </div>
 
         {/* Expiry / usage info */}
         {link && (

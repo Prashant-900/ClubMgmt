@@ -294,6 +294,70 @@ export function MemberProfileScreen() {
           />
         ))
       )}
+
+      {/* Invite lineage */}
+      {(profile.invitedBy || (profile.invitees && profile.invitees.length > 0)) && (
+        <>
+          <SectionHeader title="Invite lineage" />
+          <Card style={styles.lineageCard}>
+            {profile.invitedBy && (
+              <View style={styles.lineageSection}>
+                <Text style={styles.lineageLabel}>Invited by</Text>
+                <View style={styles.lineageRow}>
+                  <Avatar
+                    name={profile.invitedBy.name}
+                    email={profile.invitedBy.email}
+                    role={profile.invitedBy.role}
+                    size={32}
+                  />
+                  <View style={styles.lineageText}>
+                    <Text style={styles.lineageName} numberOfLines={1}>
+                      {profile.invitedBy.name ?? profile.invitedBy.email}
+                    </Text>
+                    <Text style={styles.lineageEmail} numberOfLines={1}>
+                      {profile.invitedBy.email}
+                    </Text>
+                  </View>
+                  <RoleBadge role={profile.invitedBy.role} />
+                </View>
+              </View>
+            )}
+
+            {profile.invitees && profile.invitees.length > 0 && (
+              <View
+                style={[
+                  styles.lineageSection,
+                  profile.invitedBy && styles.lineageSectionDivider,
+                ]}
+              >
+                <Text style={styles.lineageLabel}>
+                  Invited {profile.invitees.length}{' '}
+                  {profile.invitees.length === 1 ? 'member' : 'members'}
+                </Text>
+                {profile.invitees.map((invitee) => (
+                  <View key={invitee.id} style={styles.lineageRow}>
+                    <Avatar
+                      name={invitee.name}
+                      email={invitee.email}
+                      role={invitee.role}
+                      size={32}
+                    />
+                    <View style={styles.lineageText}>
+                      <Text style={styles.lineageName} numberOfLines={1}>
+                        {invitee.name ?? invitee.email}
+                      </Text>
+                      <Text style={styles.lineageEmail} numberOfLines={1}>
+                        {invitee.email}
+                      </Text>
+                    </View>
+                    <RoleBadge role={invitee.role} />
+                  </View>
+                ))}
+              </View>
+            )}
+          </Card>
+        </>
+      )}
     </Screen>
   );
 }
@@ -354,5 +418,43 @@ const styles = StyleSheet.create({
   },
   heatmapCard: {
     marginBottom: spacing.lg,
+  },
+  lineageCard: {
+    marginBottom: spacing.lg,
+  },
+  lineageSection: {
+    gap: spacing.sm,
+  },
+  lineageSectionDivider: {
+    paddingTop: spacing.md,
+    marginTop: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.borderMuted,
+  },
+  lineageLabel: {
+    ...typography.small,
+    color: colors.textMuted,
+    fontWeight: '600',
+    marginBottom: spacing.xs,
+  },
+  lineageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  lineageText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  lineageName: {
+    ...typography.small,
+    color: colors.text,
+    fontWeight: '600',
+  },
+  lineageEmail: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginTop: 2,
   },
 });

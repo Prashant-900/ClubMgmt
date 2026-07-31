@@ -12,6 +12,8 @@ import { EditContributionScreen } from '../screens/contributions/EditContributio
 import { MemberProfileScreen } from '../screens/members/MemberProfileScreen';
 import { AnalyticsScreen } from '../screens/analytics/AnalyticsScreen';
 import { InvitesScreen } from '../screens/invites/InvitesScreen';
+import { ClubFormScreen } from '../screens/clubs/ClubFormScreen';
+import { ClubDetailScreen } from '../screens/clubs/ClubDetailScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -84,6 +86,16 @@ export function RootNavigator() {
         name="Invites"
         component={InvitesScreen}
         options={{ title: 'Invite links' }}
+      />
+      <Stack.Screen
+        name="ClubForm"
+        component={ClubFormScreen}
+        options={{ title: 'Club' }}
+      />
+      <Stack.Screen
+        name="ClubDetail"
+        component={ClubDetailScreen}
+        options={{ title: 'Club' }}
       />
     </Stack.Navigator>
   );

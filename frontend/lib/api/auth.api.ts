@@ -22,32 +22,6 @@ export async function logout() {
 }
 
 /**
- * Register a new user via invite link.
- */
-export async function register(data: {
-  inviteToken: string;
-  email: string;
-  password: string;
-  name: string;
-  phone?: string;
-}) {
-  return apiRequest<AuthResponse>("/auth/register", {
-    method: "POST",
-    body: data,
-  });
-}
-
-/**
- * Login with email and password.
- */
-export async function login(data: { email: string; password: string }) {
-  return apiRequest<AuthResponse>("/auth/login", {
-    method: "POST",
-    body: data,
-  });
-}
-
-/**
  * Get the current authenticated user's profile.
  */
 export async function getProfile(token: string) {

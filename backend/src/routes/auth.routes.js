@@ -10,8 +10,6 @@ const router = Router();
 // prefix) because GET /api/auth/profile runs on every page mount — see the
 // note in rate-limit.middleware.js. `skipSuccessfulRequests` means only failed
 // attempts count, so a legitimate user is never penalised.
-router.post("/register", authLimiter, authController.register);
-router.post("/login", authLimiter, authController.login);
 router.get("/google", authController.googleLogin);
 router.get("/google/callback", authController.googleCallback);
 

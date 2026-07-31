@@ -57,6 +57,33 @@ export function parseCallbackUrl(url: string): GoogleAuthResult | null {
 }
 
 /**
+ * Pull the invite token out of a `clubmgmt://invite/<token>` deep link.
+ *
+ * This is the link a user follows from a shared invite. When the app is
+ * installed the OS routes it here (rather than the website); we extract the
+ * token so the AuthContext can start Google sign-in pre-loaded with the invite.
+ */
+export function parseInviteUrl(url: string): string | null {
+  if (!url || !url.startsWith(`${ENV.DEEP_LINK_SCHEME}://`)) {
+    return null;
+  }
+
+  // Strip scheme + any query/fragment, then match the /invite/<token> path.
+  const withoutScheme = url.slice(`${ENV.DEEP_LINK_SCHEME}://`.length);
+  const path = withoutScheme.split(/[?#]/)[0];
+  const match = path.match(/^invite\/([^/]+)\/?$/);
+  if (!match) {
+    return null;
+  }
+
+  try {
+    return decodeURIComponent(match[1]) || null;
+  } catch {
+    return match[1] || null;
+  }
+}
+
+/**
  * Open the Google sign-in flow in a Chrome Custom Tab (or the system browser as
  * a fallback) and resolve once the backend redirects to our deep link.
  *

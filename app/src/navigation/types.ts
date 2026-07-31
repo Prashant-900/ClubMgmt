@@ -17,6 +17,8 @@ export type RootStackParamList = {
   MemberProfile: { id: string };
   Analytics: { scope?: AnalyticsScope; clubId?: string } | undefined;
   Invites: undefined;
+  ClubForm: { mode: 'create' | 'edit'; club?: { id: string; name: string; description?: string } };
+  ClubDetail: { clubId: string; clubName?: string };
 };
 
 export type AnalyticsScope = 'club' | 'global';

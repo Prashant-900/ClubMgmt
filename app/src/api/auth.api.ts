@@ -19,33 +19,6 @@ export function logout() {
   return apiRequest<null>('/auth/logout', { method: 'POST' });
 }
 
-export interface RegisterPayload {
-  inviteToken: string;
-  email: string;
-  password: string;
-  name: string;
-  phone?: string;
-}
-
-export function register(payload: RegisterPayload) {
-  return apiRequest<AuthResponse>('/auth/register', {
-    method: 'POST',
-    body: { ...payload },
-  });
-}
-
-export interface LoginPayload {
-  email: string;
-  password: string;
-}
-
-export function login(payload: LoginPayload) {
-  return apiRequest<AuthResponse>('/auth/login', {
-    method: 'POST',
-    body: { ...payload },
-  });
-}
-
 /** Fetch the current user's profile. Pass a token override during bootstrap. */
 export function getProfile(token?: string) {
   return apiRequest<User>('/auth/profile', { token });

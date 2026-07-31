@@ -73,6 +73,7 @@ function AdminMembers({
   clubs: Club[];
   onOpen: (id: string) => void;
 }) {
+  const { user } = useAuth();
   const [assigned, setAssigned] = useState<User[]>([]);
   const [assignedPage, setAssignedPage] = useState(1);
   const [assignedTotal, setAssignedTotal] = useState(0);
@@ -167,7 +168,7 @@ function AdminMembers({
                 key={m.id}
                 member={m}
                 clubs={clubs}
-                canRemove
+                canRemove={m.id !== user?.id}
                 onChanged={load}
                 onOpen={onOpen}
               />
@@ -203,7 +204,7 @@ function AdminMembers({
                   key={m.id}
                   member={m}
                   clubs={clubs}
-                  canRemove
+                  canRemove={m.id !== user?.id}
                   onChanged={load}
                   onOpen={onOpen}
                 />
