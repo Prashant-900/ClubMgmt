@@ -3,9 +3,9 @@
 import { AuthGuard } from "@/components/providers/AuthGuard";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { Suspense, useEffect, useState, useCallback } from "react";
 import { ContributionHeatmap, type HeatmapDay } from "@/components/ui/ContributionHeatmap";
-import { Avatar } from "@/components/ui/Avatar";
 import { RoleBadge, StatusBadge, CategoryBadge } from "@/components/ui/Badge";
 import { PageTabs } from "@/components/ui/PageTabs";
 import { MemberGrid } from "@/components/members/MemberGrid";
@@ -24,7 +24,6 @@ import { listMembers } from "@/lib/api/member.api";
 import { useClubApi } from "@/lib/hooks/useClubApi";
 import { getApiErrorMessage } from "@/lib/hooks/apiError";
 import type { Contribution, Club, EnrichedClub, User } from "@/types";
-import Link from "next/link";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -56,15 +55,15 @@ interface SidebarStat {
 function StatItem({ label, value, error, onRetry }: SidebarStat) {
   return (
     <div>
-      <dt className="text-xs text-[#8b949e]">{label}</dt>
-      <dd className="text-sm font-semibold text-[#e6edf3] mt-0.5 flex items-center gap-2">
+      <dt className="text-xs text-[#5f6368]">{label}</dt>
+      <dd className="text-sm font-semibold text-[#202124] mt-0.5 flex items-center gap-2">
         {value}
         {error && onRetry && (
           <button
             type="button"
             onClick={onRetry}
             title={error}
-            className="text-[11px] font-normal text-[#58a6ff] hover:underline cursor-pointer"
+            className="text-[11px] font-normal text-[#1a73e8] hover:underline cursor-pointer"
           >
             retry
           </button>
@@ -80,13 +79,13 @@ function ContributionRow({ c }: { c: Contribution }) {
   return (
     <Link
       href={`/contributions/${c.id}`}
-      className="flex items-center gap-3 py-2.5 px-3 -mx-3 rounded-md hover:bg-[#161b22] transition-colors group"
+      className="flex items-center gap-3 py-2.5 px-3 -mx-3 rounded-md hover:bg-[#f8f9fa] transition-colors group"
     >
       <StatusBadge status={c.status} />
-      <span className="flex-1 text-sm text-[#e6edf3] truncate group-hover:text-[#58a6ff] transition-colors">
+      <span className="flex-1 text-sm text-[#202124] truncate group-hover:text-[#1a73e8] transition-colors">
         {c.title}
       </span>
-      <span className="text-xs text-[#8b949e] shrink-0 tabular-nums">
+      <span className="text-xs text-[#5f6368] shrink-0 tabular-nums">
         {c.hours % 1 === 0 ? c.hours : c.hours.toFixed(1)}h
       </span>
       <CategoryBadge category={c.category} className="hidden sm:inline-flex" />
@@ -111,34 +110,48 @@ function ProfileSidebar({ user, stats, heatmapData, heatmapLabel }: ProfileSideb
       ? "System Administrator"
       : `Member of ${user.club?.name ?? "a club"}`;
 
+  const initials = (user.name
+    ? user.name.split(" ").map((w) => w[0]).join("")
+    : user.email?.[0] ?? "?"
+  ).toUpperCase().slice(0, 2);
+
   return (
     <aside className="w-full">
-      {/* Avatar */}
-      <div className="flex flex-col items-center sm:items-start gap-4">
-        <Avatar name={user.name} email={user.email} role={user.role} size="xl" />
-        <div>
-          <h1 className="text-xl font-bold text-[#e6edf3] leading-tight">
+      {/* Rectangular profile banner with animated green/yellow wave */}
+      <Link
+        href={`/members/${user.id}`}
+        className="profile-wave group block w-full rounded-2xl h-28 flex items-center justify-center ring-1 ring-black/5 hover:ring-[#188038]/40 transition-shadow hover:shadow-md"
+        aria-label="View your profile"
+      >
+        <span className="relative z-10 text-3xl font-bold text-white drop-shadow-sm font-display tracking-wide">
+          {initials}
+        </span>
+      </Link>
+
+      <div className="mt-4">
+        <Link href={`/members/${user.id}`} className="inline-block">
+          <h1 className="text-xl font-bold text-[#202124] leading-tight hover:text-[#1a73e8] hover:underline transition-colors">
             {user.name ?? "Unnamed"}
           </h1>
-          <p className="text-sm text-[#8b949e] mt-0.5">{user.email}</p>
-          <RoleBadge role={user.role} className="mt-2" />
-        </div>
+        </Link>
+        <p className="text-sm text-[#5f6368] mt-0.5">{user.email}</p>
+        <RoleBadge role={user.role} className="mt-2" />
       </div>
 
       {/* Bio / designation */}
-      <div className="mt-4 pb-4 border-b border-[#21262d]">
-        <p className="text-sm text-[#8b949e]">{bio}</p>
+      <div className="mt-4 pb-4 border-b border-[#f1f3f4]">
+        <p className="text-sm text-[#5f6368]">{bio}</p>
         {user.club && (
-          <p className="text-sm text-[#8b949e] mt-1">
-            <span className="text-[#6e7681] mr-1">◆</span>
+          <p className="text-sm text-[#5f6368] mt-1">
+            <span className="text-[#80868b] mr-1">◆</span>
             {user.club.name}
           </p>
         )}
       </div>
 
       {/* Stats */}
-      <div className="mt-4 pb-4 border-b border-[#21262d] space-y-3">
-        <h2 className="text-xs font-semibold text-[#8b949e] uppercase tracking-widest">
+      <div className="mt-4 pb-4 border-b border-[#f1f3f4] space-y-3">
+        <h2 className="text-xs font-semibold text-[#5f6368] uppercase tracking-widest">
           Stats
         </h2>
         <dl className="space-y-2">
@@ -256,9 +269,9 @@ function MemberHome() {
           {!loading && !contributionsError && (
             <section>
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-semibold text-[#e6edf3]">Contribution activity</h2>
+                <h2 className="text-sm font-semibold text-[#202124]">Contribution activity</h2>
               </div>
-              <div className="bg-[#161b22] border border-[#30363d] rounded-md p-4 overflow-x-auto">
+              <div className="bg-[#f8f9fa] border border-[#dadce0] rounded-md p-4 overflow-x-auto">
                 <ContributionHeatmap data={heatmapData} label="contributions" />
               </div>
             </section>
@@ -267,15 +280,15 @@ function MemberHome() {
           {/* Recent contributions */}
           <section>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold text-[#e6edf3]">Recent contributions</h2>
+              <h2 className="text-sm font-semibold text-[#202124]">Recent contributions</h2>
               <Link
                 href="/contributions"
-                className="text-xs text-[#58a6ff] hover:underline"
+                className="text-xs text-[#1a73e8] hover:underline"
               >
                 View all
               </Link>
             </div>
-            <div className="bg-[#161b22] border border-[#30363d] rounded-md px-3 py-1">
+            <div className="bg-[#f8f9fa] border border-[#dadce0] rounded-md px-3 py-1">
               {loading ? (
                 <div className="space-y-2 py-2">
                   {Array.from({ length: 4 }).map((_, i) => (
@@ -284,7 +297,7 @@ function MemberHome() {
                 </div>
               ) : contributionsError ? (
                 <div className="py-6 flex flex-col sm:flex-row items-center justify-center gap-3 text-center">
-                  <p className="text-sm text-[#f85149]">{contributionsError}</p>
+                  <p className="text-sm text-[#c5221f]">{contributionsError}</p>
                   <button
                     type="button"
                     onClick={loadData}
@@ -294,9 +307,9 @@ function MemberHome() {
                   </button>
                 </div>
               ) : recent.length === 0 ? (
-                <div className="py-8 text-center text-sm text-[#8b949e]">
+                <div className="py-8 text-center text-sm text-[#5f6368]">
                   No contributions yet.{" "}
-                  <Link href="/contributions/submit" className="text-[#58a6ff] hover:underline">
+                  <Link href="/contributions/submit" className="text-[#1a73e8] hover:underline">
                     Submit your first one
                   </Link>
                 </div>
@@ -314,9 +327,9 @@ function MemberHome() {
           {user.club && (
             <section>
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-semibold text-[#e6edf3]">Club members</h2>
+                <h2 className="text-sm font-semibold text-[#202124]">Club members</h2>
               </div>
-              <div className="bg-[#161b22] border border-[#30363d] rounded-md p-4">
+              <div className="bg-[#f8f9fa] border border-[#dadce0] rounded-md p-4">
                 <MemberGrid clubId={user.club.id} />
               </div>
             </section>
@@ -483,17 +496,17 @@ function AdminHome() {
         {/* Right content */}
         <div className="flex-1 min-w-0">
           {/* Section tabs */}
-          <div className="flex items-center gap-1 mb-5 border-b border-[#21262d]">
+          <div className="flex items-center gap-1 mb-5 border-b border-[#f1f3f4]">
             <button
               onClick={() => setActiveSection("clubs")}
               className={`px-3 py-2 text-sm font-medium transition-colors cursor-pointer border-b-2 ${
                 activeSection === "clubs"
-                  ? "border-[#f78166] text-[#e6edf3]"
-                  : "border-transparent text-[#8b949e] hover:text-[#e6edf3]"
+                  ? "border-[#c5221f] text-[#202124]"
+                  : "border-transparent text-[#5f6368] hover:text-[#202124]"
               }`}
             >
               Clubs
-              <span className="ml-1.5 text-xs text-[#8b949e] font-normal">
+              <span className="ml-1.5 text-xs text-[#5f6368] font-normal">
                 {clubsLoading ? "…" : clubs.length}
               </span>
             </button>
@@ -501,13 +514,13 @@ function AdminHome() {
               onClick={() => setActiveSection("members")}
               className={`px-3 py-2 text-sm font-medium transition-colors cursor-pointer border-b-2 relative ${
                 activeSection === "members"
-                  ? "border-[#f78166] text-[#e6edf3]"
-                  : "border-transparent text-[#8b949e] hover:text-[#e6edf3]"
+                  ? "border-[#c5221f] text-[#202124]"
+                  : "border-transparent text-[#5f6368] hover:text-[#202124]"
               }`}
             >
               Members
               {(pendingUsersCount ?? 0) > 0 && (
-                <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold rounded-full bg-[#e3b341] text-[#0d1117] px-1">
+                <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold rounded-full bg-[#b06000] text-[#ffffff] px-1">
                   {pendingUsersCount}
                 </span>
               )}
@@ -579,11 +592,13 @@ function ClubDrilldown({ clubId }: { clubId: string }) {
       <div className="mb-6">
         <button
           onClick={() => router.push("/")}
-          className="flex items-center gap-1.5 text-sm text-[#58a6ff] hover:underline mb-4 cursor-pointer"
+          className="group flex items-center gap-2 text-sm text-[#1a73e8] hover:underline mb-4 cursor-pointer"
         >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
+          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#e6f4ea] text-[#188038] group-hover:bg-[#34a853] group-hover:text-white transition-colors no-underline">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </span>
           Back to Clubs
         </button>
 
@@ -593,7 +608,7 @@ function ClubDrilldown({ clubId }: { clubId: string }) {
             <div className="h-4 w-64 skeleton rounded" />
           </div>
         ) : error ? (
-          <div className="px-4 py-3 rounded-md bg-[rgba(248,81,73,0.1)] border border-[rgba(248,81,73,0.3)] text-sm text-[#f85149] flex items-center justify-between gap-4">
+          <div className="px-4 py-3 rounded-md bg-[rgba(234,67,53,0.1)] border border-[rgba(234,67,53,0.3)] text-sm text-[#c5221f] flex items-center justify-between gap-4">
             <span>{error}</span>
             <button
               type="button"
@@ -607,15 +622,15 @@ function ClubDrilldown({ clubId }: { clubId: string }) {
           <div className="flex flex-wrap items-start gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-[#8b949e]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <svg className="w-5 h-5 text-[#5f6368]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                 </svg>
-                <h1 className="text-xl font-bold text-[#e6edf3]">{club?.name ?? "Club"}</h1>
+                <h1 className="text-xl font-bold text-[#202124]">{club?.name ?? "Club"}</h1>
               </div>
               {club?.description && (
-                <p className="text-sm text-[#8b949e] mt-1.5 max-w-2xl">{club.description}</p>
+                <p className="text-sm text-[#5f6368] mt-1.5 max-w-2xl">{club.description}</p>
               )}
-              <div className="flex items-center gap-4 mt-2 text-xs text-[#8b949e]">
+              <div className="flex items-center gap-4 mt-2 text-xs text-[#5f6368]">
                 <span className="flex items-center gap-1">
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -623,7 +638,7 @@ function ClubDrilldown({ clubId }: { clubId: string }) {
                   {memberCount} member{memberCount !== 1 ? "s" : ""}
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-[#3fb950]" />
+                  <span className="w-2 h-2 rounded-full bg-[#188038]" />
                   Active
                 </span>
               </div>
@@ -645,7 +660,7 @@ function ClubDrilldown({ clubId }: { clubId: string }) {
         {activeTab === "overview" && (
           <div className="space-y-6">
             <div>
-              <h3 className="text-sm font-semibold text-[#e6edf3] mb-3">Leaderboard</h3>
+              <h3 className="text-sm font-semibold text-[#202124] mb-3">Leaderboard</h3>
               <Leaderboard clubId={clubId} />
             </div>
           </div>
@@ -656,9 +671,9 @@ function ClubDrilldown({ clubId }: { clubId: string }) {
         )}
         {activeTab === "analytics" && <ClubDashboard clubId={clubId} />}
         {activeTab === "events" && (
-          <div className="bg-[#161b22] border border-[#30363d] rounded-md p-12 text-center">
-            <p className="text-sm text-[#8b949e]">Events coming soon</p>
-            <p className="text-xs text-[#6e7681] mt-1">Event management is under development</p>
+          <div className="bg-[#f8f9fa] border border-[#dadce0] rounded-md p-12 text-center">
+            <p className="text-sm text-[#5f6368]">Events coming soon</p>
+            <p className="text-xs text-[#80868b] mt-1">Event management is under development</p>
           </div>
         )}
       </div>

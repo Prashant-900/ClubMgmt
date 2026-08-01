@@ -233,3 +233,23 @@ export interface LeaderboardResponse {
   entries: LeaderboardEntry[];
   pagination: Pagination;
 }
+
+// ── Notifications ──
+// Frontend-facing shape for the notification system (redesign initiative).
+// The backend model/endpoints are delivered separately; the web bell polls
+// these and degrades gracefully (empty) when the API isn't live yet.
+export type NotificationType =
+  | "CONTRIBUTION_APPROVED"
+  | "CONTRIBUTION_REJECTED"
+  | "CONTRIBUTION_PENDING"
+  | "INVITE_USED";
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body?: string | null;
+  read: boolean;
+  linkTo?: string | null;
+  createdAt: string;
+}

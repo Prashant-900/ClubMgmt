@@ -10,18 +10,22 @@ function StatCard({
   label,
   value,
   sub,
-  accent,
+  color,
 }: {
   label: string;
   value: string | number;
   sub?: string;
-  accent: string;
+  color: string;
 }) {
   return (
-    <div className="bg-gh-canvas-subtle border border-gh-border-default rounded-md p-4">
-      <p className="text-xs font-medium text-gh-text-secondary uppercase tracking-wider mb-2">{label}</p>
-      <p className={`text-2xl font-bold ${accent} leading-none`}>{value}</p>
-      {sub && <p className="text-xs text-gh-text-tertiary mt-1">{sub}</p>}
+    <div className="relative bg-white border border-[#dadce0] rounded-2xl p-4 pl-5 overflow-hidden ui-card-hover">
+      <span className="absolute left-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: color }} />
+      <div className="flex items-center gap-2 mb-2">
+        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+        <p className="text-xs font-medium text-[#5f6368] uppercase tracking-wider">{label}</p>
+      </div>
+      <p className="text-3xl font-bold text-[#202124] leading-none font-display">{value}</p>
+      {sub && <p className="text-xs text-[#80868b] mt-1.5">{sub}</p>}
     </div>
   );
 }
@@ -121,37 +125,41 @@ export function GlobalDashboard({ clubs = [] }: GlobalDashboardProps) {
                   : data.stats.totalApprovedHours.toFixed(1)
               }
               sub="Approved"
-              accent="text-gh-success-fg"
+              color="#34a853"
             />
             <StatCard
               label="Contributions"
               value={data.stats.totalApproved}
               sub="Approved"
-              accent="text-role-coordinator"
+              color="#4285f4"
             />
             <StatCard
               label="Pending"
               value={data.stats.totalPending}
               sub="Awaiting review"
-              accent="text-gh-warning-fg"
+              color="#fbbc05"
             />
             <StatCard
               label="Rejected"
               value={data.stats.totalRejected}
               sub="Total"
-              accent="text-gh-danger-fg"
+              color="#ea4335"
             />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Top clubs */}
             {!selectedClubId && data.topClubs.length > 0 && (
-              <div className="bg-gh-canvas-subtle border border-gh-border-default rounded-md p-5">
-                <h3 className="text-sm font-semibold text-gh-text-primary mb-4">Top Clubs</h3>
+              <div className="bg-white border border-[#dadce0] rounded-2xl p-5 ui-card-hover">
+                <h3 className="flex items-center gap-2 text-sm font-semibold text-gh-text-primary mb-4">
+                  <span className="w-1 h-4 rounded-full bg-[#4285f4]" />
+                  Top Clubs
+                </h3>
                 <div className="space-y-3">
                   {data.topClubs.map((entry, i) => {
                     const maxH = Math.max(...data.topClubs.map((e) => e.totalHours), 1);
                     const pct = Math.round((entry.totalHours / maxH) * 100);
+                    const barColor = ["#4285f4", "#34a853", "#fbbc05", "#ea4335"][i % 4];
                     return (
                       <div key={entry.club?.id ?? i} className="space-y-1">
                         <div className="flex items-center justify-between text-xs">
@@ -162,10 +170,10 @@ export function GlobalDashboard({ clubs = [] }: GlobalDashboardProps) {
                             {entry.totalHours % 1 === 0 ? entry.totalHours : entry.totalHours.toFixed(1)} hrs
                           </span>
                         </div>
-                        <div className="h-1.5 rounded-full bg-gh-border-muted overflow-hidden">
+                        <div className="h-2 rounded-full bg-gh-border-muted overflow-hidden">
                           <div
-                            className="h-full rounded-full bg-gh-accent-emphasis transition-all duration-700"
-                            style={{ width: `${pct}%` }}
+                            className="h-full rounded-full transition-all duration-700"
+                            style={{ width: `${pct}%`, backgroundColor: barColor }}
                           />
                         </div>
                       </div>
@@ -177,24 +185,31 @@ export function GlobalDashboard({ clubs = [] }: GlobalDashboardProps) {
 
             {/* Category distribution */}
             {data.categoryBreakdown.length > 0 && (
-              <div className="bg-gh-canvas-subtle border border-gh-border-default rounded-md p-5">
-                <h3 className="text-sm font-semibold text-gh-text-primary mb-4">Category Distribution</h3>
+              <div className="bg-white border border-[#dadce0] rounded-2xl p-5 ui-card-hover">
+                <h3 className="flex items-center gap-2 text-sm font-semibold text-gh-text-primary mb-4">
+                  <span className="w-1 h-4 rounded-full bg-[#34a853]" />
+                  Category Distribution
+                </h3>
                 <div className="space-y-3">
-                  {data.categoryBreakdown.map((c) => {
+                  {data.categoryBreakdown.map((c, ci) => {
                     const maxH = Math.max(...data.categoryBreakdown.map((x) => x.totalHours), 1);
                     const pct = Math.round((c.totalHours / maxH) * 100);
+                    const barColor = ["#4285f4", "#34a853", "#fbbc05", "#ea4335", "#1a73e8", "#188038"][ci % 6];
                     return (
                       <div key={c.category} className="space-y-1">
                         <div className="flex items-center justify-between text-xs">
-                          <span className="text-gh-text-primary font-medium">{getCategoryLabel(c.category)}</span>
+                          <span className="flex items-center gap-1.5 text-gh-text-primary font-medium">
+                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: barColor }} />
+                            {getCategoryLabel(c.category)}
+                          </span>
                           <span className="text-gh-text-secondary">
                             {c.totalHours % 1 === 0 ? c.totalHours : c.totalHours.toFixed(1)} hrs · {c.count}
                           </span>
                         </div>
-                        <div className="h-1.5 rounded-full bg-gh-border-muted overflow-hidden">
+                        <div className="h-2 rounded-full bg-gh-border-muted overflow-hidden">
                           <div
-                            className="h-full rounded-full bg-gh-success-emphasis transition-all duration-700"
-                            style={{ width: `${pct}%` }}
+                            className="h-full rounded-full transition-all duration-700"
+                            style={{ width: `${pct}%`, backgroundColor: barColor }}
                           />
                         </div>
                       </div>
@@ -206,8 +221,11 @@ export function GlobalDashboard({ clubs = [] }: GlobalDashboardProps) {
 
             {/* Top contributors */}
             {data.topContributors.length > 0 && (
-              <div className="bg-gh-canvas-subtle border border-gh-border-default rounded-md p-5">
-                <h3 className="text-sm font-semibold text-gh-text-primary mb-4">Top Contributors</h3>
+              <div className="bg-white border border-[#dadce0] rounded-2xl p-5 ui-card-hover">
+                <h3 className="flex items-center gap-2 text-sm font-semibold text-gh-text-primary mb-4">
+                  <span className="w-1 h-4 rounded-full bg-[#ea4335]" />
+                  Top Contributors
+                </h3>
                 <div className="space-y-3">
                   {data.topContributors.map((entry, i) => (
                     <div key={entry.user?.id ?? i} className="flex items-center gap-3">
@@ -237,8 +255,11 @@ export function GlobalDashboard({ clubs = [] }: GlobalDashboardProps) {
 
             {/* Weekly trend */}
             {data.weeklyTrend.length > 0 && (
-              <div className="bg-gh-canvas-subtle border border-gh-border-default rounded-md p-5">
-                <h3 className="text-sm font-semibold text-gh-text-primary mb-4">Weekly Trend</h3>
+              <div className="bg-white border border-[#dadce0] rounded-2xl p-5 ui-card-hover">
+                <h3 className="flex items-center gap-2 text-sm font-semibold text-gh-text-primary mb-4">
+                  <span className="w-1 h-4 rounded-full bg-[#fbbc05]" />
+                  Weekly Trend
+                </h3>
                 <div className="flex items-end gap-1.5 h-24" role="group" aria-label="Approved hours per week">
                   {(() => {
                     const maxH = Math.max(...data.weeklyTrend.map((w) => Number(w.hours)), 1);
@@ -276,8 +297,11 @@ export function GlobalDashboard({ clubs = [] }: GlobalDashboardProps) {
           {/* Recent contributions */}
           {data.recentContributions.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-gh-text-primary mb-4">Recent Activity</h3>
-              <div className="bg-gh-canvas-subtle border border-gh-border-default rounded-md overflow-hidden">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-gh-text-primary mb-4">
+                <span className="w-1 h-4 rounded-full bg-[#1a73e8]" />
+                Recent Activity
+              </h3>
+              <div className="bg-white border border-[#dadce0] rounded-2xl overflow-hidden">
                 {data.recentContributions.slice(0, 6).map((c, i) => (
                   <ContributionCard key={c.id} contribution={c} index={i} showUser showClub />
                 ))}

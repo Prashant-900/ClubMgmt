@@ -13,9 +13,9 @@ const SIZE_CLASSES: Record<AvatarSize, string> = {
 };
 
 const ROLE_COLORS: Record<string, string> = {
-  ADMIN:       "bg-[rgba(163,113,247,0.2)] text-[#a371f7] ring-[#a371f7]/30",
-  COORDINATOR: "bg-[rgba(121,192,255,0.2)] text-[#79c0ff] ring-[#79c0ff]/30",
-  MEMBER:      "bg-[rgba(63,185,80,0.2)]   text-[#3fb950] ring-[#3fb950]/30",
+  ADMIN:       "bg-[rgba(66,133,244,0.2)] text-[#1a73e8] ring-[#1a73e8]/30",
+  COORDINATOR: "bg-[rgba(66,133,244,0.2)] text-[#1a73e8] ring-[#1a73e8]/30",
+  MEMBER:      "bg-[rgba(52,168,83,0.2)]   text-[#188038] ring-[#188038]/30",
 };
 
 function getInitials(name: string | null | undefined, email: string): string {

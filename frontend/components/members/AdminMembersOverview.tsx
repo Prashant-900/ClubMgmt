@@ -17,7 +17,7 @@ const PAGE_SIZE = 20;
 /** Small inline failure notice so one dead section doesn't blank the page. */
 function SectionError({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <div className="px-4 py-3 rounded-md bg-[rgba(248,81,73,0.1)] border border-[rgba(248,81,73,0.3)] text-sm text-[#f85149] flex items-center justify-between gap-4">
+    <div className="px-4 py-3 rounded-md bg-[rgba(234,67,53,0.1)] border border-[rgba(234,67,53,0.3)] text-sm text-[#c5221f] flex items-center justify-between gap-4">
       <span>{message}</span>
       <button
         type="button"
@@ -32,9 +32,9 @@ function SectionError({ message, onRetry }: { message: string; onRetry: () => vo
 
 function MemberRowsSkeleton({ rows = 6 }: { rows?: number }) {
   return (
-    <div className="border border-[#30363d] rounded-md overflow-hidden">
+    <div className="border border-[#dadce0] rounded-md overflow-hidden">
       {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="flex items-center gap-3 px-4 py-3 border-b border-[#21262d] last:border-b-0">
+        <div key={i} className="flex items-center gap-3 px-4 py-3 border-b border-[#f1f3f4] last:border-b-0">
           <div className="w-8 h-8 rounded-full skeleton shrink-0" />
           <div className="flex-1 space-y-1.5">
             <div className="h-4 w-32 skeleton rounded" />
@@ -156,7 +156,7 @@ export function AdminMembersOverview() {
     <div className="space-y-8">
       {/* Search */}
       <div className="relative max-w-sm">
-        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#6e7681]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#80868b]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
         </svg>
         <input
@@ -178,20 +178,20 @@ export function AdminMembersOverview() {
           {/* Assigned members */}
           <section className="space-y-3">
             <div className="flex items-baseline justify-between">
-              <h2 className="text-sm font-semibold text-[#e6edf3]">
+              <h2 className="text-sm font-semibold text-[#202124]">
                 Members
-                <span className="ml-2 text-xs text-[#8b949e] font-normal">{assignedTotal}</span>
+                <span className="ml-2 text-xs text-[#5f6368] font-normal">{assignedTotal}</span>
               </h2>
-              <span className="text-xs text-[#6e7681]">Assigned to a club</span>
+              <span className="text-xs text-[#80868b]">Assigned to a club</span>
             </div>
 
             {assignedError ? (
               <SectionError message={assignedError} onRetry={fetchData} />
             ) : (
               <>
-                <div className="border border-[#30363d] rounded-md overflow-hidden">
+                <div className="border border-[#dadce0] rounded-md overflow-hidden">
                   {assignedMembers.length === 0 ? (
-                    <div className="py-8 text-center text-sm text-[#8b949e]">
+                    <div className="py-8 text-center text-sm text-[#5f6368]">
                       No assigned members found.
                     </div>
                   ) : (
@@ -216,18 +216,18 @@ export function AdminMembersOverview() {
           {(pendingTotal > 0 || pendingError) && (
             <section className="space-y-3">
               <div className="flex items-baseline justify-between">
-                <h2 className="text-sm font-semibold text-[#e6edf3]">
+                <h2 className="text-sm font-semibold text-[#202124]">
                   Pending assignment
-                  <span className="ml-2 text-xs text-[#8b949e] font-normal">{pendingTotal}</span>
+                  <span className="ml-2 text-xs text-[#5f6368] font-normal">{pendingTotal}</span>
                 </h2>
-                <span className="text-xs text-[#6e7681]">Waiting for club assignment</span>
+                <span className="text-xs text-[#80868b]">Waiting for club assignment</span>
               </div>
 
               {pendingError ? (
                 <SectionError message={pendingError} onRetry={fetchData} />
               ) : (
                 <>
-                  <div className="border border-[#30363d] rounded-md overflow-hidden">
+                  <div className="border border-[#dadce0] rounded-md overflow-hidden">
                     {pendingMembers.map((m, i) => (
                       <MemberCard key={m.id} member={m} onRemove={handleRemove} onRefresh={fetchData} clubs={clubs} index={i} />
                     ))}

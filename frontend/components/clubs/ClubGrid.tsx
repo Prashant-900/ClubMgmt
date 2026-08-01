@@ -55,7 +55,7 @@ function ClubCard({ club, isAdmin, deleting, onEdit, onDelete }: ClubCardProps) 
   }, [menuOpen]);
 
   return (
-    <div className="bg-[#161b22] border border-[#30363d] rounded-md p-4 hover:border-[#8b949e] transition-colors group">
+    <div className="bg-[#f8f9fa] border border-[#dadce0] rounded-md p-4 hover:border-[#5f6368] transition-colors group">
       <div className="flex items-start justify-between gap-2">
         <div
           className="flex-1 min-w-0 cursor-pointer"
@@ -63,16 +63,16 @@ function ClubCard({ club, isAdmin, deleting, onEdit, onDelete }: ClubCardProps) 
         >
           <div className="flex items-center gap-2">
             {/* Repo icon */}
-            <svg className="w-4 h-4 text-[#8b949e] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <svg className="w-4 h-4 text-[#5f6368] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
             </svg>
-            <span className="text-sm font-semibold text-[#58a6ff] group-hover:underline truncate">
+            <span className="text-sm font-semibold text-[#1a73e8] group-hover:underline truncate">
               {club.name}
             </span>
           </div>
 
           {/* Description — two lines max, falls back to the coordinator line */}
-          <p className="text-xs text-[#8b949e] mt-2 line-clamp-2 leading-relaxed">
+          <p className="text-xs text-[#5f6368] mt-2 line-clamp-2 leading-relaxed">
             {club.description?.trim()
               ? club.description
               : club.coordinatorName
@@ -91,21 +91,21 @@ function ClubCard({ club, isAdmin, deleting, onEdit, onDelete }: ClubCardProps) 
             }}
             aria-label={`Actions for ${club.name}`}
             aria-expanded={menuOpen}
-            className="w-7 h-7 flex items-center justify-center text-[#6e7681] hover:text-[#e6edf3] hover:bg-[#21262d] rounded-md transition-colors cursor-pointer"
+            className="w-7 h-7 flex items-center justify-center text-[#80868b] hover:text-[#202124] hover:bg-[#f1f3f4] rounded-md transition-colors cursor-pointer"
           >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
               <path d="M8 9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM1.5 9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Zm13 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" />
             </svg>
           </button>
           {menuOpen && (
-            <div className="absolute right-0 top-full mt-1 w-44 bg-[#161b22] border border-[#30363d] rounded-md shadow-lg z-20 animate-scale-in py-1">
+            <div className="absolute right-0 top-full mt-1 w-44 bg-[#f8f9fa] border border-[#dadce0] rounded-md shadow-lg z-20 animate-scale-in py-1">
               <button
                 type="button"
                 onClick={() => {
                   router.push(`/?clubId=${club.id}`);
                   setMenuOpen(false);
                 }}
-                className="w-full text-left px-4 py-2 text-sm text-[#e6edf3] hover:bg-[#21262d] transition-colors cursor-pointer"
+                className="w-full text-left px-4 py-2 text-sm text-[#202124] hover:bg-[#f1f3f4] transition-colors cursor-pointer"
               >
                 View Club
               </button>
@@ -116,14 +116,14 @@ function ClubCard({ club, isAdmin, deleting, onEdit, onDelete }: ClubCardProps) 
                     onEdit(club);
                     setMenuOpen(false);
                   }}
-                  className="w-full text-left px-4 py-2 text-sm text-[#e6edf3] hover:bg-[#21262d] transition-colors cursor-pointer"
+                  className="w-full text-left px-4 py-2 text-sm text-[#202124] hover:bg-[#f1f3f4] transition-colors cursor-pointer"
                 >
                   Edit club
                 </button>
               )}
               {isAdmin && (
                 <>
-                  <div className="border-t border-[#21262d] my-1" />
+                  <div className="border-t border-[#f1f3f4] my-1" />
                   <button
                     type="button"
                     disabled={deleting}
@@ -131,7 +131,7 @@ function ClubCard({ club, isAdmin, deleting, onEdit, onDelete }: ClubCardProps) 
                       onDelete(club);
                       setMenuOpen(false);
                     }}
-                    className="w-full text-left px-4 py-2 text-sm text-[#f85149] hover:bg-[rgba(248,81,73,0.1)] transition-colors cursor-pointer disabled:opacity-50"
+                    className="w-full text-left px-4 py-2 text-sm text-[#c5221f] hover:bg-[rgba(234,67,53,0.1)] transition-colors cursor-pointer disabled:opacity-50"
                   >
                     {deleting ? "Deleting…" : "Delete Club"}
                   </button>
@@ -143,7 +143,7 @@ function ClubCard({ club, isAdmin, deleting, onEdit, onDelete }: ClubCardProps) 
       </div>
 
       {/* Footer stats — all straight from the enriched payload */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-4 text-xs text-[#8b949e]">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-4 text-xs text-[#5f6368]">
         <span className="flex items-center gap-1">
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -277,9 +277,9 @@ export function ClubGrid({
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold text-[#e6edf3]">
+        <h2 className="text-sm font-semibold text-[#202124]">
           Clubs
-          <span className="ml-2 text-xs text-[#8b949e] font-normal">
+          <span className="ml-2 text-xs text-[#5f6368] font-normal">
             {loading ? "…" : clubs.length}
           </span>
         </h2>
@@ -304,13 +304,13 @@ export function ClubGrid({
       {isAdmin && showCreateForm && (
         <form
           onSubmit={handleCreate}
-          className="bg-[#161b22] border border-[#30363d] rounded-md p-4 animate-fade-in"
+          className="bg-[#f8f9fa] border border-[#dadce0] rounded-md p-4 animate-fade-in"
         >
           <div className="flex items-baseline justify-between gap-2">
-            <span className="text-xs text-[#8b949e] font-medium">Club name</span>
+            <span className="text-xs text-[#5f6368] font-medium">Club name</span>
             <span
               className={`text-[11px] tabular-nums ${
-                newNameCount > CLUB_NAME_MAX ? "text-[#f85149]" : "text-[#6e7681]"
+                newNameCount > CLUB_NAME_MAX ? "text-[#c5221f]" : "text-[#80868b]"
               }`}
             >
               {newNameCount}/{CLUB_NAME_MAX}
@@ -328,14 +328,14 @@ export function ClubGrid({
           />
 
           <div className="flex items-baseline justify-between gap-2 mt-3">
-            <span className="text-xs text-[#8b949e] font-medium">
-              Description <span className="text-[#6e7681]">(optional)</span>
+            <span className="text-xs text-[#5f6368] font-medium">
+              Description <span className="text-[#80868b]">(optional)</span>
             </span>
             <span
               className={`text-[11px] tabular-nums ${
                 newDescriptionCount > CLUB_DESCRIPTION_MAX
-                  ? "text-[#f85149]"
-                  : "text-[#6e7681]"
+                  ? "text-[#c5221f]"
+                  : "text-[#80868b]"
               }`}
             >
               {newDescriptionCount}/{CLUB_DESCRIPTION_MAX}
@@ -352,7 +352,7 @@ export function ClubGrid({
             className="gh-input mt-1.5 resize-y leading-relaxed"
           />
 
-          {createError && <p className="text-xs text-[#f85149] mt-2">{createError}</p>}
+          {createError && <p className="text-xs text-[#c5221f] mt-2">{createError}</p>}
 
           <div className="flex gap-2 mt-3">
             <button
@@ -376,7 +376,7 @@ export function ClubGrid({
       {/* Search — only worth showing once there is something to filter */}
       {!loading && !error && clubs.length > 1 && (
         <div className="relative max-w-sm">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#6e7681]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#80868b]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
           </svg>
           <input
@@ -391,17 +391,17 @@ export function ClubGrid({
 
       {/* Delete failure */}
       {deleteError && (
-        <div className="px-4 py-3 rounded-md bg-[rgba(248,81,73,0.1)] border border-[rgba(248,81,73,0.3)] text-sm text-[#f85149]">
+        <div className="px-4 py-3 rounded-md bg-[rgba(234,67,53,0.1)] border border-[rgba(234,67,53,0.3)] text-sm text-[#c5221f]">
           {deleteError}
         </div>
       )}
 
       {/* Body: error → loading → empty → grid */}
       {error ? (
-        <div className="px-4 py-3 rounded-md bg-[rgba(248,81,73,0.1)] border border-[rgba(248,81,73,0.3)] text-sm text-[#f85149] flex items-center justify-between gap-4">
+        <div className="px-4 py-3 rounded-md bg-[rgba(234,67,53,0.1)] border border-[rgba(234,67,53,0.3)] text-sm text-[#c5221f] flex items-center justify-between gap-4">
           <div>
             <p className="font-medium">Could not load clubs</p>
-            <p className="text-xs text-[#f85149]/70 mt-0.5">{error}</p>
+            <p className="text-xs text-[#c5221f]/70 mt-0.5">{error}</p>
           </div>
           <button
             type="button"
@@ -418,14 +418,14 @@ export function ClubGrid({
           ))}
         </div>
       ) : clubs.length === 0 ? (
-        <div className="bg-[#161b22] border border-[#30363d] rounded-md p-12 text-center">
-          <p className="text-sm text-[#8b949e]">
+        <div className="bg-[#f8f9fa] border border-[#dadce0] rounded-md p-12 text-center">
+          <p className="text-sm text-[#5f6368]">
             No clubs yet.{isAdmin ? " Create one to get started." : ""}
           </p>
         </div>
       ) : filteredClubs.length === 0 ? (
-        <div className="bg-[#161b22] border border-[#30363d] rounded-md p-12 text-center">
-          <p className="text-sm text-[#8b949e]">
+        <div className="bg-[#f8f9fa] border border-[#dadce0] rounded-md p-12 text-center">
+          <p className="text-sm text-[#5f6368]">
             No clubs match “{debouncedSearch.trim()}”.
           </p>
         </div>

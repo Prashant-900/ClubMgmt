@@ -23,12 +23,13 @@ function getLevel(count: number): 0 | 1 | 2 | 3 | 4 {
   return 4;
 }
 
+// White → Google-green ramp (light theme)
 const LEVEL_COLORS = [
-  "#161b22", // 0 – empty
-  "#0e4429", // 1 – light
-  "#006d32", // 2 – medium
-  "#26a641", // 3 – heavy
-  "#39d353", // 4 – max
+  "#ebedf0", // 0 – empty
+  "#b7e1c1", // 1 – light
+  "#6dc287", // 2 – medium
+  "#34a853", // 3 – heavy
+  "#188038", // 4 – max
 ];
 
 const LEVEL_LABELS = ["No activity", "1 contribution", "2–3", "4–6", "7+"];
@@ -100,12 +101,12 @@ export function ContributionHeatmap({ data, label = "contributions" }: Contribut
     <div className="w-full">
       {/* Stats line */}
       <div className="flex items-center justify-between mb-3">
-        <span className="text-sm text-[#8b949e]">
-          <span className="font-semibold text-[#e6edf3]">{totalContributions}</span>{" "}
+        <span className="text-sm text-[#5f6368]">
+          <span className="font-semibold text-[#202124]">{totalContributions}</span>{" "}
           {label} in the last year
           {totalHours > 0 && (
-            <span className="ml-2 text-[#6e7681]">
-              · <span className="text-[#e6edf3]">{totalHours % 1 === 0 ? totalHours : totalHours.toFixed(1)}</span> hrs
+            <span className="ml-2 text-[#80868b]">
+              · <span className="text-[#202124]">{totalHours % 1 === 0 ? totalHours : totalHours.toFixed(1)}</span> hrs
             </span>
           )}
         </span>
@@ -118,7 +119,7 @@ export function ContributionHeatmap({ data, label = "contributions" }: Contribut
           <div className="flex flex-col gap-0.5 mr-2 pt-5">
             {DAYS.map((d, i) => (
               <div key={i} className="h-[11px] flex items-center">
-                <span className="text-[9px] text-[#6e7681] w-6 text-right leading-none">
+                <span className="text-[9px] text-[#80868b] w-6 text-right leading-none">
                   {d}
                 </span>
               </div>
@@ -135,7 +136,7 @@ export function ContributionHeatmap({ data, label = "contributions" }: Contribut
                   <div key={wi} className="w-[11px] relative">
                     {ml && (
                       <span
-                        className="absolute text-[9px] text-[#8b949e] whitespace-nowrap leading-none top-0"
+                        className="absolute text-[9px] text-[#5f6368] whitespace-nowrap leading-none top-0"
                         style={{ left: 0 }}
                       >
                         {ml.label}
@@ -181,7 +182,7 @@ export function ContributionHeatmap({ data, label = "contributions" }: Contribut
 
         {/* Legend */}
         <div className="flex items-center gap-1.5 mt-3 justify-end">
-          <span className="text-[10px] text-[#6e7681]">Less</span>
+          <span className="text-[10px] text-[#80868b]">Less</span>
           {LEVEL_COLORS.map((c, i) => (
             <div
               key={i}
@@ -190,7 +191,7 @@ export function ContributionHeatmap({ data, label = "contributions" }: Contribut
               style={{ backgroundColor: c }}
             />
           ))}
-          <span className="text-[10px] text-[#6e7681]">More</span>
+          <span className="text-[10px] text-[#80868b]">More</span>
         </div>
       </div>
 
@@ -200,19 +201,19 @@ export function ContributionHeatmap({ data, label = "contributions" }: Contribut
           className="fixed z-50 pointer-events-none transform -translate-x-1/2 -translate-y-full -mt-2"
           style={{ left: tooltip.x, top: tooltip.y - 6 }}
         >
-          <div className="bg-[#1c2128] border border-[#30363d] rounded-md px-2.5 py-1.5 text-[11px] text-[#e6edf3] shadow-lg whitespace-nowrap">
+          <div className="bg-[#f8f9fa] border border-[#dadce0] rounded-md px-2.5 py-1.5 text-[11px] text-[#202124] shadow-lg whitespace-nowrap">
             {tooltip.day.count === 0 ? (
               <span>No activity on {formatDate(tooltip.day.date)}</span>
             ) : (
               <>
                 <span className="font-semibold">{tooltip.day.count} contribution{tooltip.day.count !== 1 ? "s" : ""}</span>
                 {tooltip.day.hours > 0 && (
-                  <span className="text-[#8b949e]">
+                  <span className="text-[#5f6368]">
                     {" "}·{" "}
                     {tooltip.day.hours % 1 === 0 ? tooltip.day.hours : tooltip.day.hours.toFixed(1)} hrs
                   </span>
                 )}
-                <div className="text-[#6e7681] mt-0.5">{formatDate(tooltip.day.date)}</div>
+                <div className="text-[#80868b] mt-0.5">{formatDate(tooltip.day.date)}</div>
               </>
             )}
           </div>

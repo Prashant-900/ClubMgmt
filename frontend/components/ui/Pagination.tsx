@@ -46,7 +46,7 @@ export function Pagination({
         ← Previous
       </button>
 
-      <span className="text-xs text-[#8b949e] tabular-nums" aria-live="polite">
+      <span className="text-xs text-[#5f6368] tabular-nums" aria-live="polite">
         Page {page} of {totalPages} · {total} {total === 1 ? itemLabel : `${itemLabel}s`} total
       </span>
 

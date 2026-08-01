@@ -1,7 +1,7 @@
 # ClubMgmt — End-to-End Status
 
-**Last updated:** 2026-07-28
-**Audited by:** Full codebase read (all backend and frontend source files)
+**Last updated:** 2026-08-01
+**Audited by:** Full codebase read (all backend and frontend source files); web frontend redesigned to Google-light theme per `REDESIGN_PLAN.md` (web only)
 
 ---
 
@@ -19,8 +19,9 @@
 
 ### Frontend
 - Framework: Next.js 16.2 (App Router), React 19, TypeScript 5
-- Styling: Tailwind CSS v4 (via PostCSS), GitHub-inspired dark design system
-- Font: Inter (Google Fonts)
+- Styling: Tailwind CSS v4 (via PostCSS), Google-inspired light design system (white surfaces, near-black text, four Google brand hues; solid colors only — no gradients/glassmorphism). Legacy `gh-*` token names retained but their values remapped to the light palette.
+- Fonts: Poppins (display/headings, Product Sans stand-in), Inter (body/UI), JetBrains Mono (code, stats, `</>` motifs) — all via next/font/google
+- Global chrome: GDSC 7-dot loading overlay, Google-colored scrollbar + `</>` scroll-progress gauge, custom `</>`→`<` bracket cursor (desktop-web only, gated on hover/pointer), prefers-reduced-motion honored
 - Auth token storage: access token in localStorage key `clubmgmt.auth.token` (migration to HttpOnly cookie still pending on the frontend); backend already sets an HttpOnly refresh cookie `clubmgmt.refresh`
 - API base: `NEXT_PUBLIC_API_URL` env var, defaults to http://localhost:4000/api
 - Base app URL: http://localhost:3000
@@ -118,7 +119,11 @@ ADMIN > COORDINATOR > MEMBER
 - [x] Leaderboard: ranked by approved hours, period filter (weekly/monthly/semester/all), paginated
 
 ### Frontend UI
-- [x] GitHub-inspired dark design system (tokens in globals.css @theme block)
+- [x] Google-inspired light design system (tokens in globals.css @theme block; legacy `gh-*` names remapped to light values)
+- [x] GDSC 7-dot morphing loading overlay on first load
+- [x] Google-colored custom scrollbar + `</>` scroll-progress gauge
+- [x] Custom `</>`→`<` bracket cursor (desktop-web only, gated on hover/pointer, respects prefers-reduced-motion)
+- [x] Multi-font typography (Poppins display / Inter body / JetBrains Mono)
 - [x] Navbar with role-aware tab visibility, avatar dropdown
 - [x] Skeleton loaders throughout
 - [x] Empty states throughout
@@ -137,7 +142,7 @@ ADMIN > COORDINATOR > MEMBER
 - [ ] Member profile page
 - [ ] Contribution edit/update page
 - [ ] Search functionality (navbar search bar is disabled)
-- [ ] Notifications (bell icon is non-functional)
+- [~] Notifications — web bell UI + `useNotifications` 30s polling wired on the frontend; degrades gracefully when backend endpoints are absent (backend notifications API still pending)
 
 ---
 
@@ -401,8 +406,8 @@ Generate one: `openssl rand -hex 32`
 ### Backend Completion: ~70%
 Core CRUD and auth are solid. Security hardening largely done: rate limiting (10/15min auth, 100/min global), admin env var, JWT entropy validation, input validation middleware (`utils/validate.js`), attachment URL validation, server-side date validation, page/limit clamping, DB indexes (M-07), cascade deletes (M-09), server-side heatmap (M-08), weekly trend by datePerformed (M-10), CORS multi-origin (H-07). Refresh-token service is built. Remaining gaps: wire `/refresh` + `/logout` routes; events, announcements, notifications (email), advanced admin tooling.
 
-### Frontend Completion: ~45%
-Core views built and functional. Missing: events, notifications, mobile polish, member profiles, edit-contribution UI (backend route exists), consistent design system, search, onboarding, error boundaries, and the localStorage→HttpOnly-cookie migration.
+### Frontend Completion: ~50%
+Core views built and functional. Design system now consistent — full Google-light redesign complete (web only): remapped tokens, multi-font typography, GDSC loader, custom scrollbar/scroll-progress gauge, bracket cursor, SVG icons, notification bell + polling. TypeScript typecheck passes clean (`npx tsc --noEmit` → 0 errors). Missing: events, backend notifications API, mobile polish, member profiles, edit-contribution UI (backend route exists), search, onboarding, error boundaries, and the localStorage→HttpOnly-cookie migration.
 
 ### Overall Product Completion: ~35%
 The foundation (auth, clubs, members, contributions, basic analytics) is working and the MVP security/hardening pass is mostly complete on the backend. Still missing the product-defining features: events, announcements, notifications, mobile app, export, search, achievement system.

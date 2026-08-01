@@ -91,15 +91,15 @@ export function ContributionList({
       {/* Filter toolbar — GitHub issue list style */}
       <div className="flex flex-wrap items-center gap-2">
         {/* Status filters */}
-        <div className="flex items-center border border-[#30363d] rounded-md overflow-hidden text-xs">
+        <div className="flex items-center border border-[#dadce0] rounded-md overflow-hidden text-xs">
           {STATUSES.map((s) => (
             <button
               key={s.value}
               onClick={() => setStatusFilter(s.value as ContributionStatus | "")}
-              className={`px-3 py-1.5 font-medium transition-colors cursor-pointer border-r border-[#30363d] last:border-r-0 ${
+              className={`px-3 py-1.5 font-medium transition-colors cursor-pointer border-r border-[#dadce0] last:border-r-0 ${
                 statusFilter === s.value
-                  ? "bg-[#21262d] text-[#e6edf3]"
-                  : "text-[#8b949e] hover:bg-[#161b22] hover:text-[#e6edf3]"
+                  ? "bg-[#f1f3f4] text-[#202124]"
+                  : "text-[#5f6368] hover:bg-[#f8f9fa] hover:text-[#202124]"
               }`}
             >
               {s.label}
@@ -121,22 +121,22 @@ export function ContributionList({
         </select>
 
         {/* Count */}
-        <span className="ml-auto text-xs text-[#8b949e]">
+        <span className="ml-auto text-xs text-[#5f6368]">
           {total} contribution{total !== 1 ? "s" : ""}
         </span>
       </div>
 
       {/* Error */}
       {error && (
-        <div className="px-4 py-3 rounded-md bg-[rgba(248,81,73,0.1)] border border-[rgba(248,81,73,0.3)] text-sm text-[#f85149]">
+        <div className="px-4 py-3 rounded-md bg-[rgba(234,67,53,0.1)] border border-[rgba(234,67,53,0.3)] text-sm text-[#c5221f]">
           {error}
         </div>
       )}
 
       {/* Issue list container */}
-      <div className="bg-[#0d1117] border border-[#30363d] rounded-md overflow-hidden">
+      <div className="bg-[#ffffff] border border-[#dadce0] rounded-md overflow-hidden">
         {/* List header */}
-        <div className="flex items-center gap-3 px-4 py-2 bg-[#161b22] border-b border-[#30363d] text-xs text-[#8b949e]">
+        <div className="flex items-center gap-3 px-4 py-2 bg-[#f8f9fa] border-b border-[#dadce0] text-xs text-[#5f6368]">
           <span className="font-medium">
             {loading ? "Loading…" : `${total} contribution${total !== 1 ? "s" : ""}`}
           </span>
@@ -147,7 +147,7 @@ export function ContributionList({
         {loading ? (
           <div>
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-3 px-4 py-3 border-b border-[#21262d] last:border-b-0">
+              <div key={i} className="flex items-center gap-3 px-4 py-3 border-b border-[#f1f3f4] last:border-b-0">
                 <div className="w-16 h-5 skeleton rounded-full" />
                 <div className="flex-1 h-4 skeleton rounded" />
                 <div className="w-8 h-4 skeleton rounded" />
@@ -156,7 +156,7 @@ export function ContributionList({
           </div>
         ) : contributions.length === 0 ? (
           <div className="py-16 text-center">
-            <p className="text-sm text-[#8b949e]">{emptyMessage}</p>
+            <p className="text-sm text-[#5f6368]">{emptyMessage}</p>
           </div>
         ) : (
           <div>
@@ -183,7 +183,7 @@ export function ContributionList({
           >
             ← Previous
           </button>
-          <span className="text-xs text-[#8b949e]">Page {page} of {totalPages}</span>
+          <span className="text-xs text-[#5f6368]">Page {page} of {totalPages}</span>
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages}

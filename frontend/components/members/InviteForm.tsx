@@ -163,44 +163,44 @@ export function InviteLinkForm() {
     <RoleGate
       allowedRoles={["ADMIN", "COORDINATOR"]}
       fallback={
-        <div className="bg-[#161b22] border border-[#30363d] rounded-md p-12 text-center">
-          <p className="text-sm text-[#f85149]">Access Denied</p>
-          <p className="text-xs text-[#8b949e] mt-1">You don&apos;t have permission to create invite links</p>
+        <div className="bg-[#f8f9fa] border border-[#dadce0] rounded-md p-12 text-center">
+          <p className="text-sm text-[#c5221f]">Access Denied</p>
+          <p className="text-xs text-[#5f6368] mt-1">You don&apos;t have permission to create invite links</p>
         </div>
       }
     >
-      <div className="max-w-2xl space-y-8">
+      <div className="space-y-8">
         {/* Context banner */}
-        <div className="bg-[rgba(31,111,235,0.1)] border border-[rgba(31,111,235,0.3)] rounded-md px-4 py-3 text-sm text-[#8b949e] flex items-start gap-2">
-          <svg className="w-4 h-4 text-[#58a6ff] shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <div className="bg-[#e8f0fe] border border-[rgba(66,133,244,0.3)] rounded-md px-4 py-3 text-sm text-[#5f6368] flex items-start gap-2">
+          <svg className="w-4 h-4 text-[#1a73e8] shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span>
             {isAdmin
-              ? <>As an <span className="text-[#a371f7] font-medium">Admin</span>, you can create invite links for <span className="text-[#79c0ff] font-medium">Coordinators</span> or <span className="text-[#3fb950] font-medium">Members</span>. Select a club and role below.</>
-              : <>As a <span className="text-[#79c0ff] font-medium">Coordinator</span>, you can create invite links for <span className="text-[#3fb950] font-medium">Members</span>. They&apos;ll join your club automatically.</>
+              ? <>As an <span className="text-[#1a73e8] font-medium">Admin</span>, you can create invite links for <span className="text-[#1a73e8] font-medium">Coordinators</span> or <span className="text-[#188038] font-medium">Members</span>. Select a club and role below.</>
+              : <>As a <span className="text-[#1a73e8] font-medium">Coordinator</span>, you can create invite links for <span className="text-[#188038] font-medium">Members</span>. They&apos;ll join your club automatically.</>
             }
           </span>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-[#161b22] border border-[#30363d] rounded-md p-5 space-y-5">
-          <h2 className="text-sm font-semibold text-[#e6edf3] border-b border-[#21262d] pb-3">
+        <form onSubmit={handleSubmit} className="bg-[#f8f9fa] border border-[#dadce0] rounded-md p-5 space-y-5">
+          <h2 className="text-sm font-semibold text-[#202124] border-b border-[#f1f3f4] pb-3">
             Generate new invite link
           </h2>
 
           {/* Role selector — admin only; coordinator is always MEMBER */}
           {isAdmin ? (
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-[#8b949e]">Inviting as</label>
+              <label className="text-xs font-medium text-[#5f6368]">Inviting as</label>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setTargetRole("COORDINATOR")}
                   className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-md border text-sm font-medium transition-colors cursor-pointer ${
                     targetRole === "COORDINATOR"
-                      ? "bg-[rgba(121,192,255,0.1)] border-[rgba(121,192,255,0.4)] text-[#79c0ff]"
-                      : "bg-[#0d1117] border-[#30363d] text-[#6e7681] hover:text-[#e6edf3] hover:border-[#8b949e]"
+                      ? "bg-[rgba(66,133,244,0.1)] border-[rgba(66,133,244,0.4)] text-[#1a73e8]"
+                      : "bg-[#ffffff] border-[#dadce0] text-[#80868b] hover:text-[#202124] hover:border-[#5f6368]"
                   }`}
                 >
                   <RoleBadge role="COORDINATOR" />
@@ -211,8 +211,8 @@ export function InviteLinkForm() {
                   onClick={() => setTargetRole("MEMBER")}
                   className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-md border text-sm font-medium transition-colors cursor-pointer ${
                     targetRole === "MEMBER"
-                      ? "bg-[rgba(63,185,80,0.1)] border-[rgba(63,185,80,0.4)] text-[#3fb950]"
-                      : "bg-[#0d1117] border-[#30363d] text-[#6e7681] hover:text-[#e6edf3] hover:border-[#8b949e]"
+                      ? "bg-[rgba(52,168,83,0.1)] border-[rgba(52,168,83,0.4)] text-[#188038]"
+                      : "bg-[#ffffff] border-[#dadce0] text-[#80868b] hover:text-[#202124] hover:border-[#5f6368]"
                   }`}
                 >
                   <RoleBadge role="MEMBER" />
@@ -222,10 +222,10 @@ export function InviteLinkForm() {
             </div>
           ) : (
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-[#8b949e]">Inviting as</label>
-              <div className="flex items-center gap-2 px-3 py-2.5 bg-[#0d1117] border border-[#30363d] rounded-md">
+              <label className="text-xs font-medium text-[#5f6368]">Inviting as</label>
+              <div className="flex items-center gap-2 px-3 py-2.5 bg-[#ffffff] border border-[#dadce0] rounded-md">
                 <RoleBadge role="MEMBER" />
-                <span className="text-xs text-[#8b949e]">Basic club member access</span>
+                <span className="text-xs text-[#5f6368]">Basic club member access</span>
               </div>
             </div>
           )}
@@ -233,8 +233,8 @@ export function InviteLinkForm() {
           {/* Club selector — admin only */}
           {isAdmin && (
             <div className="space-y-1.5">
-              <label htmlFor="club-select" className="text-xs font-medium text-[#8b949e]">
-                Club <span className="text-[#f85149]">*</span>
+              <label htmlFor="club-select" className="text-xs font-medium text-[#5f6368]">
+                Club <span className="text-[#c5221f]">*</span>
               </label>
               <select
                 id="club-select"
@@ -254,10 +254,10 @@ export function InviteLinkForm() {
           {/* Coordinator club hint */}
           {isCoordinator && user?.club && (
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-[#8b949e]">Club</label>
-              <div className="px-3 py-2 bg-[#0d1117] border border-[#30363d] rounded-md text-sm text-[#e6edf3] flex items-center justify-between">
+              <label className="text-xs font-medium text-[#5f6368]">Club</label>
+              <div className="px-3 py-2 bg-[#ffffff] border border-[#dadce0] rounded-md text-sm text-[#202124] flex items-center justify-between">
                 <span>{user.club.name}</span>
-                <span className="text-xs text-[#6e7681]">auto-assigned</span>
+                <span className="text-xs text-[#80868b]">auto-assigned</span>
               </div>
             </div>
           )}
@@ -265,7 +265,7 @@ export function InviteLinkForm() {
           {/* Settings */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label htmlFor="expires-days" className="text-xs font-medium text-[#8b949e]">
+              <label htmlFor="expires-days" className="text-xs font-medium text-[#5f6368]">
                 Valid for (days)
               </label>
               <input
@@ -280,7 +280,7 @@ export function InviteLinkForm() {
               />
             </div>
             <div className="space-y-1.5">
-              <label htmlFor="max-uses" className="text-xs font-medium text-[#8b949e]">
+              <label htmlFor="max-uses" className="text-xs font-medium text-[#5f6368]">
                 Max uses
               </label>
               <input
@@ -298,21 +298,21 @@ export function InviteLinkForm() {
 
           {/* Error */}
           {error && (
-            <div className="px-3 py-2 rounded-md bg-[rgba(248,81,73,0.1)] border border-[rgba(248,81,73,0.3)] text-sm text-[#f85149]">
+            <div className="px-3 py-2 rounded-md bg-[rgba(234,67,53,0.1)] border border-[rgba(234,67,53,0.3)] text-sm text-[#c5221f]">
               {error}
             </div>
           )}
 
           {/* Generated link */}
           {generatedLink && (
-            <div className="px-3 py-3 rounded-md bg-[rgba(63,185,80,0.1)] border border-[rgba(63,185,80,0.3)] space-y-2 animate-fade-in">
-              <p className="text-xs font-medium text-[#3fb950]">✓ Invite link created!</p>
+            <div className="px-3 py-3 rounded-md bg-[rgba(52,168,83,0.1)] border border-[rgba(52,168,83,0.3)] space-y-2 animate-fade-in">
+              <p className="text-xs font-medium text-[#188038]">✓ Invite link created!</p>
               <div className="flex items-center gap-2">
                 <input
                   type="text"
                   readOnly
                   value={generatedLink}
-                  className="flex-1 px-2 py-1.5 bg-[#0d1117] border border-[#30363d] rounded-md text-xs text-[#8b949e] font-mono truncate"
+                  className="flex-1 px-2 py-1.5 bg-[#ffffff] border border-[#dadce0] rounded-md text-xs text-[#5f6368] font-mono truncate"
                 />
                 <button
                   type="button"
@@ -347,25 +347,25 @@ export function InviteLinkForm() {
 
         {/* Active links */}
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-[#e6edf3]">
+          <h3 className="text-sm font-semibold text-[#202124]">
             Active invite links
-            <span className="ml-2 text-xs text-[#8b949e] font-normal">
+            <span className="ml-2 text-xs text-[#5f6368] font-normal">
               {links.filter((l) => !isExpired(l.expiresAt) && !isMaxed(l)).length} active
             </span>
           </h3>
 
           {linksLoading ? (
-            <div className="border border-[#30363d] rounded-md overflow-hidden">
+            <div className="border border-[#dadce0] rounded-md overflow-hidden">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-12 skeleton border-b border-[#21262d] last:border-b-0" />
+                <div key={i} className="h-12 skeleton border-b border-[#f1f3f4] last:border-b-0" />
               ))}
             </div>
           ) : links.length === 0 ? (
-            <div className="bg-[#161b22] border border-[#30363d] rounded-md p-8 text-center text-sm text-[#8b949e]">
+            <div className="bg-[#f8f9fa] border border-[#dadce0] rounded-md p-8 text-center text-sm text-[#5f6368]">
               No invite links created yet
             </div>
           ) : (
-            <div className="border border-[#30363d] rounded-md overflow-hidden">
+            <div className="border border-[#dadce0] rounded-md overflow-hidden">
               {links.map((link) => {
                 const expired = isExpired(link.expiresAt);
                 const maxed = isMaxed(link);
@@ -376,25 +376,25 @@ export function InviteLinkForm() {
                 return (
                   <div
                     key={link.id}
-                    className={`flex items-center gap-3 px-4 py-3 border-b border-[#21262d] last:border-b-0 ${inactive ? "opacity-40" : ""}`}
+                    className={`flex items-center gap-3 px-4 py-3 border-b border-[#f1f3f4] last:border-b-0 ${inactive ? "opacity-40" : ""}`}
                   >
-                    <span className={`w-2 h-2 rounded-full shrink-0 ${inactive ? "bg-[#6e7681]" : "bg-[#3fb950]"}`} />
+                    <span className={`w-2 h-2 rounded-full shrink-0 ${inactive ? "bg-[#80868b]" : "bg-[#188038]"}`} />
                     <RoleBadge role={link.role} />
                     {link.club && (
-                      <span className="text-xs text-[#8b949e] truncate">{link.club.name}</span>
+                      <span className="text-xs text-[#5f6368] truncate">{link.club.name}</span>
                     )}
-                    <span className="text-xs text-[#6e7681] tabular-nums">
+                    <span className="text-xs text-[#80868b] tabular-nums">
                       {link.usedCount}/{link.maxUses} used
                     </span>
                     <div className="flex items-center gap-2 ml-auto shrink-0">
-                      <span className={`text-xs ${expired ? "text-[#f85149]" : "text-[#6e7681]"}`}>
+                      <span className={`text-xs ${expired ? "text-[#c5221f]" : "text-[#80868b]"}`}>
                         {expired ? "Expired" : `${daysLeft}d left`}
                       </span>
                       {/* Copy button — always visible for non-expired links */}
                       {!expired && (
                         <button
                           onClick={() => handleCopyLink(link)}
-                          className="text-xs text-[#58a6ff] hover:underline cursor-pointer"
+                          className="text-xs text-[#1a73e8] hover:underline cursor-pointer"
                         >
                           {wasCopied ? "Copied!" : "Copy link"}
                         </button>
@@ -402,7 +402,7 @@ export function InviteLinkForm() {
                       {!inactive && (
                         <button
                           onClick={() => handleRevoke(link.id)}
-                          className="text-xs text-[#f85149] hover:underline cursor-pointer"
+                          className="text-xs text-[#c5221f] hover:underline cursor-pointer"
                         >
                           Revoke
                         </button>

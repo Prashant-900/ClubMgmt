@@ -17,7 +17,7 @@ import { getApiErrorMessage } from "@/lib/hooks/apiError";
 import type { Club } from "@/types";
 import Link from "next/link";
 
-type Tab = "mine" | "pending" | "members" | "club" | "analytics" | "global" | "leaderboard";
+type Tab = "mine" | "pending" | "members" | "club" | "analytics" | "leaderboard";
 
 function ContributionsContent() {
   const { user } = useAuth();
@@ -28,8 +28,8 @@ function ContributionsContent() {
   const isAdmin = user?.role === "ADMIN";
   const isCoordinator = user?.role === "COORDINATOR";
 
-  // Only the global-analytics tab needs the club list; a failure there must not
-  // take the rest of the page with it.
+  // Admin's Analytics tab is a global, club-selectable dashboard, so it needs
+  // the club list; a failure there must not take the rest of the page with it.
   const loadClubs = useCallback(async () => {
     setClubsError(null);
     try {
@@ -53,7 +53,6 @@ function ContributionsContent() {
     { id: "members",     label: "Members",           roles: ["ADMIN", "COORDINATOR", "MEMBER"] },
     { id: "club",        label: "Club contributions",roles: ["ADMIN", "COORDINATOR"] },
     { id: "analytics",   label: "Analytics",         roles: ["ADMIN", "COORDINATOR"] },
-    { id: "global",      label: "Global analytics",  roles: ["ADMIN"] },
     { id: "leaderboard", label: "Leaderboard",       roles: ["ADMIN", "COORDINATOR", "MEMBER"] },
   ];
 
@@ -64,8 +63,8 @@ function ContributionsContent() {
       {/* Page header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-[#e6edf3]">Contributions</h1>
-          <p className="text-sm text-[#8b949e] mt-0.5">
+          <h1 className="text-xl font-bold text-[#202124]">Contributions</h1>
+          <p className="text-sm text-[#5f6368] mt-0.5">
             {isAdmin
               ? "Global contribution management across all clubs"
               : isCoordinator
@@ -121,29 +120,29 @@ function ContributionsContent() {
           </RoleGate>
         )}
 
+        {/* Analytics — admin gets the global, club-selectable dashboard;
+            coordinator gets their own club's dashboard. */}
         {activeTab === "analytics" && (
           <RoleGate allowedRoles={["ADMIN", "COORDINATOR"]}>
-            <ClubDashboard />
-          </RoleGate>
-        )}
-
-        {activeTab === "global" && (
-          <RoleGate allowedRoles={["ADMIN"]}>
-            <div className="space-y-4">
-              {clubsError && (
-                <div className="px-4 py-3 rounded-md bg-[rgba(248,81,73,0.1)] border border-[rgba(248,81,73,0.3)] text-sm text-[#f85149] flex items-center justify-between gap-4">
-                  <span>{clubsError} — the club filter is unavailable.</span>
-                  <button
-                    type="button"
-                    onClick={loadClubs}
-                    className="gh-btn gh-btn-default gh-btn-sm min-h-[36px] shrink-0"
-                  >
-                    Retry
-                  </button>
-                </div>
-              )}
-              <GlobalDashboard clubs={clubs} />
-            </div>
+            {isAdmin ? (
+              <div className="space-y-4">
+                {clubsError && (
+                  <div className="px-4 py-3 rounded-md bg-[#fce8e6] border border-[rgba(234,67,53,0.3)] text-sm text-[#c5221f] flex items-center justify-between gap-4">
+                    <span>{clubsError} — the club filter is unavailable.</span>
+                    <button
+                      type="button"
+                      onClick={loadClubs}
+                      className="gh-btn gh-btn-default gh-btn-sm min-h-[36px] shrink-0"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                )}
+                <GlobalDashboard clubs={clubs} />
+              </div>
+            ) : (
+              <ClubDashboard />
+            )}
           </RoleGate>
         )}
 

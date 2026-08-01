@@ -13,23 +13,23 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 bg-[#161b22] border border-[#30363d] rounded-lg flex items-center justify-center mb-4">
-            <span className="text-base font-extrabold text-[#e6edf3] font-mono tracking-tight">
+          <div className="w-12 h-12 bg-[#f8f9fa] border border-[#dadce0] rounded-lg flex items-center justify-center mb-4">
+            <span className="text-base font-extrabold text-[#202124] font-mono tracking-tight">
               CM
             </span>
           </div>
-          <h1 className="text-xl font-semibold text-[#e6edf3]">Sign in to ClubMgmt</h1>
+          <h1 className="text-xl font-semibold text-[#202124]">Sign in to ClubMgmt</h1>
         </div>
 
         {/* Sign-in card */}
-        <div className="bg-[#161b22] border border-[#30363d] rounded-md p-5 space-y-4">
-          <p className="text-sm text-[#8b949e] text-center">
+        <div className="bg-[#f8f9fa] border border-[#dadce0] rounded-md p-5 space-y-4">
+          <p className="text-sm text-[#5f6368] text-center">
             Use your Google account to access your club profile.
           </p>
 
           <button
             onClick={handleGoogleSignIn}
-            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 bg-white text-[#1f2328] text-sm font-semibold rounded-md hover:bg-[#f3f4f6] transition-colors cursor-pointer border border-[#d0d7de]"
+            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 bg-white text-[#f1f3f4] text-sm font-semibold rounded-md hover:bg-[#202124] transition-colors cursor-pointer border border-[#dadce0]"
           >
             {/* Google G icon */}
             <svg viewBox="0 0 24 24" className="w-5 h-5" aria-hidden="true">
@@ -53,13 +53,13 @@ export default function LoginPage() {
             Continue with Google
           </button>
 
-          <p className="text-xs text-center text-[#6e7681]">
+          <p className="text-xs text-center text-[#80868b]">
             After sign-in you'll be redirected back with a session token.
           </p>
         </div>
 
         {/* Footer note */}
-        <p className="text-center text-xs text-[#6e7681] mt-6">
+        <p className="text-center text-xs text-[#80868b] mt-6">
           ClubMgmt · Role-based club management
         </p>
       </div>

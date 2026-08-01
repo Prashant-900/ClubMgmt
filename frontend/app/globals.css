@@ -1,66 +1,92 @@
 @import "tailwindcss";
 
-/* ── GitHub-inspired design tokens ── */
+/* ══════════════════════════════════════════════════════════════════════════
+   ClubMgmt — Google-style light design system
+   Solid colors only. No gradients, no glassmorphism.
+   Palette: blue #4285F4 · green #34A853 · yellow #FBBC05 · red #EA4335
+   The historic `gh-*` token names are preserved but REMAPPED to light values
+   so token-class consumers (bg-gh-canvas-default, text-gh-text-primary, …)
+   flip to the light theme automatically. New code should prefer `brand-*`.
+   ══════════════════════════════════════════════════════════════════════════ */
 
 @theme {
-  /* Backgrounds */
-  --color-gh-canvas-default:   #0d1117;
-  --color-gh-canvas-subtle:    #161b22;
-  --color-gh-canvas-inset:     #010409;
+  /* ── Brand (Google) ── */
+  --color-brand-blue:    #4285f4;
+  --color-brand-blue-fg: #1a73e8;   /* darker blue for text/links on white */
+  --color-brand-green:   #34a853;
+  --color-brand-green-fg:#188038;   /* darker green for text on white */
+  --color-brand-yellow:  #fbbc05;
+  --color-brand-yellow-fg:#b06000;  /* amber that passes contrast on white */
+  --color-brand-red:     #ea4335;
+  --color-brand-red-fg:  #c5221f;   /* darker red for text on white */
 
-  /* Borders */
-  --color-gh-border-default:   #30363d;
-  --color-gh-border-muted:     #21262d;
-  --color-gh-border-subtle:    rgba(240, 246, 252, 0.1);
+  /* ── Neutral surfaces & text (Google grey scale) ── */
+  --color-canvas:        #ffffff;   /* page background */
+  --color-surface:       #f8f9fa;   /* cards, raised surfaces */
+  --color-surface-2:     #f1f3f4;   /* hover fills, insets, chips */
+  --color-border:        #dadce0;   /* standard divider grey */
+  --color-border-muted:  #e8eaed;   /* lighter divider */
+  --color-fg:            #202124;   /* text primary (grey-900) */
+  --color-fg-muted:      #5f6368;   /* text secondary (grey-700) */
+  --color-fg-subtle:     #80868b;   /* text tertiary (grey-600) */
 
-  /* Text */
-  --color-gh-text-primary:     #e6edf3;
-  --color-gh-text-secondary:   #8b949e;
-  --color-gh-text-tertiary:    #6e7681;
-  --color-gh-text-disabled:    #484f58;
-  --color-gh-text-inverse:     #0d1117;
+  /* ── Legacy gh-* tokens remapped to light (kept to avoid churn) ── */
+  --color-gh-canvas-default:   #ffffff;
+  --color-gh-canvas-subtle:    #f8f9fa;
+  --color-gh-canvas-inset:     #f1f3f4;
 
-  /* Accent / Brand */
-  --color-gh-accent-emphasis:  #1f6feb;
-  --color-gh-accent-subtle:    rgba(31, 111, 235, 0.15);
+  --color-gh-border-default:   #dadce0;
+  --color-gh-border-muted:     #e8eaed;
+  --color-gh-border-subtle:    rgba(32, 33, 36, 0.08);
 
-  /* Success / Green */
-  --color-gh-success-emphasis: #238636;
-  --color-gh-success-muted:    rgba(35, 134, 54, 0.15);
-  --color-gh-success-fg:       #3fb950;
+  --color-gh-text-primary:     #202124;
+  --color-gh-text-secondary:   #5f6368;
+  --color-gh-text-tertiary:    #80868b;
+  --color-gh-text-disabled:    #b0b3b8;
+  --color-gh-text-inverse:     #ffffff;
 
-  /* Danger / Red */
-  --color-gh-danger-emphasis:  #da3633;
-  --color-gh-danger-muted:     rgba(218, 54, 51, 0.15);
-  --color-gh-danger-fg:        #f85149;
+  /* Muted/subtle fills are SOLID opaque tints (no alpha) so banners never
+     let the page background bleed through. */
+  --color-gh-accent-emphasis:  #4285f4;
+  --color-gh-accent-subtle:    #e8f0fe;   /* Google blue chip */
 
-  /* Warning */
-  --color-gh-warning-emphasis: #9e6a03;
-  --color-gh-warning-muted:    rgba(187, 128, 9, 0.15);
-  --color-gh-warning-fg:       #d29922;
+  --color-gh-success-emphasis: #34a853;
+  --color-gh-success-muted:    #e6f4ea;   /* Google green chip */
+  --color-gh-success-fg:       #188038;
 
-  /* Roles */
-  --color-role-admin:          #a371f7;
-  --color-role-admin-bg:       rgba(163, 113, 247, 0.15);
-  --color-role-coordinator:    #79c0ff;
-  --color-role-coordinator-bg: rgba(121, 192, 255, 0.15);
-  --color-role-member:         #3fb950;
-  --color-role-member-bg:      rgba(63, 185, 80, 0.15);
+  --color-gh-danger-emphasis:  #ea4335;
+  --color-gh-danger-muted:     #fce8e6;   /* Google red chip */
+  --color-gh-danger-fg:        #c5221f;
 
-  /* Translucent "glass" panel surface — matches the #161b22 / #30363d pair.
-     Used as `bg-glass` / `border-glass-border`, always with a backdrop blur. */
-  --color-glass:               rgb(22 27 34 / 0.72);
-  --color-glass-border:        rgb(48 54 61 / 0.8);
+  --color-gh-warning-emphasis: #fbbc05;
+  --color-gh-warning-muted:    #fef7e0;   /* Google yellow chip */
+  --color-gh-warning-fg:       #b06000;
 
-  /* Heatmap scale (GitHub green palette) */
-  --color-heatmap-0: #161b22;
-  --color-heatmap-1: #0e4429;
-  --color-heatmap-2: #006d32;
-  --color-heatmap-3: #26a641;
-  --color-heatmap-4: #39d353;
+  /* ── Roles (aligned to Google palette) ── */
+  --color-role-admin:          #ea4335;  /* red */
+  --color-role-admin-bg:       #fce8e6;
+  --color-role-coordinator:    #4285f4;  /* blue */
+  --color-role-coordinator-bg: #e8f0fe;
+  --color-role-member:         #34a853;  /* green */
+  --color-role-member-bg:      #e6f4ea;
+
+  /* ── Contribution heatmap — white → Google-green ramp ── */
+  --color-heatmap-0: #ebedf0;
+  --color-heatmap-1: #b7e1c1;
+  --color-heatmap-2: #6dc287;
+  --color-heatmap-3: #34a853;
+  --color-heatmap-4: #188038;
+
+  /* ── Scroll / brand-icon accent (used by </> indicator + cursor) ── */
+  --color-scroll-icon: #4285f4;
+
+  /* ── Fonts (wired from next/font CSS vars in layout.tsx) ── */
+  --font-sans:    var(--font-inter),   ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-poppins), var(--font-inter), ui-sans-serif, sans-serif;
+  --font-mono:    var(--font-jetbrains), ui-monospace, "SFMono-Regular", monospace;
 }
 
-/* ── Base ── */
+/* ══ Base ══════════════════════════════════════════════════════════════════ */
 
 * {
   box-sizing: border-box;
@@ -68,126 +94,358 @@
 
 html,
 body {
-  background-color: #0d1117;
-  color: #e6edf3;
+  background-color: #ffffff;
+  color: #202124;
+  font-family: var(--font-sans);
 }
 
-/* ── Scrollbar ── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb {
-  background: #30363d;
-  border-radius: 9999px;
+h1, h2, h3, .font-display {
+  font-family: var(--font-display);
 }
-::-webkit-scrollbar-thumb:hover { background: #484f58; }
 
-/* ── Animations ── */
+/* ══ Hide the native scrollbar ═══════════════════════════════════════════════
+   The page still scrolls (wheel / trackpad / keys) — the draggable grey bar is
+   gone and replaced by the vertical "<>" scroll rail (see ScrollProgress.tsx).
+   Horizontal scrollers inside the page keep a slim bar for usability. */
+::-webkit-scrollbar { width: 0; height: 0; background: transparent; }
+::-webkit-scrollbar-thumb { background: transparent; }
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* Firefox: hide the vertical bar too */
+html {
+  scrollbar-width: none;
+}
+html { -ms-overflow-style: none; } /* legacy Edge */
+
+/* ══ Custom cursor — hide native cursor on capable desktop pointers ══════════ */
+@media (hover: hover) and (pointer: fine) {
+  html.has-custom-cursor,
+  html.has-custom-cursor * {
+    cursor: none !important;
+  }
+}
+
+/* ══ Animations ══════════════════════════════════════════════════════════════ */
 
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
-
 @keyframes scale-in {
   from { opacity: 0; transform: scale(0.96) translateY(6px); }
   to   { opacity: 1; transform: scale(1)    translateY(0); }
 }
-
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
 @keyframes slide-down {
   from { opacity: 0; transform: translateY(-8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
-.animate-scale-in  { animation: scale-in  0.2s cubic-bezier(0.4, 0, 0.2, 1); }
-.animate-fade-in   { animation: fade-in   0.2s ease-out; }
-.animate-slide-down { animation: slide-down 0.15s ease-out; }
-
-/* ── Skeleton loader ── */
-.skeleton {
-  background: linear-gradient(
-    90deg,
-    #161b22 25%,
-    #21262d 50%,
-    #161b22 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: 4px;
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
 }
 
-/* ── GitHub-style inputs ── */
-.gh-input {
-  background-color: #010409;
-  border: 1px solid #30363d;
+/* Invite-page loop animation: bouncing balls that periodically re-order. */
+@keyframes ball-bounce {
+  50% { transform: translateY(25px); }
+}
+/* The leading ball arcs up, right and over toward the back of the line. */
+@keyframes ball-arc {
+  0%   { transform: translate(0, 0); }
+  50%  { transform: translate(64px, -46px); }
+  100% { transform: translate(128px, 0); }
+}
+
+.animate-scale-in   { animation: scale-in   0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+.animate-fade-in    { animation: fade-in    0.28s ease-out both; }
+.animate-slide-down { animation: slide-down 0.15s ease-out; }
+
+/* Staggered entrance helper — set --i on the element */
+.animate-stagger {
+  animation: fade-in 0.4s ease-out both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-scale-in,
+  .animate-fade-in,
+  .animate-slide-down,
+  .animate-stagger { animation: none !important; }
+}
+
+/* ══ Skeleton loader ═════════════════════════════════════════════════════════ */
+.skeleton {
+  background: linear-gradient(90deg, #f1f3f4 25%, #e8eaed 50%, #f1f3f4 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
   border-radius: 6px;
-  color: #e6edf3;
+}
+
+/* ══ Inputs ══════════════════════════════════════════════════════════════════ */
+.gh-input {
+  background-color: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  color: #202124;
   font-size: 14px;
-  padding: 5px 12px;
+  padding: 9px 14px;
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
   width: 100%;
 }
 .gh-input:focus {
-  border-color: #1f6feb;
-  box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.2);
+  border-color: #4285f4;
+  box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.2);
 }
-.gh-input::placeholder { color: #6e7681; }
+.gh-input::placeholder { color: #80868b; }
 
-/* ── GitHub-style select ── */
+/* ══ Select ══════════════════════════════════════════════════════════════════ */
 .gh-select {
-  background-color: #21262d;
-  border: 1px solid #30363d;
-  border-radius: 6px;
-  color: #e6edf3;
+  background-color: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  color: #202124;
   font-size: 13px;
-  padding: 4px 12px;
+  padding: 7px 14px;
   cursor: pointer;
   outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
-.gh-select:focus { border-color: #1f6feb; }
+.gh-select:focus {
+  border-color: #4285f4;
+  box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.2);
+}
 
-/* ── GitHub-style buttons ── */
+/* ══ Buttons ═════════════════════════════════════════════════════════════════ */
 .gh-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 16px;
-  border-radius: 6px;
+  gap: 8px;
+  padding: 9px 20px;
+  border-radius: 9999px;         /* pill — Google-style */
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.12s, border-color 0.12s;
+  transition: background 0.14s, border-color 0.14s, box-shadow 0.14s, transform 0.14s;
   border: 1px solid transparent;
   white-space: nowrap;
 }
+.gh-btn:active:not(:disabled) { transform: translateY(1px); }
+
+/* Primary → Google blue (main CTA) */
 .gh-btn-primary {
-  background-color: #238636;
-  border-color: rgba(240, 246, 252, 0.1);
+  background-color: #4285f4;
   color: #ffffff;
 }
-.gh-btn-primary:hover:not(:disabled) { background-color: #2ea043; }
-.gh-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+.gh-btn-primary:hover:not(:disabled) {
+  background-color: #1a73e8;
+  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.3);
+}
+.gh-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* Success → Google green (approve / positive) */
+.gh-btn-success {
+  background-color: #34a853;
+  color: #ffffff;
+}
+.gh-btn-success:hover:not(:disabled) {
+  background-color: #188038;
+  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.3);
+}
+.gh-btn-success:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Default → white with border */
 .gh-btn-default {
-  background-color: #21262d;
-  border-color: #30363d;
-  color: #e6edf3;
+  background-color: #ffffff;
+  border-color: #dadce0;
+  color: #202124;
 }
-.gh-btn-default:hover:not(:disabled) { background-color: #30363d; border-color: #8b949e; }
+.gh-btn-default:hover:not(:disabled) {
+  background-color: #f8f9fa;
+  border-color: #4285f4;
+  color: #1a73e8;
+}
+.gh-btn-default:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* Danger → Google red */
 .gh-btn-danger {
-  background-color: #da3633;
-  border-color: rgba(240, 246, 252, 0.1);
+  background-color: #ea4335;
   color: #ffffff;
 }
-.gh-btn-danger:hover:not(:disabled) { background-color: #b91c1c; }
+.gh-btn-danger:hover:not(:disabled) {
+  background-color: #c5221f;
+  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.3);
+}
+.gh-btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .gh-btn-sm {
-  padding: 3px 12px;
+  padding: 6px 14px;
   font-size: 12px;
+}
+
+/* ══ Card helper ═════════════════════════════════════════════════════════════ */
+.ui-card {
+  background-color: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: 14px;
+}
+.ui-card-hover {
+  transition: box-shadow 0.18s, border-color 0.18s, transform 0.18s;
+}
+.ui-card-hover:hover {
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.1), 0 4px 14px rgba(60, 64, 67, 0.12);
+  border-color: #c6cacd;
+}
+
+/* ══ Profile banner wave (home sidebar) ══════════════════════════════════════
+   Rectangular card, solid Google-blue background, with THREE fully-opaque wave
+   ribbons — yellow, red, green — each a repeating SVG layer drifting at its own
+   pace. The vertical positions are spread apart so the bands read as three
+   distinct crests instead of overlapping. Adapted from the classic three-layer
+   CSS wave. */
+.profile-wave {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  background-color: #4285f4;
+  background-image:
+    url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='1600' height='198'%3e%3cpath fill='%23FBBD06' fill-rule='evenodd' d='M.005 121C311 121 409.898-.25 811 0c400 0 500 121 789 121v77H0s.005-48 .005-77z'/%3e%3c/svg%3e"),
+    url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='1600' height='198'%3e%3cpath fill='%23EA4436' fill-rule='evenodd' d='M.005 121C311 121 409.898-.25 811 0c400 0 500 121 789 121v77H0s.005-48 .005-77z'/%3e%3c/svg%3e"),
+    url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='1600' height='198'%3e%3cpath fill='%2334A853' fill-rule='evenodd' d='M.005 121C311 121 409.898-.25 811 0c400 0 500 121 789 121v77H0s.005-48 .005-77z'/%3e%3c/svg%3e");
+  background-repeat: repeat-x;
+  background-size: 500px 44%;
+  background-position: 0 100%, 300px 80%, 600px 60%;
+  animation: profile-waves 20s linear infinite;
+}
+/* Each layer travels a whole number of tile-widths (500px) so it loops with no
+   jump: 1500 = 3 tiles, 2000 = 4 tiles, 1000 = 2 tiles. The vertical component
+   of each position is held constant across the keyframe so only the horizontal
+   drift animates. Vertical positions stay under 100% so every crest — including
+   the green back layer at 60% — stays inside the card: yellow (front) sits
+   lowest, red mid, green highest and behind. */
+@keyframes profile-waves {
+  to {
+    background-position: 1500px 100%, 2300px 80%, 1600px 60%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .profile-wave { animation: none; }
+}
+
+/* ══ GDSC 7-dot morphing loader (ported from Krackhack loading/loading.css) ══ */
+.dsc-loader {
+  position: relative;
+  width: 225px;
+  height: 150px;
+}
+.dsc-dot {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+}
+.dsc-dot1 {
+  top: 55px;
+  background-color: #4285f4;
+  transform-origin: 20px center;
+  animation: dsc-dot1 6s forwards ease-in-out;
+  z-index: 2;
+}
+.dsc-dot2 { left: 62.5px; top: 55px; background-color: #ea4335; animation: dsc-dot2 6s forwards ease-in-out; }
+.dsc-dot3 { bottom: 0;  left: 62.5px; background-color: #34a853; animation: dsc-dot3 6s forwards ease-in-out; }
+.dsc-dot4 { left: 62.5px; background-color: #34a853; animation: dsc-dot4 6s forwards ease-in-out; }
+.dsc-dot5 { left: 62.5px; top: 55px; background-color: #34a853; animation: dsc-dot5 6s forwards ease-in-out; }
+.dsc-dot6 { left: 62.5px; bottom: 0; background-color: #fbbc05; animation: dsc-dot6 6s forwards ease-in-out; }
+.dsc-dot7 {
+  top: 55px;
+  background-color: #ea4335;
+  transform-origin: 20px center;
+  animation: dsc-dot7 6s forwards ease-in-out;
+  z-index: 1;
+}
+
+@keyframes dsc-dot1 {
+  0%   { opacity: 0; transform: scale(0); }
+  5%   { opacity: 1; transform: scale(1); }
+  25%  { width: 40px; }
+  30%  { width: 100px; transform: rotate(0); }
+  35%  { transform: rotate(-30deg); }
+  45%  { transform: rotate(30deg); }
+  50%, 100% { width: 100px; transform: rotate(30deg); }
+}
+@keyframes dsc-dot2 {
+  0%   { opacity: 0; transform: scale(0); }
+  5%   { opacity: 0; transform: scale(0); }
+  10%  { opacity: 1; width: 40px; transform: scale(1); }
+  15%  { left: 62.5px; }
+  20%  { width: 100px; left: 125px; transform: scale(1); transform-origin: 80px center; }
+  25%  { transform: scale(0); }
+  30%  { transform: scale(0); background-color: #ea4335; }
+  36%  { background-color: #fbbc05; }
+  40%  { width: 100px; left: 125px; transform: rotate(-30deg); }
+  50%, 100% { width: 100px; left: 125px; background-color: #fbbc05; transform: rotate(-30deg); transform-origin: 80px center; }
+}
+@keyframes dsc-dot3 {
+  0%   { opacity: 0; transform: scale(0); }
+  10%  { opacity: 0; transform: scale(0); }
+  15%  { opacity: 1; transform: scale(1); width: 40px; }
+  20%  { width: 100px; left: 62.5px; }
+  25%  { width: 40px; left: 122.5px; transform: scale(1); }
+  30%  { transform: scale(0); }
+  50%, 100% { transform: scale(0); }
+}
+@keyframes dsc-dot4 {
+  0%   { opacity: 0; transform: scale(0); }
+  15%  { opacity: 0; transform: scale(0); }
+  20%  { opacity: 1; transform: scale(1); width: 40px; }
+  25%  { width: 100px; left: 62.5px; }
+  30%  { width: 40px; left: 122.5px; transform: scale(1); }
+  35%  { transform: scale(0); }
+  50%, 100% { transform: scale(0); }
+}
+@keyframes dsc-dot5 {
+  0%   { opacity: 0; transform: scale(0); transform-origin: left center; }
+  10%  { opacity: 0; transform: scale(0); }
+  15%  { opacity: 1; transform: scale(1); width: 40px; left: 62.5px; transform-origin: left center; }
+  20%  { width: 100px; left: 125px; transform-origin: 80px center; }
+  30%  { transform: rotate(0); }
+  35%  { transform: rotate(-30deg); }
+  45%  { transform: rotate(30deg); }
+  50%, 100% { opacity: 1; transform: rotate(30deg); transform-origin: 80px center; left: 125px; width: 100px; }
+}
+@keyframes dsc-dot6 {
+  0%    { opacity: 0; transform: scale(0); }
+  15%   { opacity: 0; transform: scale(0); }
+  20%   { opacity: 1; transform: scale(1); width: 40px; }
+  22.5% { width: 100px; left: 62.5px; }
+  27.5% { width: 40px; left: 122.5px; transform: scale(1); }
+  32.5% { transform: scale(0); }
+  50%, 100% { transform: scale(0); }
+}
+@keyframes dsc-dot7 {
+  0%   { opacity: 0; transform: scale(0); }
+  35%  { opacity: 1; transform: scale(0); }
+  36%  { transform: scale(1); width: 100px; transform: rotate(-30deg); }
+  50%, 100% { transform: scale(1); width: 100px; transform: rotate(-30deg); }
+}
+
+/* Loader overlay fade-out */
+@keyframes loader-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; visibility: hidden; }
+}
+.dsc-loader-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ffffff;
+}
+.dsc-loader-overlay.is-leaving {
+  animation: loader-fade-out 0.5s ease forwards;
 }

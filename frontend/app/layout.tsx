@@ -1,11 +1,32 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Poppins, JetBrains_Mono } from "next/font/google";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { Navbar } from "@/components/layout/Navbar";
+import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
+import { CustomCursor } from "@/components/ui/CustomCursor";
+import { ScrollProgress } from "@/components/ui/ScrollProgress";
 import "./globals.css";
 
+// Body / UI typeface.
 const inter = Inter({
   subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+// Display / heading typeface (Product Sans stand-in).
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-poppins",
+  display: "swap",
+});
+
+// Mono — code, stats, and the GDG "</>" brand motifs.
+const jetbrains = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains",
+  display: "swap",
 });
 
 const APP_DESCRIPTION =
@@ -30,8 +51,8 @@ export const metadata: Metadata = {
 
 // themeColor / colorScheme belong in the viewport export, not metadata
 export const viewport: Viewport = {
-  themeColor: "#0d1117",
-  colorScheme: "dark",
+  themeColor: "#ffffff",
+  colorScheme: "light",
 };
 
 export default function RootLayout({
@@ -40,8 +61,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.className}>
-      <body className="min-h-screen bg-[#0d1117] text-[#e6edf3] antialiased">
+    <html
+      lang="en"
+      className={`${inter.variable} ${poppins.variable} ${jetbrains.variable} ${inter.className}`}
+    >
+      <body className="min-h-screen bg-canvas text-fg antialiased">
+        <LoadingOverlay />
+        <CustomCursor />
+        <ScrollProgress />
         <AuthProvider>
           <Navbar />
           {/* pt-28 accounts for 64px navbar top bar + 44px tab row */}

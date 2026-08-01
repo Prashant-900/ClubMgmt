@@ -61,9 +61,9 @@ export function ApprovalQueue() {
 
   if (loading) {
     return (
-      <div className="border border-[#30363d] rounded-md overflow-hidden">
+      <div className="border border-[#dadce0] rounded-md overflow-hidden">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-3 px-4 py-4 border-b border-[#21262d] last:border-b-0">
+          <div key={i} className="flex items-center gap-3 px-4 py-4 border-b border-[#f1f3f4] last:border-b-0">
             <div className="w-8 h-8 skeleton rounded-md shrink-0" />
             <div className="flex-1 space-y-1.5">
               <div className="h-4 w-2/3 skeleton rounded" />
@@ -81,7 +81,7 @@ export function ApprovalQueue() {
 
   if (error) {
     return (
-      <div className="px-4 py-3 rounded-md bg-[rgba(248,81,73,0.1)] border border-[rgba(248,81,73,0.3)] text-sm text-[#f85149]">
+      <div className="px-4 py-3 rounded-md bg-[rgba(234,67,53,0.1)] border border-[rgba(234,67,53,0.3)] text-sm text-[#c5221f]">
         {error}
       </div>
     );
@@ -89,13 +89,13 @@ export function ApprovalQueue() {
 
   if (contributions.length === 0) {
     return (
-      <div className="bg-[#161b22] border border-[#30363d] rounded-md p-12 text-center">
-        <div className="w-10 h-10 rounded-full bg-[rgba(63,185,80,0.15)] border border-[rgba(63,185,80,0.3)] flex items-center justify-center mx-auto mb-3">
-          <svg className="w-5 h-5 text-[#3fb950]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <div className="bg-[#f8f9fa] border border-[#dadce0] rounded-md p-12 text-center">
+        <div className="w-10 h-10 rounded-full bg-[rgba(52,168,83,0.15)] border border-[rgba(52,168,83,0.3)] flex items-center justify-center mx-auto mb-3">
+          <svg className="w-5 h-5 text-[#188038]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <p className="text-sm text-[#8b949e]">All caught up — no pending approvals</p>
+        <p className="text-sm text-[#5f6368]">All caught up — no pending approvals</p>
       </div>
     );
   }
@@ -104,34 +104,34 @@ export function ApprovalQueue() {
     <div className="space-y-4">
       {/* Count banner */}
       <div className="flex items-center gap-2">
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[rgba(210,153,34,0.15)] border border-[rgba(210,153,34,0.4)] text-[#d29922]">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#d29922]" />
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[rgba(251,188,5,0.15)] border border-[rgba(251,188,5,0.4)] text-[#b06000]">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#b06000]" />
           {contributions.length} pending review
         </span>
       </div>
 
       {/* List */}
-      <div className="border border-[#30363d] rounded-md overflow-hidden">
+      <div className="border border-[#dadce0] rounded-md overflow-hidden">
         {contributions.map((c, index) => (
           <div
             key={c.id}
-            className="border-b border-[#21262d] last:border-b-0 animate-fade-in"
+            className="border-b border-[#f1f3f4] last:border-b-0 animate-fade-in"
             style={{ animationDelay: `${index * 30}ms`, animationFillMode: "both" }}
           >
             {/* Main row */}
             <div className="flex items-start gap-3 px-4 py-3">
               {/* Hours badge */}
-              <div className="shrink-0 w-9 h-9 rounded-md bg-[#161b22] border border-[#30363d] flex flex-col items-center justify-center">
-                <span className="text-[13px] font-bold text-[#e6edf3] leading-none tabular-nums">
+              <div className="shrink-0 w-9 h-9 rounded-md bg-[#f8f9fa] border border-[#dadce0] flex flex-col items-center justify-center">
+                <span className="text-[13px] font-bold text-[#202124] leading-none tabular-nums">
                   {c.hours % 1 === 0 ? c.hours : c.hours.toFixed(1)}
                 </span>
-                <span className="text-[8px] text-[#6e7681] uppercase tracking-wider">hrs</span>
+                <span className="text-[8px] text-[#80868b] uppercase tracking-wider">hrs</span>
               </div>
 
               {/* Content */}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-[#e6edf3] leading-snug">{c.title}</p>
-                <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-[#8b949e]">
+                <p className="text-sm font-medium text-[#202124] leading-snug">{c.title}</p>
+                <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-[#5f6368]">
                   <span>{c.user?.name ?? c.user?.email}</span>
                   <span>·</span>
                   <CategoryBadge category={c.category} />
@@ -144,12 +144,12 @@ export function ApprovalQueue() {
                   {(c.user as { club?: { name: string } }).club && (
                     <>
                       <span>·</span>
-                      <span className="text-[#58a6ff]">{(c.user as { club?: { name: string } }).club?.name}</span>
+                      <span className="text-[#1a73e8]">{(c.user as { club?: { name: string } }).club?.name}</span>
                     </>
                   )}
                 </div>
                 {c.description && (
-                  <p className="text-xs text-[#6e7681] mt-1 line-clamp-1">{c.description}</p>
+                  <p className="text-xs text-[#80868b] mt-1 line-clamp-1">{c.description}</p>
                 )}
               </div>
 
@@ -165,7 +165,7 @@ export function ApprovalQueue() {
                 <button
                   onClick={() => setRejectId(rejectId === c.id ? null : c.id)}
                   disabled={actionLoading === c.id}
-                  className="gh-btn gh-btn-default gh-btn-sm disabled:opacity-50 text-[#f85149] border-[rgba(248,81,73,0.4)] hover:bg-[rgba(248,81,73,0.1)]"
+                  className="gh-btn gh-btn-default gh-btn-sm disabled:opacity-50 text-[#c5221f] border-[rgba(234,67,53,0.4)] hover:bg-[rgba(234,67,53,0.1)]"
                 >
                   Reject
                 </button>
@@ -174,7 +174,7 @@ export function ApprovalQueue() {
 
             {/* Rejection panel */}
             {rejectId === c.id && (
-              <div className="px-4 pb-3 pt-0 bg-[#161b22] animate-fade-in">
+              <div className="px-4 pb-3 pt-0 bg-[#f8f9fa] animate-fade-in">
                 <textarea
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}

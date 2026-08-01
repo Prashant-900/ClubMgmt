@@ -1,16 +1,16 @@
-// Badge.tsx — GitHub-style label / status badges
+// Badge.tsx — Google-style label / status badges
 import React from "react";
 import type { ContributionCategory, ContributionStatus, Role } from "@/types";
 
-// ── Role badge ────────────────────────────────────────────────────────────────
+// ── Role badge (Google palette: admin=red, coordinator=blue, member=green) ────
 
 const ROLE_BADGE: Record<Role, string> = {
   ADMIN:
-    "text-[#a371f7] bg-[rgba(163,113,247,0.15)] border border-[rgba(163,113,247,0.4)]",
+    "text-brand-red-fg bg-[rgba(234,67,53,0.10)] border border-[rgba(234,67,53,0.30)]",
   COORDINATOR:
-    "text-[#79c0ff] bg-[rgba(121,192,255,0.15)] border border-[rgba(121,192,255,0.4)]",
+    "text-brand-blue-fg bg-[rgba(66,133,244,0.10)] border border-[rgba(66,133,244,0.30)]",
   MEMBER:
-    "text-[#3fb950] bg-[rgba(63,185,80,0.15)] border border-[rgba(63,185,80,0.4)]",
+    "text-brand-green-fg bg-[rgba(52,168,83,0.10)] border border-[rgba(52,168,83,0.30)]",
 };
 
 interface RoleBadgeProps {
@@ -37,20 +37,20 @@ const STATUS_CONFIG: Record<
   APPROVED: {
     label: "Approved",
     className:
-      "text-[#3fb950] bg-[rgba(63,185,80,0.15)] border border-[rgba(63,185,80,0.4)]",
-    dot: "bg-[#3fb950]",
+      "text-brand-green-fg bg-[rgba(52,168,83,0.10)] border border-[rgba(52,168,83,0.30)]",
+    dot: "bg-brand-green",
   },
   REJECTED: {
     label: "Rejected",
     className:
-      "text-[#f85149] bg-[rgba(248,81,73,0.15)] border border-[rgba(248,81,73,0.4)]",
-    dot: "bg-[#f85149]",
+      "text-brand-red-fg bg-[rgba(234,67,53,0.10)] border border-[rgba(234,67,53,0.30)]",
+    dot: "bg-brand-red",
   },
   PENDING: {
     label: "Pending",
     className:
-      "text-[#d29922] bg-[rgba(210,153,34,0.15)] border border-[rgba(210,153,34,0.4)]",
-    dot: "bg-[#d29922]",
+      "text-brand-yellow-fg bg-[rgba(251,188,5,0.16)] border border-[rgba(251,188,5,0.40)]",
+    dot: "bg-brand-yellow",
   },
 };
 
@@ -75,17 +75,17 @@ export function getStatusConfig(status: ContributionStatus) {
   return STATUS_CONFIG[status];
 }
 
-// ── Category badge ────────────────────────────────────────────────────────────
+// ── Category badge (mapped onto the four Google hues) ─────────────────────────
 
 const CATEGORY_CONFIG: Record<ContributionCategory, { label: string; className: string }> = {
-  DEVELOPMENT:   { label: "Development",   className: "text-[#79c0ff] bg-[rgba(121,192,255,0.12)] border border-[rgba(121,192,255,0.3)]" },
-  WORKSHOP:      { label: "Workshop",      className: "text-[#a371f7] bg-[rgba(163,113,247,0.12)] border border-[rgba(163,113,247,0.3)]" },
-  PRESENTATION:  { label: "Presentation",  className: "text-[#79c0ff] bg-[rgba(79,140,255,0.12)] border border-[rgba(79,140,255,0.3)]" },
-  DESIGN:        { label: "Design",        className: "text-[#ff7b72] bg-[rgba(255,123,114,0.12)] border border-[rgba(255,123,114,0.3)]" },
-  EVENT_SUPPORT: { label: "Event Support", className: "text-[#d29922] bg-[rgba(210,153,34,0.12)] border border-[rgba(210,153,34,0.3)]" },
-  DOCUMENTATION: { label: "Documentation", className: "text-[#58a6ff] bg-[rgba(88,166,255,0.12)] border border-[rgba(88,166,255,0.3)]" },
-  MEETING:       { label: "Meeting",       className: "text-[#3fb950] bg-[rgba(63,185,80,0.12)] border border-[rgba(63,185,80,0.3)]" },
-  OTHER:         { label: "Other",         className: "text-[#8b949e] bg-[rgba(139,148,158,0.12)] border border-[rgba(139,148,158,0.3)]" },
+  DEVELOPMENT:   { label: "Development",   className: "text-brand-blue-fg bg-[rgba(66,133,244,0.10)] border border-[rgba(66,133,244,0.28)]" },
+  WORKSHOP:      { label: "Workshop",      className: "text-brand-green-fg bg-[rgba(52,168,83,0.10)] border border-[rgba(52,168,83,0.28)]" },
+  PRESENTATION:  { label: "Presentation",  className: "text-brand-blue-fg bg-[rgba(66,133,244,0.10)] border border-[rgba(66,133,244,0.28)]" },
+  DESIGN:        { label: "Design",        className: "text-brand-red-fg bg-[rgba(234,67,53,0.10)] border border-[rgba(234,67,53,0.28)]" },
+  EVENT_SUPPORT: { label: "Event Support", className: "text-brand-yellow-fg bg-[rgba(251,188,5,0.16)] border border-[rgba(251,188,5,0.35)]" },
+  DOCUMENTATION: { label: "Documentation", className: "text-brand-blue-fg bg-[rgba(66,133,244,0.10)] border border-[rgba(66,133,244,0.28)]" },
+  MEETING:       { label: "Meeting",       className: "text-brand-green-fg bg-[rgba(52,168,83,0.10)] border border-[rgba(52,168,83,0.28)]" },
+  OTHER:         { label: "Other",         className: "text-fg-muted bg-surface-2 border border-border" },
 };
 
 interface CategoryBadgeProps {

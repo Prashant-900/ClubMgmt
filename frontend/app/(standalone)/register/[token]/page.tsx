@@ -189,8 +189,8 @@ export default function RegisterPage() {
           <button
             type="button"
             onClick={handleGoogleSignup}
-            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 bg-white text-[#1f2328] text-sm font-semibold
-                       rounded-md border border-[#d0d7de] cursor-pointer transition-colors hover:bg-[#f3f4f6]
+            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 bg-white text-[#f1f3f4] text-sm font-semibold
+                       rounded-md border border-[#dadce0] cursor-pointer transition-colors hover:bg-[#202124]
                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gh-accent-emphasis
                        focus-visible:ring-offset-2 focus-visible:ring-offset-gh-canvas-subtle"
           >

@@ -86,7 +86,7 @@ export function MemberCard({ member, onRemove, onRefresh, clubs = [], index = 0 
 
   return (
     <div
-      className="flex flex-col border-b border-[#21262d] last:border-b-0 hover:bg-[#161b22] transition-colors group animate-fade-in"
+      className="flex flex-col border-b border-[#f1f3f4] last:border-b-0 hover:bg-[#f8f9fa] transition-colors group animate-fade-in"
       style={{ animationDelay: `${index * 40}ms`, animationFillMode: "both" }}
     >
       {/* Main row */}
@@ -99,29 +99,29 @@ export function MemberCard({ member, onRemove, onRefresh, clubs = [], index = 0 
           <div className="flex items-center gap-2 flex-wrap">
             <Link
               href={`/members/${member.id}`}
-              className="text-sm font-medium text-[#e6edf3] truncate hover:text-[#58a6ff] hover:underline"
+              className="text-sm font-medium text-[#202124] truncate hover:text-[#1a73e8] hover:underline"
             >
               {member.name ?? "Pending setup"}
             </Link>
             <RoleBadge role={member.role} />
             {member.isVerified && (
-              <span className="text-[10px] text-[#3fb950]">✓ verified</span>
+              <span className="text-[10px] text-[#188038]">✓ verified</span>
             )}
             {canAssign && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[rgba(210,153,34,0.15)] border border-[rgba(210,153,34,0.3)] text-[#e3b341]">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[rgba(251,188,5,0.15)] border border-[rgba(251,188,5,0.3)] text-[#b06000]">
                 pending
               </span>
             )}
           </div>
-          <p className="text-xs text-[#8b949e] truncate mt-0.5">{member.email}</p>
+          <p className="text-xs text-[#5f6368] truncate mt-0.5">{member.email}</p>
           {member.club && (
-            <p className="text-xs text-[#6e7681] mt-0.5">{member.club.name}</p>
+            <p className="text-xs text-[#80868b] mt-0.5">{member.club.name}</p>
           )}
         </div>
 
         {/* Join date */}
         <div className="text-right shrink-0 hidden sm:block">
-          <span className="text-xs text-[#6e7681]">
+          <span className="text-xs text-[#80868b]">
             Joined{" "}
             {new Date(member.createdAt).toLocaleDateString("en-IN", {
               month: "short",
@@ -135,7 +135,7 @@ export function MemberCard({ member, onRemove, onRefresh, clubs = [], index = 0 
           <RoleGate allowedRoles={["ADMIN"]}>
             <button
               onClick={() => { setShowActions(!showActions); setActionError(null); }}
-              className="w-7 h-7 flex items-center justify-center text-[#6e7681] hover:text-[#e6edf3] hover:bg-[#21262d] rounded-md transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
+              className="w-7 h-7 flex items-center justify-center text-[#80868b] hover:text-[#202124] hover:bg-[#f1f3f4] rounded-md transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
               title="Actions"
             >
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
@@ -148,11 +148,11 @@ export function MemberCard({ member, onRemove, onRefresh, clubs = [], index = 0 
 
       {/* Expandable actions panel */}
       {showActions && (
-        <div className="border-t border-[#21262d] px-4 pt-3 pb-3 space-y-2.5 bg-[#0d1117] animate-fade-in">
+        <div className="border-t border-[#f1f3f4] px-4 pt-3 pb-3 space-y-2.5 bg-[#ffffff] animate-fade-in">
 
           {/* Error message */}
           {actionError && (
-            <p className="text-xs text-[#f85149] bg-[rgba(248,81,73,0.1)] border border-[rgba(248,81,73,0.3)] rounded px-2 py-1.5">
+            <p className="text-xs text-[#c5221f] bg-[rgba(234,67,53,0.1)] border border-[rgba(234,67,53,0.3)] rounded px-2 py-1.5">
               {actionError}
             </p>
           )}
@@ -160,7 +160,7 @@ export function MemberCard({ member, onRemove, onRefresh, clubs = [], index = 0 
           {/* ASSIGN action — for users with no club */}
           {canAssign && clubs.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs font-medium text-[#e3b341]">Assign to club</p>
+              <p className="text-xs font-medium text-[#b06000]">Assign to club</p>
               <div className="flex items-center gap-2 flex-wrap">
                 <select
                   value={selectedClubId}
@@ -194,7 +194,7 @@ export function MemberCard({ member, onRemove, onRefresh, clubs = [], index = 0 
           {/* PROMOTE action — for already-assigned members */}
           {canPromote && clubs.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs font-medium text-[#8b949e]">Promote to coordinator</p>
+              <p className="text-xs font-medium text-[#5f6368]">Promote to coordinator</p>
               <div className="flex items-center gap-2 flex-wrap">
                 <select
                   value={selectedClubId}
@@ -217,7 +217,7 @@ export function MemberCard({ member, onRemove, onRefresh, clubs = [], index = 0 
 
               {/* Cross-club move warning — visible before the confirm step */}
               {isCrossClubPromotion && currentClub && (
-                <p className="text-xs text-[#d29922] bg-[rgba(187,128,9,0.15)] border border-[rgba(187,128,9,0.3)] rounded px-2 py-1.5">
+                <p className="text-xs text-[#b06000] bg-[rgba(251,188,5,0.15)] border border-[rgba(251,188,5,0.3)] rounded px-2 py-1.5">
                   <span className="font-medium">Different club.</span>{" "}
                   {displayName} is currently in {currentClub.name} — promoting them
                   here will move them out of it.
@@ -231,8 +231,8 @@ export function MemberCard({ member, onRemove, onRefresh, clubs = [], index = 0 
             <div>
               <button
                 onClick={() => onRemove(member.id)}
-                className="gh-btn gh-btn-sm text-[#f85149] border-[rgba(248,81,73,0.4)] bg-transparent hover:bg-[rgba(248,81,73,0.1)]"
-                style={{ border: "1px solid rgba(248,81,73,0.4)" }}
+                className="gh-btn gh-btn-sm text-[#c5221f] border-[rgba(234,67,53,0.4)] bg-transparent hover:bg-[rgba(234,67,53,0.1)]"
+                style={{ border: "1px solid rgba(234,67,53,0.4)" }}
               >
                 Remove member
               </button>

@@ -26,17 +26,22 @@ function SubmitContent() {
       <div className="mb-8">
         <Link
           href="/contributions"
-          className="inline-flex items-center gap-2 text-xs text-gray-500 hover:text-gray-300 transition-colors mb-4"
+          className="group inline-flex items-center gap-2 text-xs text-[#1a73e8] hover:text-[#174ea6] transition-colors mb-4"
         >
-          ← Back to Contributions
+          <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#e6f4ea] text-[#188038] group-hover:bg-[#34a853] group-hover:text-white transition-colors">
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </span>
+          Back to Contributions
         </Link>
         <div className="flex items-center gap-3">
-          <div className="w-2 h-8 rounded-full bg-gradient-to-b from-violet-500 to-indigo-600" />
+          <div className="w-1.5 h-9 rounded-full bg-[#4285f4]" />
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-100 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#202124] tracking-tight">
               Submit Contribution
             </h1>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <p className="text-sm text-[#5f6368] mt-0.5">
               Record a completed piece of work
             </p>
           </div>
@@ -44,7 +49,7 @@ function SubmitContent() {
       </div>
 
       {/* Form card */}
-      <div className="bg-glass backdrop-blur-xl border border-glass-border rounded-2xl p-6">
+      <div className="bg-white border border-[#dadce0] rounded-2xl p-6 shadow-sm">
         <ContributionForm clubs={clubs} />
       </div>
     </div>

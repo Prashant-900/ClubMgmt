@@ -19,8 +19,8 @@ export default function StandaloneLayout({ children }: { children: ReactNode }) 
   return (
     <div
       lang="en"
-      className={`${inter.className} min-h-screen bg-[#0a0a0f] text-gray-100 antialiased`}
-      style={{ background: "linear-gradient(168deg, #0a0a0f 0%, #0f0d1a 50%, #0a0a0f 100%)" }}
+      className={`${inter.className} min-h-screen bg-[#ffffff] text-gray-100 antialiased`}
+      style={{ background: "linear-gradient(168deg, #ffffff 0%, #ffffff 50%, #ffffff 100%)" }}
     >
         {children}
     </div>

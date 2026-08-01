@@ -128,29 +128,38 @@ export function MemberGrid({ clubId }: { clubId?: string }) {
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         {/* Search */}
         <div className="relative flex-1 max-w-sm">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#6e7681]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
+          {/* Two-tone brand search icon — blue lens, green handle */}
+          <svg
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2.2}
+            aria-hidden
+          >
+            <circle cx="11" cy="11" r="6" stroke="#4285f4" strokeLinecap="round" />
+            <path d="M21 21l-4.35-4.35" stroke="#34a853" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           <input
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search members…"
             aria-label="Search members"
-            className="gh-input pl-9"
+            className="gh-input"
+            style={{ paddingLeft: 40 }}
           />
         </div>
 
         {/* Role filter — ADMIN only */}
         <RoleGate allowedRoles={["ADMIN"]}>
-          <div className="flex items-center border border-[#30363d] rounded-md overflow-hidden text-xs">
+          <div className="flex items-center border border-[#dadce0] rounded-md overflow-hidden text-xs">
             {FILTER_TABS.map((tab) => (
               <button
                 key={tab.value}
                 onClick={() => setActiveFilter(tab.value)}
-                className={`px-3 py-1.5 font-medium transition-colors cursor-pointer border-r border-[#30363d] last:border-r-0 whitespace-nowrap ${
+                className={`px-3 py-1.5 font-medium transition-colors cursor-pointer border-r border-[#dadce0] last:border-r-0 whitespace-nowrap ${
                   activeFilter === tab.value
-                    ? "bg-[#21262d] text-[#e6edf3]"
-                    : "text-[#8b949e] hover:bg-[#161b22] hover:text-[#e6edf3]"
+                    ? "bg-[#f1f3f4] text-[#202124]"
+                    : "text-[#5f6368] hover:bg-[#f8f9fa] hover:text-[#202124]"
                 }`}
               >
                 {tab.label}
@@ -162,17 +171,17 @@ export function MemberGrid({ clubId }: { clubId?: string }) {
 
       {/* Error */}
       {error && (
-        <div className="px-4 py-3 rounded-md bg-[rgba(248,81,73,0.1)] border border-[rgba(248,81,73,0.3)] text-sm text-[#f85149] flex items-center justify-between">
+        <div className="px-4 py-3 rounded-md bg-[rgba(234,67,53,0.1)] border border-[rgba(234,67,53,0.3)] text-sm text-[#c5221f] flex items-center justify-between">
           <span>{error}</span>
           <button onClick={fetchMembers} className="gh-btn gh-btn-default gh-btn-sm min-h-[36px] ml-4">Retry</button>
         </div>
       )}
 
       {/* Contributor list container */}
-      <div className="border border-[#30363d] rounded-md overflow-hidden">
+      <div className="border border-[#dadce0] rounded-md overflow-hidden">
         {/* List header */}
-        <div className="flex items-center px-4 py-2 bg-[#161b22] border-b border-[#30363d]">
-          <span className="text-xs font-medium text-[#8b949e]">
+        <div className="flex items-center px-4 py-2 bg-[#f8f9fa] border-b border-[#dadce0]">
+          <span className="text-xs font-medium text-[#5f6368]">
             {loading ? "Loading…" : `${total} ${total === 1 ? "member" : "members"}`}
           </span>
         </div>
@@ -181,7 +190,7 @@ export function MemberGrid({ clubId }: { clubId?: string }) {
         {loading ? (
           <div>
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-3 px-4 py-3 border-b border-[#21262d] last:border-b-0">
+              <div key={i} className="flex items-center gap-3 px-4 py-3 border-b border-[#f1f3f4] last:border-b-0">
                 <div className="w-8 h-8 rounded-full skeleton shrink-0" />
                 <div className="flex-1 space-y-1.5">
                   <div className="h-4 w-32 skeleton rounded" />
@@ -193,7 +202,7 @@ export function MemberGrid({ clubId }: { clubId?: string }) {
           </div>
         ) : members.length === 0 ? (
           <div className="py-16 text-center">
-            <p className="text-sm text-[#8b949e]">
+            <p className="text-sm text-[#5f6368]">
               {debouncedSearch.trim()
                 ? `No members match “${debouncedSearch.trim()}”`
                 : activeFilter !== "ALL"

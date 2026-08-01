@@ -187,7 +187,7 @@ export function ClubEditModal({ club, onCancel, onSaved }: ClubEditModalProps) {
             </label>
             <span
               className={`text-[11px] tabular-nums ${
-                nameOverLimit ? "text-[#f85149]" : "text-gh-text-tertiary"
+                nameOverLimit ? "text-[#c5221f]" : "text-gh-text-tertiary"
               }`}
             >
               {nameCount}/{CLUB_NAME_MAX}
@@ -205,7 +205,7 @@ export function ClubEditModal({ club, onCancel, onSaved }: ClubEditModalProps) {
             aria-invalid={nameError ? true : undefined}
             className="gh-input mt-1.5"
           />
-          {nameError && <p className="mt-1 text-xs text-[#f85149]">{nameError}</p>}
+          {nameError && <p className="mt-1 text-xs text-[#c5221f]">{nameError}</p>}
         </div>
 
         {/* Description */}
@@ -219,7 +219,7 @@ export function ClubEditModal({ club, onCancel, onSaved }: ClubEditModalProps) {
             </label>
             <span
               className={`text-[11px] tabular-nums ${
-                descriptionOverLimit ? "text-[#f85149]" : "text-gh-text-tertiary"
+                descriptionOverLimit ? "text-[#c5221f]" : "text-gh-text-tertiary"
               }`}
             >
               {descriptionCount}/{CLUB_DESCRIPTION_MAX}
@@ -238,13 +238,13 @@ export function ClubEditModal({ club, onCancel, onSaved }: ClubEditModalProps) {
             className="gh-input mt-1.5 resize-y leading-relaxed"
           />
           {descriptionError && (
-            <p className="mt-1 text-xs text-[#f85149]">{descriptionError}</p>
+            <p className="mt-1 text-xs text-[#c5221f]">{descriptionError}</p>
           )}
         </div>
 
         {/* Non-field errors */}
         {formError && (
-          <p className="mt-3 px-3 py-2 rounded-md bg-[rgba(248,81,73,0.1)] border border-[rgba(248,81,73,0.3)] text-xs text-[#f85149]">
+          <p className="mt-3 px-3 py-2 rounded-md bg-[rgba(234,67,53,0.1)] border border-[rgba(234,67,53,0.3)] text-xs text-[#c5221f]">
             {formError}
           </p>
         )}
