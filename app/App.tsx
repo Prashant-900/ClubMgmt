@@ -3,7 +3,7 @@ import { StatusBar } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
-  DarkTheme,
+  DefaultTheme,
   NavigationContainer,
   type Theme,
 } from '@react-navigation/native';
@@ -12,18 +12,18 @@ import { RootNavigator } from './src/navigation/RootNavigator';
 import { linking } from './src/navigation/linking';
 import { colors } from './src/theme';
 
-/** React Navigation theme mapped onto the GitHub-dark palette. */
+/** React Navigation theme mapped onto the Google-light palette. */
 const navTheme: Theme = {
-  ...DarkTheme,
-  dark: true,
+  ...DefaultTheme,
+  dark: false,
   colors: {
-    ...DarkTheme.colors,
+    ...DefaultTheme.colors,
     primary: colors.accentEmphasis,
     background: colors.canvas,
-    card: colors.surface,
+    card: colors.canvas,
     text: colors.text,
     border: colors.border,
-    notification: colors.dangerEmphasis,
+    notification: colors.danger,
   },
 };
 
@@ -33,7 +33,7 @@ export default function App() {
       <SafeAreaProvider>
         <AuthProvider>
           <NavigationContainer theme={navTheme} linking={linking}>
-            <StatusBar barStyle="light-content" backgroundColor={colors.canvas} />
+            <StatusBar barStyle="dark-content" backgroundColor={colors.canvas} />
             <RootNavigator />
           </NavigationContainer>
         </AuthProvider>

@@ -1,9 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Button, Screen } from '../../components';
+import { Button, Screen, SegmentedControl } from '../../components';
 import { useAuth } from '../../context/AuthContext';
-import { contributionApi } from '../../api';
 import type { AppNavigation } from '../../navigation/types';
 import type { Role } from '../../types';
 import { colors, spacing, typography } from '../../theme';
@@ -54,20 +53,12 @@ export function ContributionsScreen() {
       </View>
 
       {visibleTabs.length > 1 ? (
-        <View style={styles.tabBar}>
-          {visibleTabs.map((t) => {
-            const selected = t.value === activeTab;
-            return (
-              <Text
-                key={t.value}
-                onPress={() => setTab(t.value)}
-                style={[styles.tab, selected && styles.tabActive]}
-              >
-                {t.label}
-              </Text>
-            );
-          })}
-        </View>
+        <SegmentedControl
+          options={visibleTabs.map((t) => ({ value: t.value, label: t.label }))}
+          value={activeTab}
+          onChange={(v) => setTab(v)}
+          style={styles.tabs}
+        />
       ) : null}
 
       <View style={styles.body}>
@@ -103,23 +94,8 @@ const styles = StyleSheet.create({
     ...typography.h2,
     color: colors.text,
   },
-  tabBar: {
-    flexDirection: 'row',
-    gap: spacing.lg,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+  tabs: {
     marginBottom: spacing.md,
-  },
-  tab: {
-    ...typography.bodyStrong,
-    color: colors.textMuted,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 2,
-    borderBottomColor: colors.transparent,
-  },
-  tabActive: {
-    color: colors.text,
-    borderBottomColor: colors.accentEmphasis,
   },
   body: {
     flex: 1,

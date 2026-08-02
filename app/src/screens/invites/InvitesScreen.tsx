@@ -459,7 +459,7 @@ const styles = StyleSheet.create({
   },
   generated: {
     backgroundColor: colors.successSubtle,
-    borderColor: `${colors.successEmphasis}4d`,
+    borderColor: colors.successEmphasis,
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: radius.md,
     padding: spacing.md,

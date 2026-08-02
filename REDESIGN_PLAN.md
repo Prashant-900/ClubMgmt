@@ -94,6 +94,8 @@ Order chosen for lowest risk → highest visibility:
 7. Sprinkle **FloatingCircles**-style ambient animation (Google colors) on landing/empty states only — "not too pushy."
 
 ## Phase 3 — App screen migration
+> **Status (2026-08-02): DONE.** The React Native app was fully migrated to the Google-light theme, mirroring every web decision (blue active labels, green/red/yellow cycling accents, solid opaque chips, pill buttons, white cards + soft shadow, no purple). The bottom tab bar was rebuilt as a **floating pill** (`FloatingTabBar` custom `tabBar`, rounded white bar detached from screen edges, safe-area padded, per-tab colored icon chips). All screens are token-driven off `app/src/theme/colors.ts`; `tsc --noEmit` passes clean. Deferred: `react-native-svg` icons (kept crisp text glyphs to avoid a native rebuild) and the notifications screen.
+
 1. **TabNavigator:** SVG icons + light theme.
 2. Home, Contributions, Members, Leaderboard, Profile — restyle to tokens, spacing, section headers in Poppins.
 3. **Notifications screen** + unread badge on a tab/header, polling every 30s.

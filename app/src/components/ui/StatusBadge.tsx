@@ -3,15 +3,18 @@ import { Badge } from './Badge';
 import { colors, roleColor, statusColors } from '../../theme';
 import type { ContributionStatus, Role } from '../../types';
 
+const ROLE_CHIP: Record<Role, { fg: string; bg: string }> = {
+  ADMIN: { fg: colors.dangerEmphasis, bg: colors.dangerSubtle },
+  COORDINATOR: { fg: colors.accentEmphasis, bg: colors.accentSubtle },
+  MEMBER: { fg: colors.successEmphasis, bg: colors.successSubtle },
+};
+
 export function RoleBadge({ role }: { role: Role }) {
-  const color = roleColor(role);
-  return (
-    <Badge
-      label={role}
-      color={color}
-      background={`${color}26` /* ~15% alpha */}
-    />
-  );
+  const chip = ROLE_CHIP[role] ?? {
+    fg: roleColor(role),
+    bg: colors.neutralSubtle,
+  };
+  return <Badge label={role} color={chip.fg} background={chip.bg} />;
 }
 
 export function StatusBadge({ status }: { status: ContributionStatus }) {

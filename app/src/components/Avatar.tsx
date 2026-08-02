@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, View, type ViewStyle } from 'react-native';
-import { colors, radius, roleColor } from '../theme';
+import { colors, radius } from '../theme';
 import type { Role } from '../types';
 
 interface AvatarProps {
@@ -23,11 +23,18 @@ function initialsFor(name?: string | null, email?: string | null): string {
 
 /**
  * Circular initials avatar. Tinted by role when provided (mirrors the web's
- * role-coloured member chips), otherwise a neutral surface.
+ * role-coloured member chips) using SOLID opaque chips — no alpha, so the
+ * avatar never lets the page bleed through on a light background.
  */
+const ROLE_CHIP: Record<Role, { fg: string; bg: string }> = {
+  ADMIN: { fg: colors.dangerEmphasis, bg: colors.dangerSubtle },
+  COORDINATOR: { fg: colors.accentEmphasis, bg: colors.accentSubtle },
+  MEMBER: { fg: colors.successEmphasis, bg: colors.successSubtle },
+};
+
 export function Avatar({ name, email, role, size = 40, style }: AvatarProps) {
   const initials = useMemo(() => initialsFor(name, email), [name, email]);
-  const tint = role ? roleColor(role) : colors.textMuted;
+  const chip = role ? ROLE_CHIP[role] : { fg: colors.textMuted, bg: colors.neutralSubtle };
 
   return (
     <View
@@ -37,14 +44,14 @@ export function Avatar({ name, email, role, size = 40, style }: AvatarProps) {
           width: size,
           height: size,
           borderRadius: size / 2,
-          backgroundColor: `${tint}26`,
-          borderColor: `${tint}55`,
+          backgroundColor: chip.bg,
+          borderColor: colors.borderMuted,
         },
         style,
       ]}
     >
       <Text
-        style={[styles.text, { color: tint, fontSize: Math.round(size * 0.4) }]}
+        style={[styles.text, { color: chip.fg, fontSize: Math.round(size * 0.4) }]}
         numberOfLines={1}
       >
         {initials}

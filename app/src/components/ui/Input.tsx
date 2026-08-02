@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -18,14 +18,28 @@ interface InputProps extends TextInputProps {
 
 /** Labeled text field matching the web form styling. */
 export const Input = forwardRef<TextInput, InputProps>(
-  ({ label, error, hint, containerStyle, style, ...rest }, ref) => {
+  ({ label, error, hint, containerStyle, style, onFocus, onBlur, ...rest }, ref) => {
+    const [focused, setFocused] = useState(false);
     return (
       <View style={[styles.container, containerStyle]}>
         {label ? <Text style={styles.label}>{label}</Text> : null}
         <TextInput
           ref={ref}
-          placeholderTextColor={colors.textDisabled}
-          style={[styles.input, error ? styles.inputError : null, style]}
+          placeholderTextColor={colors.textSubtle}
+          style={[
+            styles.input,
+            error ? styles.inputError : null,
+            focused && !error ? styles.inputFocus : null,
+            style,
+          ]}
+          onFocus={(e) => {
+            setFocused(true);
+            onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setFocused(false);
+            onBlur?.(e);
+          }}
           {...rest}
         />
         {error ? (
@@ -53,15 +67,19 @@ const styles = StyleSheet.create({
   input: {
     ...typography.body,
     color: colors.text,
-    backgroundColor: colors.inset,
+    backgroundColor: colors.canvas,
     borderColor: colors.border,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: radius.md,
+    borderWidth: 1,
+    borderRadius: 8,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm + 2,
   },
+  inputFocus: {
+    borderColor: colors.accent,
+    borderWidth: 1.5,
+  },
   inputError: {
-    borderColor: colors.dangerEmphasis,
+    borderColor: colors.danger,
   },
   error: {
     ...typography.caption,

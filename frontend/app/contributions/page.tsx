@@ -92,8 +92,10 @@ function ContributionsContent() {
         className="mb-6"
       />
 
-      {/* Tab content */}
-      <div className="animate-fade-in" key={activeTab}>
+      {/* Tab content — no remount key so switching swaps only the active
+          panel instead of tearing down the whole subtree (which flashed like
+          a full-page reload). */}
+      <div className="animate-fade-in">
         {activeTab === "mine" && (
           <ContributionList
             mineOnly

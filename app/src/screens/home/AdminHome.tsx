@@ -160,8 +160,16 @@ export function AdminHome() {
       <Text style={styles.title}>Overview</Text>
 
       <StatGrid>
-        <StatCard label="Total Clubs" value={data.clubs.length} />
-        <StatCard label="Members" value={data.totalMembers} />
+        <StatCard
+          label="Total Clubs"
+          value={data.clubs.length}
+          valueColor={colors.accentEmphasis}
+        />
+        <StatCard
+          label="Members"
+          value={data.totalMembers}
+          valueColor={colors.roleMember}
+        />
         <StatCard
           label="Pending Users"
           value={data.unassignedMembers}
@@ -170,7 +178,7 @@ export function AdminHome() {
         <StatCard
           label="Pending Approvals"
           value={data.pendingApprovals}
-          valueColor={colors.warningEmphasis}
+          valueColor={colors.dangerEmphasis}
         />
         <StatCard
           label="Total Hours"

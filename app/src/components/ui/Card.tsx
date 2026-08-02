@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
-import { colors, radius, spacing } from '../../theme';
+import { colors, spacing } from '../../theme';
 
 interface CardProps {
   children: React.ReactNode;
@@ -33,11 +33,17 @@ export function Card({ children, onPress, style, compact = false }: CardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.canvas,
     borderColor: colors.border,
     borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: radius.lg,
+    borderRadius: 16,
     padding: spacing.lg,
+    // Soft Google-style lift.
+    shadowColor: '#202124',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
   },
   compact: {
     padding: spacing.md,

@@ -1,66 +1,74 @@
 /**
- * GitHub-inspired dark palette, ported from the web frontend so the mobile
- * app matches it 1:1. Kept as flat constants (no theming lib) for a clean
- * bare React Native setup.
+ * Google-style light palette — mirrors the web frontend's `@theme` tokens so
+ * the mobile app matches it 1:1. Solid colors only (no gradients); the historic
+ * key *names* are preserved but their *values* are remapped to light so every
+ * consumer flips automatically.
+ *
+ * Convention: the base key (e.g. `success`) is the pure Google hue used for
+ * fills/icons; `*Emphasis` is the darker variant for text/links on white; and
+ * `*Subtle` is a SOLID opaque tint (no alpha) used for chip/banner backgrounds
+ * so the page never bleeds through.
+ *
+ * Palette: blue #4285F4 · green #34A853 · yellow #FBBC05 · red #EA4335
  */
 
 export const colors = {
   // Surfaces
-  canvas: '#0d1117', // page background
-  surface: '#161b22', // cards / subtle panels
-  inset: '#010409', // deepest inset (code blocks, wells)
-  surfaceHover: '#1c2129',
+  canvas: '#ffffff', // page background
+  surface: '#f8f9fa', // cards / subtle panels
+  inset: '#f1f3f4', // deepest inset (wells, insets, chips)
+  surfaceHover: '#f1f3f4',
 
   // Borders
-  border: '#30363d',
-  borderMuted: '#21262d',
+  border: '#dadce0',
+  borderMuted: '#e8eaed',
 
-  // Text
-  text: '#e6edf3', // primary
-  textMuted: '#8b949e', // secondary
-  textSubtle: '#6e7681', // tertiary
-  textDisabled: '#484f58',
+  // Text (Google grey scale)
+  text: '#202124', // primary  (grey-900)
+  textMuted: '#5f6368', // secondary (grey-700)
+  textSubtle: '#80868b', // tertiary (grey-600)
+  textDisabled: '#b0b3b8',
 
-  // Accent (primary action)
-  accent: '#1f6feb',
-  accentEmphasis: '#388bfd',
-  accentSubtle: 'rgba(56,139,253,0.15)',
+  // Accent — Google blue
+  accent: '#4285f4', // fills, icons, primary action
+  accentEmphasis: '#1a73e8', // darker blue for text/links/active
+  accentSubtle: '#e8f0fe', // solid blue chip
 
-  // Success
-  success: '#238636',
-  successEmphasis: '#3fb950',
-  successSubtle: 'rgba(63,185,80,0.15)',
+  // Success — Google green
+  success: '#34a853',
+  successEmphasis: '#188038', // darker green for text on white
+  successSubtle: '#e6f4ea', // solid green chip
 
-  // Danger
-  danger: '#da3633',
-  dangerEmphasis: '#f85149',
-  dangerSubtle: 'rgba(248,81,73,0.15)',
+  // Danger — Google red
+  danger: '#ea4335',
+  dangerEmphasis: '#c5221f', // darker red for text on white
+  dangerSubtle: '#fce8e6', // solid red chip
 
-  // Warning
-  warning: '#9e6a03',
-  warningEmphasis: '#d29922',
-  warningSubtle: 'rgba(210,153,34,0.15)',
+  // Warning — Google yellow (pair with dark text; amber fg passes contrast)
+  warning: '#fbbc05',
+  warningEmphasis: '#b06000', // amber that passes contrast on white
+  warningSubtle: '#fef7e0', // solid yellow chip
 
-  // Role accents
-  roleAdmin: '#a371f7',
-  roleCoordinator: '#79c0ff',
-  roleMember: '#3fb950',
+  // Role accents (aligned to Google palette — no purple)
+  roleAdmin: '#ea4335', // red
+  roleCoordinator: '#4285f4', // blue
+  roleMember: '#34a853', // green
 
   // Neutral chip
-  neutralSubtle: 'rgba(139,148,158,0.15)',
+  neutralSubtle: '#f1f3f4',
 
   white: '#ffffff',
   black: '#000000',
   transparent: 'transparent',
 } as const;
 
-/** Contribution heatmap intensity ramp (low → high). */
+/** Contribution heatmap intensity ramp (low → high): white → Google-green. */
 export const heatmapRamp = [
-  '#161b22', // 0 — empty
-  '#0e4429',
-  '#006d32',
-  '#26a641',
-  '#39d353', // max
+  '#ebedf0', // 0 — empty
+  '#b7e1c1',
+  '#6dc287',
+  '#34a853',
+  '#188038', // max
 ] as const;
 
 export type ColorName = keyof typeof colors;

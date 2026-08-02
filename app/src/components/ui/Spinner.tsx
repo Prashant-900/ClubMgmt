@@ -1,6 +1,7 @@
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { colors, spacing, typography } from '../../theme';
+import { GdscLoader } from './GdscLoader';
 
 interface SpinnerProps {
   /** Center in the available space (fills flex). */
@@ -9,10 +10,15 @@ interface SpinnerProps {
   size?: 'small' | 'large';
 }
 
+/**
+ * Loading indicator. Uses the GDSC 7-dot morph loader (same as the web app) so
+ * loading states feel consistent across platforms. `size` maps to the loader
+ * board scale: 'small' for inline spots, 'large' for full-screen fills.
+ */
 export function Spinner({ fill = false, label, size = 'large' }: SpinnerProps) {
   return (
     <View style={[styles.wrap, fill && styles.fill]}>
-      <ActivityIndicator size={size} color={colors.accent} />
+      <GdscLoader size={size === 'small' ? 0.4 : 0.7} />
       {label ? <Text style={styles.label}>{label}</Text> : null}
     </View>
   );

@@ -12,6 +12,8 @@ import type { Role, User } from '../types';
 import {
   setAccessToken,
   setUnauthorizedHandler,
+  loadPersistedRefreshCookie,
+  clearPersistedRefreshCookie,
 } from '../api/client';
 import * as authApi from '../api/auth.api';
 import {
@@ -69,6 +71,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAccessToken(null);
     setToken(null);
     setUser(null);
+    // Forget the persisted refresh cookie so a later boot can't restore it.
+    void clearPersistedRefreshCookie();
   }, []);
 
   const setSession = useCallback(async (freshToken: string) => {
@@ -124,6 +128,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     (async () => {
       try {
+        // Restore the persisted refresh cookie first so the refresh call below
+        // can authenticate even after a cold start / app reinstall.
+        await loadPersistedRefreshCookie();
         const res = await authApi.refreshSession();
         const freshToken = res.data?.token ?? null;
         if (!freshToken) {

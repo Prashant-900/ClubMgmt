@@ -384,7 +384,8 @@ export function ClubGrid({
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search clubs…"
             aria-label="Search clubs"
-            className="gh-input pl-9"
+            className="gh-input"
+            style={{ paddingLeft: 36 }}
           />
         </div>
       )}

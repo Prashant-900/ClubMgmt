@@ -1,5 +1,7 @@
 export * from './ui';
 export { Avatar } from './Avatar';
+export { BracketMark } from './BracketMark';
+export { ProfileWaveBanner } from './ProfileWaveBanner';
 export { StatCard } from './StatCard';
 export { StatGrid } from './StatGrid';
 export { SectionHeader } from './SectionHeader';

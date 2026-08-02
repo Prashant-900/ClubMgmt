@@ -91,7 +91,7 @@ const SIZES: Record<Size, { py: number; px: number; font: number }> = {
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: radius.md,
+    borderRadius: radius.pill,
     borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',

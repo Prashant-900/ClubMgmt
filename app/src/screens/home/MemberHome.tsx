@@ -6,6 +6,7 @@ import {
   Card,
   ContributionCard,
   HeatmapGrid,
+  ProfileWaveBanner,
   SectionHeader,
   Screen,
   Spinner,
@@ -130,11 +131,28 @@ export function MemberHome() {
     .sort((a, b) => b.datePerformed.localeCompare(a.datePerformed))
     .slice(0, 8);
 
+  const displayName = user?.name || user?.email || '';
+  const initials = (
+    user?.name
+      ? user.name.split(' ').map((w) => w[0]).join('')
+      : user?.email?.[0] ?? '?'
+  )
+    .toUpperCase()
+    .slice(0, 2);
+
   return (
     <Screen onRefresh={onRefresh} refreshing={refreshing}>
+      {/* Google-vibe welcome banner — solid blue card with drifting
+          green/red/yellow wave ribbons + white initials (mirrors web home). */}
+      <ProfileWaveBanner
+        initials={initials}
+        onPress={() => navigation.navigate('Profile')}
+      />
       <View style={styles.greeting}>
         <Text style={styles.hi}>Welcome back</Text>
-        <Text style={styles.name}>{user?.name || user?.email}</Text>
+        <Text style={styles.name} numberOfLines={1}>
+          {displayName}
+        </Text>
       </View>
 
       <StatGrid>
@@ -143,7 +161,11 @@ export function MemberHome() {
           value={formatHours(data.approvedHours)}
           valueColor={colors.successEmphasis}
         />
-        <StatCard label="Approved" value={data.approvedCount} />
+        <StatCard
+          label="Approved"
+          value={data.approvedCount}
+          valueColor={colors.accentEmphasis}
+        />
         <StatCard
           label="Pending"
           value={data.pendingCount}
@@ -152,7 +174,7 @@ export function MemberHome() {
         <StatCard
           label="Club Rank"
           value={data.rank != null ? `#${data.rank}` : '—'}
-          valueColor={colors.roleCoordinator}
+          valueColor={colors.dangerEmphasis}
         />
       </StatGrid>
 
@@ -209,6 +231,7 @@ export function MemberHome() {
 
 const styles = StyleSheet.create({
   greeting: {
+    marginTop: spacing.md,
     marginBottom: spacing.lg,
   },
   hi: {

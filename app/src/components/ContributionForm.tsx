@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
   notice: {
     backgroundColor: colors.accentSubtle,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: `${colors.accentEmphasis}55`,
+    borderColor: colors.accentEmphasis,
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.lg,

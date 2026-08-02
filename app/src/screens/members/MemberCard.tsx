@@ -299,10 +299,10 @@ export function MemberCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.canvas,
     borderColor: colors.border,
     borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: radius.md,
+    borderRadius: 16,
     marginBottom: spacing.sm,
     overflow: 'hidden',
   },
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
   },
   pendingChip: {
     backgroundColor: colors.warningSubtle,
-    borderColor: `${colors.warningEmphasis}4d`,
+    borderColor: colors.warningEmphasis,
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: radius.pill,
     paddingHorizontal: spacing.sm,
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.canvas,
   },
   chipSelected: {
     backgroundColor: colors.accentSubtle,

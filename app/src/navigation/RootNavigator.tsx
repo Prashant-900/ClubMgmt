@@ -1,9 +1,10 @@
-import React from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { RootStackParamList } from './types';
 import { useAuth } from '../context/AuthContext';
 import { colors } from '../theme';
+import { GdscLoader } from '../components/ui';
 import { AuthNavigator } from './AuthNavigator';
 import { TabNavigator } from './TabNavigator';
 import { ContributionDetailScreen } from '../screens/contributions/ContributionDetailScreen';
@@ -21,7 +22,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 function BootSplash() {
   return (
     <View style={styles.splash}>
-      <ActivityIndicator size="large" color={colors.accentEmphasis} />
+      <GdscLoader size={0.85} />
     </View>
   );
 }
@@ -31,11 +32,26 @@ function BootSplash() {
  *  - while the session is resolving → boot splash
  *  - no user → the auth (Login) stack
  *  - signed in → bottom tabs, with detail/form screens pushed on top.
+ *
+ * Minimum time (ms) the boot splash stays up so the GDSC animation is always
+ * visible on a cold start — otherwise a fast refresh call would flash it away
+ * before the user ever sees it (this is the "I don't see the loading screen"
+ * complaint). Mirrors the web LoadingOverlay's minimum-visible window.
  */
+const MIN_SPLASH_MS = 1600;
+
 export function RootNavigator() {
   const { user, loading } = useAuth();
 
-  if (loading) {
+  // Hold the splash for at least MIN_SPLASH_MS from mount, independent of how
+  // quickly `loading` resolves, so the loader animation actually shows.
+  const [minElapsed, setMinElapsed] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setMinElapsed(true), MIN_SPLASH_MS);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (loading || !minElapsed) {
     return <BootSplash />;
   }
 
@@ -46,9 +62,9 @@ export function RootNavigator() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: colors.surface },
-        headerTintColor: colors.text,
-        headerTitleStyle: { color: colors.text },
+        headerStyle: { backgroundColor: colors.canvas },
+        headerTintColor: colors.accentEmphasis,
+        headerTitleStyle: { color: colors.text, fontWeight: '600' },
         headerShadowVisible: false,
         contentStyle: { backgroundColor: colors.canvas },
       }}>

@@ -1,8 +1,9 @@
 "use client";
 
-// CustomCursor.tsx — desktop-only two-tone arrow cursor.
-// A tilted arrow (like a native pointer) built from two chevron arms: the upper
-// arm is Google blue, the lower arm is Google red. It tracks the pointer with
+// CustomCursor.tsx — desktop-only four-tone arrow cursor.
+// A tilted arrow (like a native pointer) built from two chevron arms, each split
+// into two colored segments so all four Google colors show: the left arm runs
+// red → blue and the right arm runs green → yellow. It tracks the pointer with
 // zero smoothing (position is written straight from the mousemove event, so
 // there is no trailing lag) and nudges a little larger over clickable elements.
 //
@@ -69,9 +70,10 @@ export function CustomCursor() {
       style={{ opacity: visible ? 1 : 0 }}
     >
       {/* Tilted arrow pointer whose tip (vertex) sits at the top and points
-          up. Built from two arms meeting at the top vertex (11,3): the left
-          arm is Google blue, the right arm is Google red. The vertex is placed
-          on the pointer hotspot. */}
+          up. Built from two arms meeting at the top vertex (11,3). Each arm is
+          split into two segments so all four Google colors appear: the LEFT arm
+          runs red → blue (tip → tail), the RIGHT arm runs green → yellow. The
+          vertex is placed on the pointer hotspot. */}
       <svg
         width="20"
         height="20"
@@ -83,17 +85,31 @@ export function CustomCursor() {
           transformOrigin: "11px 3px",
         }}
       >
-        {/* left arm — Google blue */}
+        {/* left arm, lower half — Google blue */}
         <path
-          d="M11 3 L4 20"
+          d="M7.5 11.5 L4 20"
           stroke="#4285f4"
           strokeWidth="4"
           strokeLinecap="round"
         />
-        {/* right arm — Google red */}
+        {/* left arm, upper half — Google red */}
         <path
-          d="M11 3 L18 20"
+          d="M11 3 L7.5 11.5"
           stroke="#ea4335"
+          strokeWidth="4"
+          strokeLinecap="round"
+        />
+        {/* right arm, upper half — Google green */}
+        <path
+          d="M11 3 L14.5 11.5"
+          stroke="#34a853"
+          strokeWidth="4"
+          strokeLinecap="round"
+        />
+        {/* right arm, lower half — Google yellow */}
+        <path
+          d="M14.5 11.5 L18 20"
+          stroke="#fbbc05"
           strokeWidth="4"
           strokeLinecap="round"
         />

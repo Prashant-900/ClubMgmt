@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
   },
   unverified: {
     backgroundColor: colors.warningSubtle,
-    borderColor: `${colors.warningEmphasis}66`,
+    borderColor: colors.warningEmphasis,
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: 999,
     paddingHorizontal: spacing.sm,

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Button, Screen } from '../../components';
+import { BracketMark, Button, Screen } from '../../components';
 import { useAuth } from '../../context/AuthContext';
 import { colors, radius, spacing, typography } from '../../theme';
 
@@ -26,7 +26,7 @@ export function LoginScreen() {
     <Screen scroll={false} contentStyle={styles.content}>
       <View style={styles.hero}>
         <View style={styles.logo}>
-          <Text style={styles.logoText}>CM</Text>
+          <BracketMark size={34} />
         </View>
 
         <Text style={styles.title}>Sign in to ClubMgmt</Text>
@@ -67,17 +67,15 @@ const styles = StyleSheet.create({
   logo: {
     width: 72,
     height: 72,
-    borderRadius: radius.xl,
-    backgroundColor: colors.accentSubtle,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: `${colors.accentEmphasis}55`,
+    borderRadius: radius.lg,
+    // Transparent box with a rounded outline — the four-color </> mark sits
+    // inside it (mirrors the web header logo).
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.xl,
-  },
-  logoText: {
-    ...typography.h1,
-    color: colors.accentEmphasis,
   },
   title: {
     ...typography.h1,

@@ -1,21 +1,80 @@
 import { ENV } from '../config/env';
 import type { ApiResponse } from '../types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
  * ClubMgmt mobile API client.
  *
  * Mirrors the web client (frontend/lib/api/client.ts) so the request/refresh
- * contract stays identical, with two React-Native-specific adaptations:
+ * contract stays identical, with React-Native-specific adaptations:
  *
  *  1. There is no `window` / router at module scope, so instead of
  *     `window.location.replace("/login")` on an unrecoverable 401 we invoke a
  *     callback that the AuthProvider registers via `setUnauthorizedHandler`.
- *  2. Cookies are handled automatically by the native HTTP stack's persistent
- *     cookie jar, so the web's `credentials: "include"` is unnecessary — the
- *     HttpOnly `clubmgmt.refresh` cookie rides along on every request on its own.
+ *  2. The web relies on the browser's cookie store for the HttpOnly
+ *     `clubmgmt.refresh` cookie. React Native's native cookie jar is NOT
+ *     reliably persisted across app restarts (and is cleared on reinstall), so
+ *     we persist that one cookie ourselves in AsyncStorage: we capture it from
+ *     `Set-Cookie` on every response and replay it as a `Cookie` header on every
+ *     request. This is what keeps the user signed in between launches.
  */
 
 const API_BASE_URL = ENV.API_BASE_URL;
+
+// ── Persistent refresh cookie (mirrors the web HttpOnly cookie) ──
+const REFRESH_COOKIE_NAME = 'clubmgmt.refresh';
+const REFRESH_STORAGE_KEY = '@clubmgmt/refresh-cookie';
+
+// Cached in memory so requests don't await AsyncStorage on the hot path; kept in
+// sync with storage. `undefined` = not loaded yet, `null` = known-absent.
+let refreshCookieValue: string | null | undefined = undefined;
+
+/** Load the persisted refresh cookie into memory (call once on boot). */
+export async function loadPersistedRefreshCookie(): Promise<void> {
+  try {
+    refreshCookieValue = (await AsyncStorage.getItem(REFRESH_STORAGE_KEY)) ?? null;
+  } catch {
+    refreshCookieValue = null;
+  }
+}
+
+async function persistRefreshCookie(value: string | null): Promise<void> {
+  refreshCookieValue = value;
+  try {
+    if (value) {
+      await AsyncStorage.setItem(REFRESH_STORAGE_KEY, value);
+    } else {
+      await AsyncStorage.removeItem(REFRESH_STORAGE_KEY);
+    }
+  } catch {
+    // Storage failure is non-fatal — the in-memory value still works this run.
+  }
+}
+
+/** Extract & persist the refresh cookie from a response's Set-Cookie header. */
+function captureRefreshCookie(response: Response): void {
+  // RN merges multiple Set-Cookie headers into one comma-joined string.
+  const raw =
+    response.headers.get('set-cookie') ?? response.headers.get('Set-Cookie');
+  if (!raw) return;
+
+  // Find the `clubmgmt.refresh=...` pair anywhere in the (possibly merged) value.
+  const match = raw.match(new RegExp(`${REFRESH_COOKIE_NAME}=([^;,]+)`));
+  if (!match) return;
+
+  const value = match[1];
+  // An explicit clear (empty value / Max-Age=0 / expired) removes it.
+  const cleared =
+    value === '' ||
+    /Max-Age=0/i.test(raw) ||
+    /expires=Thu, 01 Jan 1970/i.test(raw);
+  void persistRefreshCookie(cleared ? null : `${REFRESH_COOKIE_NAME}=${value}`);
+}
+
+/** Clear the persisted refresh cookie (on logout / unrecoverable 401). */
+export async function clearPersistedRefreshCookie(): Promise<void> {
+  await persistRefreshCookie(null);
+}
 
 // ── In-memory access token (never persisted to disk / AsyncStorage) ──
 let accessToken: string | null = null;
@@ -142,6 +201,12 @@ export async function apiRequest<T>(
     requestHeaders.Authorization = `Bearer ${effectiveToken}`;
   }
 
+  // Replay the persisted refresh cookie so the native cookie jar doesn't need
+  // to survive restarts. Only sent for the auth endpoints that use it.
+  if (refreshCookieValue && endpoint.startsWith('/auth/')) {
+    requestHeaders.Cookie = refreshCookieValue;
+  }
+
   const fetchOptions: RequestInit = {
     method,
     headers: requestHeaders,
@@ -160,6 +225,9 @@ export async function apiRequest<T>(
       err instanceof Error ? err.message : 'Network request failed';
     throw { success: false, message } as ApiError;
   }
+
+  // Capture + persist any refresh-cookie rotation before anything else.
+  captureRefreshCookie(response);
 
   // Some endpoints (e.g. logout) may return an empty body.
   let data: (ApiResponse<T> & { message?: string }) | null = null;

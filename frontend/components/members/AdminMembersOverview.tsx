@@ -164,7 +164,8 @@ export function AdminMembersOverview() {
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Search members…"
           aria-label="Search members"
-          className="gh-input pl-9"
+          className="gh-input"
+          style={{ paddingLeft: 36 }}
         />
       </div>
 

@@ -33,7 +33,7 @@ export function BlockedState({
   const palette = TONE_COLORS[tone];
   return (
     <View style={styles.wrap}>
-      <View style={[styles.card, { backgroundColor: palette.bg, borderColor: `${palette.fg}55` }]}>
+      <View style={[styles.card, { backgroundColor: palette.bg, borderColor: palette.fg }]}>
         <Text style={[styles.title, { color: palette.fg }]}>{title}</Text>
         {message ? <Text style={styles.message}>{message}</Text> : null}
         {actionLabel && onAction ? (
