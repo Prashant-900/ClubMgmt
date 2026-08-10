@@ -122,7 +122,7 @@ export function Navbar() {
             <LogoMark className="w-5 h-5" />
           </div>
           <span className="text-[17px] font-semibold text-fg hidden sm:block font-display tracking-tight">
-            ClubMgmt
+            GDG
           </span>
         </Link>
 

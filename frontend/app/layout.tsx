@@ -30,21 +30,21 @@ const jetbrains = JetBrains_Mono({
 });
 
 const APP_DESCRIPTION =
-  "Track and approve club contributions across your college organization. " +
-  "ClubMgmt gives admins, coordinators, and members a shared, role-based view " +
+  "Track and manage contributions across GDG on Campus. " +
+  "Admins, coordinators, and members get a shared, role-based view " +
   "of who is contributing, how much, and when.";
 
 export const metadata: Metadata = {
   title: {
-    default: "ClubMgmt",
-    template: "%s · ClubMgmt",
+    default: "GDG",
+    template: "%s · GDG",
   },
   description: APP_DESCRIPTION,
-  applicationName: "ClubMgmt",
+  applicationName: "GDG",
   openGraph: {
     type: "website",
-    siteName: "ClubMgmt",
-    title: "ClubMgmt",
+    siteName: "GDG",
+    title: "GDG",
     description: APP_DESCRIPTION,
   },
 };

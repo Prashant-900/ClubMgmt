@@ -4,7 +4,7 @@
  *
  * Auth model (C-04): the short-lived access token lives ONLY in memory — never
  * in localStorage, so an XSS payload can't read it. The long-lived credential is
- * the HttpOnly `clubmgmt.refresh` cookie, which JS can't touch. Every request is
+ * the HttpOnly `gdg.refresh` cookie, which JS can't touch. Every request is
  * sent with `credentials: "include"` so that cookie rides along. When a call
  * returns 401, we transparently hit `POST /auth/refresh` (which rotates the
  * cookie and returns a fresh access token) exactly once and retry the original

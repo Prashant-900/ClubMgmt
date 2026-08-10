@@ -1,4 +1,4 @@
-// icons/index.tsx — inline SVG icon system for ClubMgmt (Google-style, stroke-based).
+// icons/index.tsx — inline SVG icon system for GDG (Google-style, stroke-based).
 // All icons accept standard SVG props (className, strokeWidth, etc.) and inherit
 // `currentColor`, so color them with Tailwind text-* utilities.
 

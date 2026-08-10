@@ -20,7 +20,7 @@ async function getProfile(req, res, next) {
 
 // Deep-link schemes the mobile app is allowed to be bounced back to. Kept as an
 // allowlist so the `redirect` param can never be abused as an open redirect.
-const MOBILE_REDIRECT_ALLOWLIST = ["clubmgmt://"];
+const MOBILE_REDIRECT_ALLOWLIST = ["gdg://"];
 
 function isAllowedMobileRedirect(value) {
   return (
@@ -35,7 +35,7 @@ async function googleLogin(req, res, next) {
     const redirectUrl = new URL(authService.getGoogleAuthUrl());
 
     // Additive mobile branch: when the React Native app initiates sign-in it
-    // passes a `redirect` deep link (e.g. clubmgmt://auth/callback). We fold
+    // passes a `redirect` deep link (e.g. gdg://auth/callback). We fold
     // both the invite token and that deep link into the OAuth `state` param as
     // JSON. The web flow sends no `redirect`, so `state` stays a bare invite
     // token string exactly as before — the callback handles both shapes.

@@ -9,7 +9,7 @@
  * cannot read, so an XSS payload cannot exfiltrate a long-lived credential.
  */
 
-const REFRESH_COOKIE_NAME = "clubmgmt.refresh";
+const REFRESH_COOKIE_NAME = "gdg.refresh";
 
 /**
  * Parse the Cookie header into `req.cookies`.

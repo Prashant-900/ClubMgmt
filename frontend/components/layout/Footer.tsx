@@ -141,10 +141,10 @@ export function Footer() {
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-700 
                             flex items-center justify-center">
-              <span className="text-white text-[10px] font-extrabold">CM</span>
+              <span className="text-white text-[10px] font-extrabold">GDG</span>
             </div>
             <span className="hidden sm:block text-xs font-medium text-gray-500">
-              ClubMgmt
+              GDG
             </span>
           </div>
         </div>

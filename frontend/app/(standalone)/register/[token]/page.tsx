@@ -46,7 +46,7 @@ export default function RegisterPage() {
   const [linkError, setLinkError] = useState<string | null>(null);
   const [attemptedAppOpen, setAttemptedAppOpen] = useState(false);
 
-  const appDeepLink = `clubmgmt://invite/${encodeURIComponent(inviteToken)}`;
+  const appDeepLink = `gdg://invite/${encodeURIComponent(inviteToken)}`;
 
   const handleGoogleSignup = () => {
     window.location.href = `${API_BASE_URL}/auth/google?inviteToken=${encodeURIComponent(inviteToken)}`;
@@ -144,11 +144,11 @@ export default function RegisterPage() {
         <div className="flex flex-col items-center mb-8">
           <div className="w-12 h-12 bg-gh-canvas-subtle border border-gh-border-default rounded-lg flex items-center justify-center mb-4">
             <span className="text-base font-extrabold text-gh-text-primary font-mono tracking-tight">
-              CM
+              GDG
             </span>
           </div>
           <h1 className="text-xl font-semibold text-gh-text-primary text-center">
-            Join {link?.club?.name ?? "ClubMgmt"}
+            Join {link?.club?.name ?? "GDG"}
           </h1>
           <p className="text-sm text-gh-text-secondary mt-1.5 flex items-center gap-1.5">
             You&apos;ve been invited as

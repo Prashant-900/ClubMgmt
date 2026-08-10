@@ -40,7 +40,7 @@ export default function GlobalError({
   return (
     <html lang="en">
       <body className="min-h-screen bg-gh-canvas-default text-gh-text-primary antialiased">
-        <title>Something went wrong · ClubMgmt</title>
+        <title>Something went wrong · GDG</title>
         <div className="min-h-screen flex items-center justify-center px-4 py-12">
           <div className="w-full max-w-md bg-gh-canvas-subtle border border-gh-border-default rounded-lg p-6 animate-scale-in">
             <h1 className="text-base font-semibold text-gh-text-primary">
@@ -49,7 +49,7 @@ export default function GlobalError({
             <p className="mt-1 text-sm text-gh-text-secondary">
               {isDev
                 ? "The application shell failed to render."
-                : "ClubMgmt could not load. Trying again usually fixes it."}
+                : "GDG could not load. Trying again usually fixes it."}
             </p>
 
             {isDev && error.message ? (
