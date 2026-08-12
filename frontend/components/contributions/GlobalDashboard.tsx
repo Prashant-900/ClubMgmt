@@ -74,7 +74,7 @@ export function GlobalDashboard({ clubs = [] }: GlobalDashboardProps) {
           onChange={(e) => setSelectedClubId(e.target.value)}
           className="gh-select focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gh-accent-emphasis"
         >
-          <option value="">All clubs</option>
+          <option value="">All domains</option>
           {clubs.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
@@ -153,7 +153,7 @@ export function GlobalDashboard({ clubs = [] }: GlobalDashboardProps) {
               <div className="bg-white border border-[#dadce0] rounded-2xl p-5 ui-card-hover">
                 <h3 className="flex items-center gap-2 text-sm font-semibold text-gh-text-primary mb-4">
                   <span className="w-1 h-4 rounded-full bg-[#4285f4]" />
-                  Top Clubs
+                  Top Domains
                 </h3>
                 <div className="space-y-3">
                   {data.topClubs.map((entry, i) => {

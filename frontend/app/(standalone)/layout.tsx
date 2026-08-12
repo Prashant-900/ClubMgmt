@@ -6,8 +6,8 @@ import "../globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Join a club",
-  description: "Register with your invite link to join a club.",
+  title: "Join a domain",
+  description: "Register with your invite link to join a domain.",
 };
 
 /**

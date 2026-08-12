@@ -228,7 +228,7 @@ function ContributionDetailContent() {
               )
             }
           />
-          <MetaField label="Club" value={contribution.club?.name ?? "—"} />
+          <MetaField label="Domain" value={contribution.club?.name ?? "—"} />
 
           {contribution.approvedBy && (
             <MetaField

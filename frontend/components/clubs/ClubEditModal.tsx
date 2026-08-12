@@ -89,10 +89,10 @@ export function ClubEditModal({ club, onCancel, onSaved }: ClubEditModalProps) {
     let valid = true;
 
     if (!trimmedName) {
-      setNameError("Club name is required");
+      setNameError("Domain name is required");
       valid = false;
     } else if (trimmedName.length > CLUB_NAME_MAX) {
-      setNameError(`Club name must be ${CLUB_NAME_MAX} characters or fewer`);
+      setNameError(`Domain name must be ${CLUB_NAME_MAX} characters or fewer`);
       valid = false;
     } else {
       setNameError(null);
@@ -138,7 +138,7 @@ export function ClubEditModal({ club, onCancel, onSaved }: ClubEditModalProps) {
         onSaved({ ...club, ...payload });
       }
     } catch (err: unknown) {
-      const message = getApiErrorMessage(err, "Failed to update club");
+      const message = getApiErrorMessage(err, "Failed to update domain");
       // 409 = duplicate name; surface it on the field, not as a page banner
       if (getApiErrorStatus(err) === 409) {
         setNameError(message);
@@ -173,7 +173,7 @@ export function ClubEditModal({ club, onCancel, onSaved }: ClubEditModalProps) {
                    rounded-lg shadow-2xl shadow-black/50 p-5 animate-scale-in"
       >
         <h2 id={titleId} className="text-base font-semibold text-gh-text-primary">
-          Edit club
+          Edit domain
         </h2>
         <p className="mt-1 text-xs text-gh-text-tertiary">
           Members, contributions and invite links are unaffected.
@@ -183,7 +183,7 @@ export function ClubEditModal({ club, onCancel, onSaved }: ClubEditModalProps) {
         <div className="mt-4">
           <div className="flex items-baseline justify-between gap-2">
             <label htmlFor={nameId} className="text-xs font-medium text-gh-text-secondary">
-              Club name
+              Domain name
             </label>
             <span
               className={`text-[11px] tabular-nums ${
@@ -201,7 +201,7 @@ export function ClubEditModal({ club, onCancel, onSaved }: ClubEditModalProps) {
               setName(e.target.value);
               setNameError(null);
             }}
-            placeholder="e.g. Robotics Club"
+            placeholder="e.g. Robotics Domain"
             aria-invalid={nameError ? true : undefined}
             className="gh-input mt-1.5"
           />
@@ -233,7 +233,7 @@ export function ClubEditModal({ club, onCancel, onSaved }: ClubEditModalProps) {
               setDescriptionError(null);
             }}
             rows={4}
-            placeholder="What does this club do?"
+            placeholder="What does this domain do?"
             aria-invalid={descriptionError ? true : undefined}
             className="gh-input mt-1.5 resize-y leading-relaxed"
           />

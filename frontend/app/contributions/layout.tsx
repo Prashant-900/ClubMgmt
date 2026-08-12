@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 export const metadata: Metadata = {
   title: "Contributions",
   description:
-    "Browse, filter, and review contributions submitted by club members.",
+    "Browse, filter, and review contributions submitted by domain members.",
 };
 
 export default function ContributionsLayout({

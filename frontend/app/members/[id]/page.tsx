@@ -292,7 +292,7 @@ function MemberProfileContent({ memberId }: { memberId: string }) {
         <BlockedState
           tone="warning"
           title="Profile not available"
-          message="You can only view members from your own club."
+          message="You can only view members from your own domain."
         />
       );
     }
@@ -396,9 +396,9 @@ function MemberProfileContent({ memberId }: { memberId: string }) {
             )}
           </MetaField>
           <MetaField label="Role">{roleLabel(profile.role)}</MetaField>
-          <MetaField label="Club">
+          <MetaField label="Domain">
             {profile.club?.name ?? (
-              <span className="text-gh-text-tertiary">No club assigned</span>
+              <span className="text-gh-text-tertiary">No domain assigned</span>
             )}
           </MetaField>
           <MetaField label="Joined">{formatDate(profile.createdAt)}</MetaField>
@@ -557,7 +557,7 @@ function MemberProfileContent({ memberId }: { memberId: string }) {
 
 const ROLE_LABELS: Record<Role, string> = {
   ADMIN: "Administrator",
-  COORDINATOR: "Club coordinator",
+  COORDINATOR: "Domain coordinator",
   MEMBER: "Member",
 };
 

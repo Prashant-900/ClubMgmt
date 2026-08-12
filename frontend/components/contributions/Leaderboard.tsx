@@ -75,7 +75,7 @@ export function Leaderboard({ clubId }: LeaderboardProps) {
         <div className="grid grid-cols-[40px_1fr_auto_auto_auto] gap-4 px-4 py-2 bg-[#f8f9fa] border-b border-[#dadce0] text-xs font-medium text-[#5f6368]">
           <span>#</span>
           <span>Member</span>
-          <span className="text-right hidden sm:block">Club</span>
+          <span className="text-right hidden sm:block">Domain</span>
           <span className="text-right">Hours</span>
           <span className="text-right hidden sm:block">Contrib.</span>
         </div>

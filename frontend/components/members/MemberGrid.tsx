@@ -238,7 +238,7 @@ export function MemberGrid({ clubId }: { clubId?: string }) {
       <ConfirmModal
         open={removeTargetId !== null}
         title="Remove member"
-        message="This member will lose access to the club. You can invite them again later."
+        message="This member will lose access to the domain. You can invite them again later."
         confirmLabel="Remove member"
         loading={removing}
         onConfirm={confirmRemove}

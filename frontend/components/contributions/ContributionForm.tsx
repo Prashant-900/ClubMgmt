@@ -160,7 +160,7 @@ export function ContributionForm({
     }
 
     if (!isEdit && isAdmin && clubs.length > 0 && !form.clubId)
-      return "Please select a club";
+      return "Please select a domain";
 
     return null;
   }
@@ -385,7 +385,7 @@ export function ContributionForm({
       {!isEdit && isAdmin && clubs.length > 0 && (
         <div className="space-y-1.5">
           <label htmlFor="contribution-club" className={labelClass}>
-            Club <span className="text-gh-danger-fg">*</span>
+            Domain <span className="text-gh-danger-fg">*</span>
           </label>
           <select
             id="contribution-club"
@@ -396,7 +396,7 @@ export function ContributionForm({
             aria-describedby={describedBy}
             required
           >
-            <option value="">Select a club…</option>
+            <option value="">Select a domain…</option>
             {clubs.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}

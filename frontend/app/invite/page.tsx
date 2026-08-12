@@ -23,7 +23,7 @@ export default function InvitePage() {
           <div className="hidden lg:block sticky top-28 self-start">
             <InviteAnimation />
             <p className="text-center text-xs text-[#80868b] mt-4">
-              Grow your club — every invite builds the community.
+              Grow your domain — every invite builds the community.
             </p>
           </div>
         </div>

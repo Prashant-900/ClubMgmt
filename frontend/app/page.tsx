@@ -105,10 +105,10 @@ interface ProfileSidebarProps {
 function ProfileSidebar({ user, stats, heatmapData, heatmapLabel }: ProfileSidebarProps) {
   const bio =
     user.role === "COORDINATOR"
-      ? `${user.club?.name ?? "Club"} Coordinator`
+      ? `${user.club?.name ?? "Domain"} Coordinator`
       : user.role === "ADMIN"
       ? "System Administrator"
-      : `Member of ${user.club?.name ?? "a club"}`;
+      : `Member of ${user.club?.name ?? "a domain"}`;
 
   const initials = (user.name
     ? user.name.split(" ").map((w) => w[0]).join("")
@@ -240,7 +240,7 @@ function MemberHome() {
     { label: "Approved", value: contributionsError ? "—" : approved.length },
     { label: "Pending", value: contributionsError ? "—" : pending.length },
     {
-      label: "Club Rank",
+      label: "Domain Rank",
       value: rank != null ? `#${rank}` : "—",
       error: rankError,
       onRetry: rankError ? loadData : undefined,
@@ -327,7 +327,7 @@ function MemberHome() {
           {user.club && (
             <section>
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-semibold text-[#202124]">Club members</h2>
+                <h2 className="text-sm font-semibold text-[#202124]">Domain members</h2>
               </div>
               <div className="bg-[#f8f9fa] border border-[#dadce0] rounded-md p-4">
                 <MemberGrid clubId={user.club.id} />
@@ -382,7 +382,7 @@ function AdminHome() {
       setClubs(clubsRes.value.data ?? []);
     } else {
       setClubs([]);
-      setClubsError(getApiErrorMessage(clubsRes.reason, "Failed to load clubs"));
+      setClubsError(getApiErrorMessage(clubsRes.reason, "Failed to load domains"));
     }
     setClubsLoading(false);
 
@@ -441,7 +441,7 @@ function AdminHome() {
   // Each stat degrades on its own: a failed fetch shows "—" plus a retry link.
   const sidebarStats: SidebarStat[] = [
     {
-      label: "Total Clubs",
+      label: "Total Domains",
       value: clubsError ? "—" : clubs.length,
       error: clubsError,
       onRetry: clubsError ? loadData : undefined,
@@ -505,7 +505,7 @@ function AdminHome() {
                   : "border-transparent text-[#5f6368] hover:text-[#202124]"
               }`}
             >
-              Clubs
+              Domains
               <span className="ml-1.5 text-xs text-[#5f6368] font-normal">
                 {clubsLoading ? "…" : clubs.length}
               </span>
@@ -599,7 +599,7 @@ function ClubDrilldown({ clubId }: { clubId: string }) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </span>
-          Back to Clubs
+          Back to Domains
         </button>
 
         {loading ? (
@@ -625,7 +625,7 @@ function ClubDrilldown({ clubId }: { clubId: string }) {
                 <svg className="w-5 h-5 text-[#5f6368]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                 </svg>
-                <h1 className="text-xl font-bold text-[#202124]">{club?.name ?? "Club"}</h1>
+                <h1 className="text-xl font-bold text-[#202124]">{club?.name ?? "Domain"}</h1>
               </div>
               {club?.description && (
                 <p className="text-sm text-[#5f6368] mt-1.5 max-w-2xl">{club.description}</p>

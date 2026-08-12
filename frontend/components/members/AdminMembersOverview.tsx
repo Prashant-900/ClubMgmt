@@ -105,7 +105,7 @@ export function AdminMembersOverview() {
     } else {
       setClubs([]);
       setClubsError(
-        getApiErrorMessage(clubsResponse.reason, "Failed to load clubs — assign and promote are unavailable")
+        getApiErrorMessage(clubsResponse.reason, "Failed to load domains — assign and promote are unavailable")
       );
     }
 
@@ -183,7 +183,7 @@ export function AdminMembersOverview() {
                 Members
                 <span className="ml-2 text-xs text-[#5f6368] font-normal">{assignedTotal}</span>
               </h2>
-              <span className="text-xs text-[#80868b]">Assigned to a club</span>
+              <span className="text-xs text-[#80868b]">Assigned to a domain</span>
             </div>
 
             {assignedError ? (
@@ -221,7 +221,7 @@ export function AdminMembersOverview() {
                   Pending assignment
                   <span className="ml-2 text-xs text-[#5f6368] font-normal">{pendingTotal}</span>
                 </h2>
-                <span className="text-xs text-[#80868b]">Waiting for club assignment</span>
+                <span className="text-xs text-[#80868b]">Waiting for domain assignment</span>
               </div>
 
               {pendingError ? (

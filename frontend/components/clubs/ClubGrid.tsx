@@ -107,7 +107,7 @@ function ClubCard({ club, isAdmin, deleting, onEdit, onDelete }: ClubCardProps) 
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-[#202124] hover:bg-[#f1f3f4] transition-colors cursor-pointer"
               >
-                View Club
+                View Domain
               </button>
               {isAdmin && (
                 <button
@@ -118,7 +118,7 @@ function ClubCard({ club, isAdmin, deleting, onEdit, onDelete }: ClubCardProps) 
                   }}
                   className="w-full text-left px-4 py-2 text-sm text-[#202124] hover:bg-[#f1f3f4] transition-colors cursor-pointer"
                 >
-                  Edit club
+                  Edit domain
                 </button>
               )}
               {isAdmin && (
@@ -133,7 +133,7 @@ function ClubCard({ club, isAdmin, deleting, onEdit, onDelete }: ClubCardProps) 
                     }}
                     className="w-full text-left px-4 py-2 text-sm text-[#c5221f] hover:bg-[rgba(234,67,53,0.1)] transition-colors cursor-pointer disabled:opacity-50"
                   >
-                    {deleting ? "Deleting…" : "Delete Club"}
+                    {deleting ? "Deleting…" : "Delete Domain"}
                   </button>
                 </>
               )}
@@ -218,11 +218,11 @@ export function ClubGrid({
     const description = newDescription.trim();
 
     if (!name) {
-      setCreateError("Club name is required");
+      setCreateError("Domain name is required");
       return;
     }
     if (name.length > CLUB_NAME_MAX) {
-      setCreateError(`Club name must be ${CLUB_NAME_MAX} characters or fewer`);
+      setCreateError(`Domain name must be ${CLUB_NAME_MAX} characters or fewer`);
       return;
     }
     if (description.length > CLUB_DESCRIPTION_MAX) {
@@ -246,7 +246,7 @@ export function ClubGrid({
         onRefresh();
       }
     } catch (err: unknown) {
-      setCreateError(getApiErrorMessage(err, "Failed to create club"));
+      setCreateError(getApiErrorMessage(err, "Failed to create domain"));
     } finally {
       setCreating(false);
     }
@@ -263,7 +263,7 @@ export function ClubGrid({
       setDeleteTarget(null);
       onRefresh();
     } catch (err: unknown) {
-      setDeleteError(getApiErrorMessage(err, "Failed to delete club"));
+      setDeleteError(getApiErrorMessage(err, "Failed to delete domain"));
       setDeleteTarget(null);
     } finally {
       setDeletingId(null);
@@ -278,7 +278,7 @@ export function ClubGrid({
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-sm font-semibold text-[#202124]">
-          Clubs
+          Domains
           <span className="ml-2 text-xs text-[#5f6368] font-normal">
             {loading ? "…" : clubs.length}
           </span>
@@ -295,7 +295,7 @@ export function ClubGrid({
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
-            New Club
+            New Domain
           </button>
         )}
       </div>
@@ -307,7 +307,7 @@ export function ClubGrid({
           className="bg-[#f8f9fa] border border-[#dadce0] rounded-md p-4 animate-fade-in"
         >
           <div className="flex items-baseline justify-between gap-2">
-            <span className="text-xs text-[#5f6368] font-medium">Club name</span>
+            <span className="text-xs text-[#5f6368] font-medium">Domain name</span>
             <span
               className={`text-[11px] tabular-nums ${
                 newNameCount > CLUB_NAME_MAX ? "text-[#c5221f]" : "text-[#80868b]"
@@ -348,7 +348,7 @@ export function ClubGrid({
               setCreateError(null);
             }}
             rows={3}
-            placeholder="What does this club do?"
+            placeholder="What does this domain do?"
             className="gh-input mt-1.5 resize-y leading-relaxed"
           />
 
@@ -360,7 +360,7 @@ export function ClubGrid({
               disabled={creating}
               className="gh-btn gh-btn-primary gh-btn-sm min-h-[36px]"
             >
-              {creating ? "Creating…" : "Create club"}
+              {creating ? "Creating…" : "Create domain"}
             </button>
             <button
               type="button"
@@ -382,8 +382,8 @@ export function ClubGrid({
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search clubs…"
-            aria-label="Search clubs"
+            placeholder="Search domains…"
+            aria-label="Search domains"
             className="gh-input"
             style={{ paddingLeft: 36 }}
           />
@@ -401,7 +401,7 @@ export function ClubGrid({
       {error ? (
         <div className="px-4 py-3 rounded-md bg-[rgba(234,67,53,0.1)] border border-[rgba(234,67,53,0.3)] text-sm text-[#c5221f] flex items-center justify-between gap-4">
           <div>
-            <p className="font-medium">Could not load clubs</p>
+            <p className="font-medium">Could not load domains</p>
             <p className="text-xs text-[#c5221f]/70 mt-0.5">{error}</p>
           </div>
           <button
@@ -421,13 +421,13 @@ export function ClubGrid({
       ) : clubs.length === 0 ? (
         <div className="bg-[#f8f9fa] border border-[#dadce0] rounded-md p-12 text-center">
           <p className="text-sm text-[#5f6368]">
-            No clubs yet.{isAdmin ? " Create one to get started." : ""}
+            No domains yet.{isAdmin ? " Create one to get started." : ""}
           </p>
         </div>
       ) : filteredClubs.length === 0 ? (
         <div className="bg-[#f8f9fa] border border-[#dadce0] rounded-md p-12 text-center">
           <p className="text-sm text-[#5f6368]">
-            No clubs match “{debouncedSearch.trim()}”.
+            No domains match "{debouncedSearch.trim()}".
           </p>
         </div>
       ) : (
@@ -456,15 +456,15 @@ export function ClubGrid({
 
       <ConfirmModal
         open={deleteTarget !== null}
-        title="Delete club"
+        title="Delete domain"
         message={
           <>
             Delete <span className="text-gh-text-primary font-medium">{deleteTarget?.name}</span>?
-            This will remove the club, unassign its members, and delete related
+            This will remove the domain, unassign its members, and delete related
             invite links and contributions.
           </>
         }
-        confirmLabel="Delete club"
+        confirmLabel="Delete domain"
         loading={deletingId !== null}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteTarget(null)}

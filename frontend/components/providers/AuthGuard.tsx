@@ -62,14 +62,14 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
               Hey{user.name ? `, ${user.name.split(" ")[0]}` : ""}!
             </h1>
             <p className="text-sm text-[#5f6368]">
-              Your account is set up, but you haven&apos;t been assigned to a club yet.
+              Your account is set up, but you haven&apos;t been assigned to a domain yet.
             </p>
           </div>
 
           <div className="bg-[#f8f9fa] border border-[#dadce0] rounded-md p-4 text-left space-y-2">
             <p className="text-sm text-[#5f6368] leading-relaxed">
-              An admin will assign you to a club or promote you to a club lead.
-              Once that happens, you&apos;ll see your club&apos;s dashboard here.
+              An admin will assign you to a domain or promote you to a domain lead.
+              Once that happens, you&apos;ll see your domain&apos;s dashboard here.
             </p>
           </div>
 

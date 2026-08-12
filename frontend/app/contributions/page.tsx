@@ -37,7 +37,7 @@ function ContributionsContent() {
       setClubs(res.data ?? []);
     } catch (err: unknown) {
       setClubs([]);
-      setClubsError(getApiErrorMessage(err, "Failed to load clubs"));
+      setClubsError(getApiErrorMessage(err, "Failed to load domains"));
     }
   }, []);
 
@@ -51,7 +51,7 @@ function ContributionsContent() {
     { id: "mine",        label: "My contributions",  roles: ["ADMIN", "COORDINATOR", "MEMBER"] },
     { id: "pending",     label: "Pending approvals", roles: ["ADMIN", "COORDINATOR"] },
     { id: "members",     label: "Members",           roles: ["ADMIN", "COORDINATOR", "MEMBER"] },
-    { id: "club",        label: "Club contributions",roles: ["ADMIN", "COORDINATOR"] },
+    { id: "club",        label: "Domain contributions",roles: ["ADMIN", "COORDINATOR"] },
     { id: "analytics",   label: "Analytics",         roles: ["ADMIN", "COORDINATOR"] },
     { id: "leaderboard", label: "Leaderboard",       roles: ["ADMIN", "COORDINATOR", "MEMBER"] },
   ];
@@ -66,9 +66,9 @@ function ContributionsContent() {
           <h1 className="text-xl font-bold text-[#202124]">Contributions</h1>
           <p className="text-sm text-[#5f6368] mt-0.5">
             {isAdmin
-              ? "Global contribution management across all clubs"
+              ? "Global contribution management across all domains"
               : isCoordinator
-              ? `Contributions for ${user.club?.name ?? "your club"}`
+              ? `Contributions for ${user.club?.name ?? "your domain"}`
               : "Track and submit your completed work"}
           </p>
         </div>
@@ -118,7 +118,7 @@ function ContributionsContent() {
 
         {activeTab === "club" && (
           <RoleGate allowedRoles={["ADMIN", "COORDINATOR"]}>
-            <ContributionList showUser emptyMessage="No contributions in your club yet." />
+            <ContributionList showUser emptyMessage="No contributions in your domain yet." />
           </RoleGate>
         )}
 
@@ -130,7 +130,7 @@ function ContributionsContent() {
               <div className="space-y-4">
                 {clubsError && (
                   <div className="px-4 py-3 rounded-md bg-[#fce8e6] border border-[rgba(234,67,53,0.3)] text-sm text-[#c5221f] flex items-center justify-between gap-4">
-                    <span>{clubsError} — the club filter is unavailable.</span>
+                    <span>{clubsError} — the domain filter is unavailable.</span>
                     <button
                       type="button"
                       onClick={loadClubs}

@@ -201,7 +201,7 @@ export default function RegisterPage() {
           <p className="text-center text-xs text-gh-text-tertiary">
             {isMobileDevice()
               ? "If the app is installed, it will open automatically. Otherwise sign in here."
-              : "Sign in with the Google account you want to use for this club."}
+              : "Sign in with the Google account you want to use for this domain."}
           </p>
         </div>
 

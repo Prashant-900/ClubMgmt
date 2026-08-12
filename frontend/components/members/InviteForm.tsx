@@ -78,7 +78,7 @@ export function InviteLinkForm() {
     setCopied(false);
 
     if (isAdmin && !selectedClubId) {
-      setError("Please select a club.");
+      setError("Please select a domain.");
       return;
     }
 
@@ -177,8 +177,8 @@ export function InviteLinkForm() {
           </svg>
           <span>
             {isAdmin
-              ? <>As an <span className="text-[#1a73e8] font-medium">Admin</span>, you can create invite links for <span className="text-[#1a73e8] font-medium">Coordinators</span> or <span className="text-[#188038] font-medium">Members</span>. Select a club and role below.</>
-              : <>As a <span className="text-[#1a73e8] font-medium">Coordinator</span>, you can create invite links for <span className="text-[#188038] font-medium">Members</span>. They&apos;ll join your club automatically.</>
+              ? <>As an <span className="text-[#1a73e8] font-medium">Admin</span>, you can create invite links for <span className="text-[#1a73e8] font-medium">Coordinators</span> or <span className="text-[#188038] font-medium">Members</span>. Select a domain and role below.</>
+              : <>As a <span className="text-[#1a73e8] font-medium">Coordinator</span>, you can create invite links for <span className="text-[#188038] font-medium">Members</span>. They&apos;ll join your domain automatically.</>
             }
           </span>
         </div>
@@ -225,7 +225,7 @@ export function InviteLinkForm() {
               <label className="text-xs font-medium text-[#5f6368]">Inviting as</label>
               <div className="flex items-center gap-2 px-3 py-2.5 bg-[#ffffff] border border-[#dadce0] rounded-md">
                 <RoleBadge role="MEMBER" />
-                <span className="text-xs text-[#5f6368]">Basic club member access</span>
+                <span className="text-xs text-[#5f6368]">Basic domain member access</span>
               </div>
             </div>
           )}
@@ -234,7 +234,7 @@ export function InviteLinkForm() {
           {isAdmin && (
             <div className="space-y-1.5">
               <label htmlFor="club-select" className="text-xs font-medium text-[#5f6368]">
-                Club <span className="text-[#c5221f]">*</span>
+                Domain <span className="text-[#c5221f]">*</span>
               </label>
               <select
                 id="club-select"
@@ -243,7 +243,7 @@ export function InviteLinkForm() {
                 className="gh-select w-full py-2"
                 disabled={loading}
               >
-                {clubs.length === 0 && <option value="">No clubs available</option>}
+                {clubs.length === 0 && <option value="">No domains available</option>}
                 {clubs.map((club) => (
                   <option key={club.id} value={club.id}>{club.name}</option>
                 ))}
@@ -254,7 +254,7 @@ export function InviteLinkForm() {
           {/* Coordinator club hint */}
           {isCoordinator && user?.club && (
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-[#5f6368]">Club</label>
+              <label className="text-xs font-medium text-[#5f6368]">Domain</label>
               <div className="px-3 py-2 bg-[#ffffff] border border-[#dadce0] rounded-md text-sm text-[#202124] flex items-center justify-between">
                 <span>{user.club.name}</span>
                 <span className="text-xs text-[#80868b]">auto-assigned</span>

@@ -160,14 +160,14 @@ export function MemberCard({ member, onRemove, onRefresh, clubs = [], index = 0 
           {/* ASSIGN action — for users with no club */}
           {canAssign && clubs.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs font-medium text-[#b06000]">Assign to club</p>
+              <p className="text-xs font-medium text-[#b06000]">Assign to domain</p>
               <div className="flex items-center gap-2 flex-wrap">
                 <select
                   value={selectedClubId}
                   onChange={(e) => setSelectedClubId(e.target.value)}
                   className="gh-select text-xs flex-1 min-w-[120px]"
                 >
-                  <option value="">Select club…</option>
+                  <option value="">Select domain…</option>
                   {clubs.map((club) => (
                     <option key={club.id} value={club.id}>{club.name}</option>
                   ))}
@@ -199,7 +199,7 @@ export function MemberCard({ member, onRemove, onRefresh, clubs = [], index = 0 
                 <select
                   value={selectedClubId}
                   onChange={(e) => setSelectedClubId(e.target.value)}
-                  aria-label="Club to coordinate"
+                  aria-label="Domain to coordinate"
                   className="gh-select text-xs flex-1 min-w-[120px]"
                 >
                   {clubs.map((club) => (
@@ -218,7 +218,7 @@ export function MemberCard({ member, onRemove, onRefresh, clubs = [], index = 0 
               {/* Cross-club move warning — visible before the confirm step */}
               {isCrossClubPromotion && currentClub && (
                 <p className="text-xs text-[#b06000] bg-[rgba(251,188,5,0.15)] border border-[rgba(251,188,5,0.3)] rounded px-2 py-1.5">
-                  <span className="font-medium">Different club.</span>{" "}
+                  <span className="font-medium">Different domain.</span>{" "}
                   {displayName} is currently in {currentClub.name} — promoting them
                   here will move them out of it.
                 </p>
@@ -244,7 +244,7 @@ export function MemberCard({ member, onRemove, onRefresh, clubs = [], index = 0 
       {/* Cross-club promotion needs an explicit yes — it moves the member */}
       <ConfirmModal
         open={confirmCrossClub}
-        title="Move member to another club?"
+        title="Move member to another domain?"
         message={
           <>
             <span className="text-gh-text-primary font-medium">{displayName}</span> is
@@ -252,7 +252,7 @@ export function MemberCard({ member, onRemove, onRefresh, clubs = [], index = 0 
             <span className="text-gh-text-primary font-medium">{currentClub?.name}</span>.
             Promoting them to Coordinator of{" "}
             <span className="text-gh-text-primary font-medium">
-              {targetClub?.name ?? "the selected club"}
+              {targetClub?.name ?? "the selected domain"}
             </span>{" "}
             will move them out of{" "}
             <span className="text-gh-text-primary font-medium">{currentClub?.name}</span>.
