@@ -43,7 +43,7 @@ async function listMembers(
   } else if (requester?.role === "ADMIN") {
     if (clubId) {
       where.clubId = clubId;
-    } else if (clubStatus === "pending") {
+    } else if (clubStatus === "unassigned" || clubStatus === "pending") {
       where.clubId = null;
       // Exclude admins — they have no club by design
       where.role = { not: "ADMIN" };

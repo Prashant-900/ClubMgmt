@@ -753,6 +753,10 @@ async function getLeaderboard({ period = "all", clubId, page, limit } = {}, requ
     where.clubId = requester.clubId;
   } else if (requester.role === "ADMIN" && clubId) {
     where.clubId = clubId;
+  } else if (requester.role === "MEMBER" && requester.clubId) {
+    // Members see the leaderboard scoped to their own domain, so the
+    // "Domain Rank" shown in the app is a within-domain rank, not global.
+    where.clubId = requester.clubId;
   }
 
   const grouped = await prisma.contribution.groupBy({

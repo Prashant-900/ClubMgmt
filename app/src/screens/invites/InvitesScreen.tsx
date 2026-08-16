@@ -27,8 +27,19 @@ import { colors, radius, spacing, typography } from '../../theme';
 
 type InviteRole = Extract<Role, 'COORDINATOR' | 'MEMBER'>;
 
-function registerUrl(token: string): string {
+/** Deep link that opens the app directly on a device that has it installed. */
+function deepLinkUrl(token: string): string {
+  return `${ENV.DEEP_LINK_SCHEME}://invite/${token}`;
+}
+
+/** Web fallback for people who don't have the app installed yet. */
+function webUrl(token: string): string {
   return `${ENV.WEB_BASE_URL}/register/${token}`;
+}
+
+/** Share message: deep link first (opens the app), web URL as fallback. */
+function inviteShareMessage(token: string): string {
+  return `Join my domain on ClubMgmt!\nApp link: ${deepLinkUrl(token)}\nWeb: ${webUrl(token)}`;
 }
 
 function isExpired(expiresAt: string): boolean {
@@ -60,7 +71,7 @@ export function InvitesScreen() {
 
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
+  const [generatedToken, setGeneratedToken] = useState<string | null>(null);
 
   const [links, setLinks] = useState<InviteLink[]>([]);
   const [linksLoading, setLinksLoading] = useState(true);
@@ -104,7 +115,7 @@ export function InvitesScreen() {
 
   const handleGenerate = async () => {
     setError(null);
-    setGeneratedUrl(null);
+    setGeneratedToken(null);
 
     if (isAdmin && !selectedClubId) {
       setError('Please select a domain.');
@@ -120,7 +131,7 @@ export function InvitesScreen() {
         expiresInDays: clampInt(expiresInDays, 1, 30),
       });
       if (res.data) {
-        setGeneratedUrl(registerUrl(res.data.token));
+        setGeneratedToken(res.data.token);
         fetchLinks();
       }
     } catch (err) {
@@ -130,9 +141,13 @@ export function InvitesScreen() {
     }
   };
 
-  const shareUrl = async (url: string) => {
+  const shareInvite = async (token: string) => {
     try {
-      await Share.share({ message: url });
+      await Share.share({
+        message: inviteShareMessage(token),
+        // iOS uses the `url` field for the primary shared item.
+        url: deepLinkUrl(token),
+      });
     } catch {
       // User dismissed the share sheet — nothing to do.
     }
@@ -267,15 +282,15 @@ export function InvitesScreen() {
 
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-        {generatedUrl ? (
+        {generatedToken ? (
           <View style={styles.generated}>
             <Text style={styles.generatedTitle}>✓ Invite link created</Text>
             <Text style={styles.generatedUrl} numberOfLines={2}>
-              {generatedUrl}
+              {deepLinkUrl(generatedToken)}
             </Text>
             <Button
               title="Share link"
-              onPress={() => shareUrl(generatedUrl)}
+              onPress={() => shareInvite(generatedToken)}
               variant="secondary"
               size="sm"
             />
@@ -344,7 +359,7 @@ export function InvitesScreen() {
                 </Text>
                 <View style={styles.linkActions}>
                   {!expired ? (
-                    <Pressable onPress={() => shareUrl(registerUrl(link.token))}>
+                    <Pressable onPress={() => shareInvite(link.token)}>
                       <Text style={styles.linkAction}>Share</Text>
                     </Pressable>
                   ) : null}
