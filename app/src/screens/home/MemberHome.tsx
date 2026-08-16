@@ -35,12 +35,14 @@ export function MemberHome() {
   const { user } = useAuth();
   const [data, setData] = useState<MemberHomeData | null>(null);
   const [heatmap, setHeatmap] = useState<HeatmapResponse | null>(null);
+  const [heatmapError, setHeatmapError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
+    setHeatmapError(null);
     const [contribRes, boardRes, heatmapRes] = await Promise.allSettled([
       contributionApi.listMyContributions({ limit: 100 }),
       contributionApi.getLeaderboard({ period: 'all', limit: 100 }),
@@ -87,13 +89,24 @@ export function MemberHome() {
       rank,
     });
 
-    setHeatmap(
+    if (
       heatmapRes.status === 'fulfilled' &&
-        heatmapRes.value.success &&
-        heatmapRes.value.data
-        ? heatmapRes.value.data
-        : null,
-    );
+      heatmapRes.value.success &&
+      heatmapRes.value.data
+    ) {
+      setHeatmap(heatmapRes.value.data);
+      setHeatmapError(null);
+    } else if (user?.id) {
+      const reason =
+        heatmapRes.status === 'rejected'
+          ? heatmapRes.reason
+          : heatmapRes.value;
+      setHeatmap(null);
+      setHeatmapError(getApiErrorMessage(reason, 'Failed to load activity'));
+    } else {
+      setHeatmap(null);
+      setHeatmapError(null);
+    }
   }, [user?.id]);
 
   useEffect(() => {
@@ -172,7 +185,7 @@ export function MemberHome() {
           valueColor={colors.warningEmphasis}
         />
         <StatCard
-          label="Club Rank"
+          label="Domain Rank"
           value={data.rank != null ? `#${data.rank}` : '—'}
           valueColor={colors.dangerEmphasis}
         />
@@ -183,7 +196,7 @@ export function MemberHome() {
           <View style={styles.clubRow}>
             <Avatar name={user.club.name} size={40} />
             <View style={styles.clubText}>
-              <Text style={styles.clubLabel}>Your club</Text>
+              <Text style={styles.clubLabel}>Your domain</Text>
               <Text style={styles.clubName} numberOfLines={1}>
                 {user.club.name}
               </Text>
@@ -193,8 +206,8 @@ export function MemberHome() {
       ) : (
         <BlockedState
           tone="neutral"
-          title="No club assigned yet"
-          message="An administrator will assign you to a club soon."
+          title="No domain assigned yet"
+          message="An administrator will assign you to a domain soon."
         />
       )}
 
@@ -204,6 +217,15 @@ export function MemberHome() {
           <Card style={styles.heatmapCard}>
             <HeatmapGrid data={heatmap} subjectPrefix="you" />
           </Card>
+        </>
+      ) : heatmapError ? (
+        <>
+          <SectionHeader title="Your contribution activity" />
+          <BlockedState
+            tone="danger"
+            title="Activity unavailable"
+            message={heatmapError}
+          />
         </>
       ) : null}
 

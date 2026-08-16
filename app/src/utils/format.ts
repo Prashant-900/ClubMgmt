@@ -51,7 +51,7 @@ export function formatDatePlain(iso: string): string {
 /** Human role labels, mirrored from the web member-profile page. */
 export const ROLE_LABELS: Record<Role, string> = {
   ADMIN: 'Administrator',
-  COORDINATOR: 'Club coordinator',
+  COORDINATOR: 'Domain coordinator',
   MEMBER: 'Member',
 };
 

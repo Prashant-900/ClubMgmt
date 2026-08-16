@@ -21,8 +21,10 @@ function parseDay(iso: string): Date {
 
 /** Intensity bucket 0–4 for a day, matching the web heatmap. */
 function levelFor(day: HeatmapDay, maxHours: number): number {
-  if (day.count === 0) return 0;
-  if (maxHours <= 0) return 1;
+  if (!day || day.count === 0) return 0;
+  // Any activity is at least level 1, even if hours are missing/zero or the
+  // max is not a usable positive number (guards against NaN / undefined).
+  if (!(maxHours > 0) || !(day.hours > 0)) return 1;
   const ratio = day.hours / maxHours;
   if (ratio <= 0.25) return 1;
   if (ratio <= 0.5) return 2;
@@ -37,7 +39,9 @@ export function HeatmapGrid({ data, subjectPrefix = 'you' }: HeatmapGridProps) {
   const columns = useMemo(() => {
     if (!days || days.length === 0) return [] as (HeatmapDay | null)[][];
     // Leading blanks so the first day lands on its correct weekday row.
-    const leading = parseDay(days[0].date).getDay();
+    // Guard against an unparseable first date (getDay() → NaN).
+    const firstWeekday = parseDay(days[0].date).getDay();
+    const leading = Number.isNaN(firstWeekday) ? 0 : firstWeekday;
     const cells: (HeatmapDay | null)[] = [
       ...Array.from({ length: leading }, () => null),
       ...days,

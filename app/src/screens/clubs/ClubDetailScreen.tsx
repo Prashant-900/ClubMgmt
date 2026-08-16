@@ -93,7 +93,7 @@ export function ClubDetailScreen() {
         setAnalytics(analyticsRes.value.data ?? null);
       }
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Could not load this club.'));
+      setError(getApiErrorMessage(err, 'Could not load this domain.'));
     }
   }, [clubId]);
 
@@ -108,10 +108,10 @@ export function ClubDetailScreen() {
     setRefreshing(false);
   }, [load]);
 
-  const title = club?.name ?? clubName ?? 'Club';
+  const title = club?.name ?? clubName ?? 'Domain';
 
   if (loading) {
-    return <Spinner fill label="Loading club…" />;
+    return <Spinner fill label="Loading domain…" />;
   }
 
   if (error) {
@@ -119,7 +119,7 @@ export function ClubDetailScreen() {
       <Screen>
         <Text style={styles.title}>{title}</Text>
         <BlockedState
-          title="Could not load club"
+          title="Could not load domain"
           message={error}
           actionLabel="Retry"
           onAction={() => {
@@ -190,7 +190,7 @@ function OverviewTab({ entries }: { entries: LeaderboardEntry[] }) {
     return (
       <EmptyState
         title="No ranking yet"
-        message="No contributions logged in this club yet."
+        message="No contributions logged in this domain yet."
       />
     );
   }
@@ -233,7 +233,7 @@ function MembersTab({
     return (
       <EmptyState
         title="No members yet"
-        message="Assign members to this club to see them here."
+        message="Assign members to this domain to see them here."
       />
     );
   }
@@ -272,7 +272,7 @@ function ContributionsTab({
     return (
       <EmptyState
         title="No contributions yet"
-        message="Nothing has been logged for this club yet."
+        message="Nothing has been logged for this domain yet."
       />
     );
   }
@@ -303,7 +303,7 @@ function AnalyticsTab({
     return (
       <EmptyState
         title="No analytics yet"
-        message="There's nothing to summarise for this club yet."
+        message="There's nothing to summarise for this domain yet."
       />
     );
   }

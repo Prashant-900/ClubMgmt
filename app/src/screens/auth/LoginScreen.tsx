@@ -31,7 +31,7 @@ export function LoginScreen() {
 
         <Text style={styles.title}>Sign in to ClubMgmt</Text>
         <Text style={styles.subtitle}>
-          Use your Google account to access your club profile.
+          Sign in with your Google account to track and manage contributions.
         </Text>
 
         <Button
@@ -45,11 +45,11 @@ export function LoginScreen() {
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <Text style={styles.helper}>
-          After sign-in you'll be redirected back with a session token.
+          You'll be brought right back here once Google confirms your account.
         </Text>
       </View>
 
-      <Text style={styles.footer}>ClubMgmt · Role-based club management</Text>
+      <Text style={styles.footer}>ClubMgmt · Role-based domain management</Text>
     </Screen>
   );
 }

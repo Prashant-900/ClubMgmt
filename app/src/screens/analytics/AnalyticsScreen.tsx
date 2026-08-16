@@ -232,7 +232,7 @@ function ClubsSection({ list }: { list: TopClub[] }) {
   const maxHours = Math.max(...list.map((c) => c.totalHours), 1);
   return (
     <Card style={styles.section}>
-      <Text style={styles.sectionTitle}>Top clubs</Text>
+      <Text style={styles.sectionTitle}>Top domains</Text>
       {list.map((entry, i) => (
         <DistributionBar
           key={entry.club?.id ?? i}
@@ -352,7 +352,7 @@ export function AnalyticsScreen() {
 
   const filterOptions = useMemo(
     () => [
-      { value: '', label: 'All clubs' },
+      { value: '', label: 'All domains' },
       ...clubs.map((c) => ({ value: c.id, label: c.name })),
     ],
     [clubs],
@@ -363,7 +363,7 @@ export function AnalyticsScreen() {
     [navigation],
   );
 
-  const title = scope === 'club' ? 'Club analytics' : 'Global analytics';
+  const title = scope === 'club' ? 'Domain analytics' : 'Global analytics';
 
   if (loading) {
     return <Spinner fill label="Loading analytics…" />;
@@ -395,7 +395,7 @@ export function AnalyticsScreen() {
           <BlockedState
             tone="neutral"
             title="No analytics yet"
-            message="There's nothing to summarise for this club yet."
+            message="There's nothing to summarise for this domain yet."
           />
         </Screen>
       );

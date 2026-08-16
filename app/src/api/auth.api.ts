@@ -1,18 +1,13 @@
 import { apiRequest } from './client';
-import type { AuthResponse, User } from '../types';
+import type { User } from '../types';
 
 /**
  * Auth API — mirrors frontend/lib/api/auth.api.ts.
  *
- * Note on the refresh cookie: on the web the HttpOnly `clubmgmt.refresh` cookie
- * is sent via `credentials: "include"`. On React Native the native cookie jar
- * persists and replays it automatically, so no extra wiring is needed here.
+ * Note: unlike the web, there is no `refreshSession()` here. React Native can't
+ * use the HttpOnly refresh cookie, so the app persists the access token itself
+ * (see api/client.ts) and re-authenticates via Google when it expires.
  */
-
-/** Exchange the refresh cookie for a fresh short-lived access token. */
-export function refreshSession() {
-  return apiRequest<{ token: string }>('/auth/refresh', { method: 'POST' });
-}
 
 /** Invalidate the server-side refresh session and clear its cookie. */
 export function logout() {

@@ -121,7 +121,7 @@ export function MemberProfileScreen() {
           <BlockedState
             tone="warning"
             title="Profile not available"
-            message="You can only view members from your own club."
+            message="You can only view members from your own domain."
           />
         </Screen>
       );
@@ -217,8 +217,8 @@ export function MemberProfileScreen() {
           </MetaField>
           <MetaField label="Role" value={roleLabel(profile.role)} />
           <MetaField
-            label="Club"
-            value={profile.club?.name ?? 'No club assigned'}
+            label="Domain"
+            value={profile.club?.name ?? 'No domain assigned'}
           />
           <MetaField label="Joined" value={formatDateLong(profile.createdAt)} />
         </MetaGrid>

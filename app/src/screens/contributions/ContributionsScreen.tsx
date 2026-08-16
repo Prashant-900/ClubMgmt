@@ -21,7 +21,7 @@ interface TabDef {
 const TABS: TabDef[] = [
   { value: 'mine', label: 'Mine' },
   { value: 'pending', label: 'Pending', roles: ['ADMIN', 'COORDINATOR'] },
-  { value: 'club', label: 'Club feed', roles: ['ADMIN', 'COORDINATOR'] },
+  { value: 'club', label: 'Domain feed', roles: ['ADMIN', 'COORDINATOR'] },
 ];
 
 /**

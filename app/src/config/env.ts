@@ -1,5 +1,3 @@
-import { Platform } from 'react-native';
-
 /**
  * App configuration.
  *
@@ -8,33 +6,25 @@ import { Platform } from 'react-native';
  * for your environment, or wire these to react-native-config later if you
  * prefer .env files.
  *
- * Networking notes:
+ * Both DEV and PROD point at the deployed Render backend so the app works
+ * against the live API out of the box (there is no local backend to run). If
+ * you spin up the backend locally, swap DEV_API_BASE_URL back to your host:
  *  - Android emulator reaches the host machine at 10.0.2.2 (NOT localhost).
  *  - iOS simulator can use localhost directly.
  *  - A physical device must use your machine's LAN IP, e.g. http://192.168.1.20:4000/api
  */
 
-const DEV_API_BASE_URL = Platform.select({
-  android: 'http://10.0.2.2:4000/api',
-  ios: 'http://10.0.2.2:4000/api',
-  default: 'http://10.0.2.2:4000/api',
-}) as string;
-
-// For a release/production build, point this at your deployed API.
-const PROD_API_BASE_URL = 'https://your-production-domain.com/api';
+// Deployed backend (Render). Includes the `/api` prefix the client expects.
+const DEV_API_BASE_URL = 'https://gdg-club-management.onrender.com/api';
+const PROD_API_BASE_URL = 'https://gdg-club-management.onrender.com/api';
 
 /**
  * Public web origin of the Next.js frontend, used to build shareable
- * registration links (`<WEB_BASE_URL>/register/<token>`). Point this at your
- * deployed frontend; in dev it mirrors the API host on the web port.
+ * registration/invite links (`<WEB_BASE_URL>/register/<token>`). Points at the
+ * deployed Vercel frontend.
  */
-const DEV_WEB_BASE_URL = Platform.select({
-  android: 'http://10.0.2.2:3000',
-  ios: 'http://10.0.2.2:3000',
-  default: 'http://10.0.2.2:3000',
-}) as string;
-
-const PROD_WEB_BASE_URL = 'https://your-production-domain.com';
+const DEV_WEB_BASE_URL = 'https://gdgclubapp.vercel.com';
+const PROD_WEB_BASE_URL = 'https://gdgclubapp.vercel.com';
 
 export const ENV = {
   API_BASE_URL: __DEV__ ? DEV_API_BASE_URL : PROD_API_BASE_URL,

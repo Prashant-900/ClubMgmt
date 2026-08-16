@@ -151,7 +151,7 @@ function AdminMembers({
   return (
     <View style={styles.sections}>
       <View>
-        <SectionHeader title="Members" subtitle={`${assignedTotal} assigned to a club`} />
+        <SectionHeader title="Members" subtitle={`${assignedTotal} assigned to a domain`} />
         {assignedError ? (
           <BlockedState
             title="Could not load members"
@@ -188,7 +188,7 @@ function AdminMembers({
         <View>
           <SectionHeader
             title="Pending assignment"
-            subtitle={`${pendingTotal} waiting for a club`}
+            subtitle={`${pendingTotal} waiting for a domain`}
           />
           {pendingError ? (
             <BlockedState

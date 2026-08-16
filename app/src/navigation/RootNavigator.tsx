@@ -106,12 +106,12 @@ export function RootNavigator() {
       <Stack.Screen
         name="ClubForm"
         component={ClubFormScreen}
-        options={{ title: 'Club' }}
+        options={{ title: 'Domain' }}
       />
       <Stack.Screen
         name="ClubDetail"
         component={ClubDetailScreen}
-        options={{ title: 'Club' }}
+        options={{ title: 'Domain' }}
       />
     </Stack.Navigator>
   );

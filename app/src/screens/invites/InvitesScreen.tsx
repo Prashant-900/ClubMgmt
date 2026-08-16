@@ -107,7 +107,7 @@ export function InvitesScreen() {
     setGeneratedUrl(null);
 
     if (isAdmin && !selectedClubId) {
-      setError('Please select a club.');
+      setError('Please select a domain.');
       return;
     }
 
@@ -180,8 +180,8 @@ export function InvitesScreen() {
       <Text style={styles.title}>Invite links</Text>
       <Text style={styles.lead}>
         {isAdmin
-          ? 'As an Admin, create invite links for Coordinators or Members. Pick a club and role below.'
-          : 'As a Coordinator, create invite links for Members. They join your club automatically.'}
+          ? 'As an Admin, create invite links for Coordinators or Members. Pick a domain and role below.'
+          : 'As a Coordinator, create invite links for Members. They join your domain automatically.'}
       </Text>
 
       {/* Form */}
@@ -202,15 +202,15 @@ export function InvitesScreen() {
         ) : (
           <View style={[styles.readonlyRow, styles.field]}>
             <RoleBadge role="MEMBER" />
-            <Text style={styles.readonlyText}>Basic club member access</Text>
+            <Text style={styles.readonlyText}>Basic domain member access</Text>
           </View>
         )}
 
         {isAdmin ? (
           <>
-            <Text style={styles.fieldLabel}>Club</Text>
+            <Text style={styles.fieldLabel}>Domain</Text>
             {clubs.length === 0 ? (
-              <Text style={styles.muted}>No clubs available</Text>
+              <Text style={styles.muted}>No domains available</Text>
             ) : (
               <View style={[styles.chips, styles.field]}>
                 {clubs.map((club) => {
@@ -238,7 +238,7 @@ export function InvitesScreen() {
           </>
         ) : user?.club ? (
           <>
-            <Text style={styles.fieldLabel}>Club</Text>
+            <Text style={styles.fieldLabel}>Domain</Text>
             <View style={[styles.readonlyRow, styles.field]}>
               <Text style={styles.readonlyText}>{user.club.name}</Text>
               <Text style={styles.muted}>auto-assigned</Text>

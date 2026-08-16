@@ -186,8 +186,8 @@ export function ProfileScreen() {
           </MetaField>
           <MetaField label="Role" value={roleLabel(profile.role)} />
           <MetaField
-            label="Club"
-            value={profile.club?.name ?? 'No club assigned'}
+            label="Domain"
+            value={profile.club?.name ?? 'No domain assigned'}
           />
           <MetaField label="Joined" value={formatDateLong(profile.createdAt)} />
         </MetaGrid>
@@ -230,7 +230,7 @@ export function ProfileScreen() {
             variant="secondary"
           />
           <Button
-            title={isAdmin ? 'View analytics' : 'Club analytics'}
+            title={isAdmin ? 'View analytics' : 'Domain analytics'}
             onPress={() =>
               navigation.navigate('Analytics', {
                 scope: isAdmin ? 'global' : 'club',

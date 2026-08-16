@@ -5,86 +5,72 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 /**
  * ClubMgmt mobile API client.
  *
- * Mirrors the web client (frontend/lib/api/client.ts) so the request/refresh
- * contract stays identical, with React-Native-specific adaptations:
+ * Auth model (React-Native specific):
  *
- *  1. There is no `window` / router at module scope, so instead of
- *     `window.location.replace("/login")` on an unrecoverable 401 we invoke a
- *     callback that the AuthProvider registers via `setUnauthorizedHandler`.
- *  2. The web relies on the browser's cookie store for the HttpOnly
- *     `clubmgmt.refresh` cookie. React Native's native cookie jar is NOT
- *     reliably persisted across app restarts (and is cleared on reinstall), so
- *     we persist that one cookie ourselves in AsyncStorage: we capture it from
- *     `Set-Cookie` on every response and replay it as a `Cookie` header on every
- *     request. This is what keeps the user signed in between launches.
+ * The web app keeps the user signed in via an HttpOnly `clubmgmt.refresh`
+ * cookie and silently exchanges it for short-lived access tokens. React
+ * Native's native HTTP stack does NOT expose `Set-Cookie` to `fetch`, and its
+ * cookie jar is not reliably persisted across app restarts / reinstalls, so the
+ * refresh-cookie strategy cannot work here.
+ *
+ * Instead we persist the JWT access token itself in AsyncStorage. The backend
+ * returns `token` in the JSON body of the Google OAuth callback (delivered to
+ * the app via the `clubmgmt://auth/callback?token=...` deep link). We store it,
+ * restore it on cold start, and attach it as a Bearer token on every request.
+ * When it eventually expires the next request 401s and we route the user back
+ * to Login to re-authenticate.
  */
 
 const API_BASE_URL = ENV.API_BASE_URL;
 
-// ── Persistent refresh cookie (mirrors the web HttpOnly cookie) ──
-const REFRESH_COOKIE_NAME = 'clubmgmt.refresh';
-const REFRESH_STORAGE_KEY = '@clubmgmt/refresh-cookie';
+// ── Persisted access token ──
+// Stored in AsyncStorage so the session survives app restarts, and mirrored in
+// memory so requests don't await storage on the hot path.
+const TOKEN_STORAGE_KEY = '@clubmgmt/access-token';
 
-// Cached in memory so requests don't await AsyncStorage on the hot path; kept in
-// sync with storage. `undefined` = not loaded yet, `null` = known-absent.
-let refreshCookieValue: string | null | undefined = undefined;
-
-/** Load the persisted refresh cookie into memory (call once on boot). */
-export async function loadPersistedRefreshCookie(): Promise<void> {
-  try {
-    refreshCookieValue = (await AsyncStorage.getItem(REFRESH_STORAGE_KEY)) ?? null;
-  } catch {
-    refreshCookieValue = null;
-  }
-}
-
-async function persistRefreshCookie(value: string | null): Promise<void> {
-  refreshCookieValue = value;
-  try {
-    if (value) {
-      await AsyncStorage.setItem(REFRESH_STORAGE_KEY, value);
-    } else {
-      await AsyncStorage.removeItem(REFRESH_STORAGE_KEY);
-    }
-  } catch {
-    // Storage failure is non-fatal — the in-memory value still works this run.
-  }
-}
-
-/** Extract & persist the refresh cookie from a response's Set-Cookie header. */
-function captureRefreshCookie(response: Response): void {
-  // RN merges multiple Set-Cookie headers into one comma-joined string.
-  const raw =
-    response.headers.get('set-cookie') ?? response.headers.get('Set-Cookie');
-  if (!raw) return;
-
-  // Find the `clubmgmt.refresh=...` pair anywhere in the (possibly merged) value.
-  const match = raw.match(new RegExp(`${REFRESH_COOKIE_NAME}=([^;,]+)`));
-  if (!match) return;
-
-  const value = match[1];
-  // An explicit clear (empty value / Max-Age=0 / expired) removes it.
-  const cleared =
-    value === '' ||
-    /Max-Age=0/i.test(raw) ||
-    /expires=Thu, 01 Jan 1970/i.test(raw);
-  void persistRefreshCookie(cleared ? null : `${REFRESH_COOKIE_NAME}=${value}`);
-}
-
-/** Clear the persisted refresh cookie (on logout / unrecoverable 401). */
-export async function clearPersistedRefreshCookie(): Promise<void> {
-  await persistRefreshCookie(null);
-}
-
-// ── In-memory access token (never persisted to disk / AsyncStorage) ──
 let accessToken: string | null = null;
 
+/** Set the in-memory access token (does not touch storage). */
 export function setAccessToken(token: string | null): void {
   accessToken = token;
 }
 
+/** Read the current in-memory access token. */
 export function getAccessToken(): string | null {
   return accessToken;
+}
+
+/**
+ * Load the persisted access token into memory. Call once on app boot before
+ * making any authenticated request. Returns the token (or null if none).
+ */
+export async function loadPersistedToken(): Promise<string | null> {
+  try {
+    accessToken = (await AsyncStorage.getItem(TOKEN_STORAGE_KEY)) ?? null;
+  } catch {
+    accessToken = null;
+  }
+  return accessToken;
+}
+
+/** Persist a fresh access token to storage and memory (login / OAuth). */
+export async function persistToken(token: string): Promise<void> {
+  accessToken = token;
+  try {
+    await AsyncStorage.setItem(TOKEN_STORAGE_KEY, token);
+  } catch {
+    // Storage failure is non-fatal — the in-memory token still works this run.
+  }
+}
+
+/** Clear the persisted access token from storage and memory (logout / 401). */
+export async function clearPersistedToken(): Promise<void> {
+  accessToken = null;
+  try {
+    await AsyncStorage.removeItem(TOKEN_STORAGE_KEY);
+  } catch {
+    // Ignore — the in-memory token is already cleared.
+  }
 }
 
 // ── Unauthorized handler wiring (set by AuthProvider) ──
@@ -94,15 +80,16 @@ let unauthorizedHandler: UnauthorizedHandler | null = null;
 
 /**
  * Registered by the AuthProvider. Called once when a request fails auth in a
- * way we cannot silently recover from (refresh failed / no session). The
- * handler should clear user state and route back to Login.
+ * way we cannot recover from (expired / invalid token). The handler should
+ * clear user state and route back to Login.
  */
 export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): void {
   unauthorizedHandler = handler;
 }
 
-// Endpoints that must never trigger a refresh/redirect on 401 — they *are* the
-// auth surface, so a 401 from them is a real, expected failure (bad creds etc.).
+// Endpoints that must never trigger the unauthorized handler on 401 — they *are*
+// the auth surface, so a 401 from them is a real, expected failure (bad creds,
+// no session yet, etc.) rather than an expired session mid-app.
 const AUTH_EXEMPT_PREFIXES = [
   '/auth/login',
   '/auth/register',
@@ -122,7 +109,9 @@ function handleUnauthorized(endpoint: string): void {
   if (isAuthExempt(endpoint)) {
     return;
   }
-  accessToken = null;
+  // The stored token is no longer usable — drop it so a later cold start can't
+  // restore it and get stuck in a boot loop of 401s.
+  void clearPersistedToken();
   if (isHandlingUnauthorized) {
     return;
   }
@@ -138,33 +127,6 @@ function handleUnauthorized(endpoint: string): void {
   }
 }
 
-// ── Silent refresh (de-duplicated) ──
-let refreshPromise: Promise<string | null> | null = null;
-
-async function refreshAccessToken(): Promise<string | null> {
-  // Collapse concurrent refreshes into a single in-flight request.
-  if (refreshPromise) {
-    return refreshPromise;
-  }
-
-  refreshPromise = (async () => {
-    try {
-      const res = await apiRequest<{ token: string }>('/auth/refresh', {
-        method: 'POST',
-      });
-      const newToken = res.data?.token ?? null;
-      accessToken = newToken;
-      return newToken;
-    } catch {
-      return null;
-    } finally {
-      refreshPromise = null;
-    }
-  })();
-
-  return refreshPromise;
-}
-
 // ── Request types ──
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
@@ -172,7 +134,7 @@ export interface ApiRequestOptions {
   method?: HttpMethod;
   body?: Record<string, unknown>;
   headers?: Record<string, string>;
-  /** Explicit token override (used internally for the post-refresh retry). */
+  /** Explicit token override (used during bootstrap before state is committed). */
   token?: string | null;
 }
 
@@ -186,7 +148,6 @@ export interface ApiError {
 export async function apiRequest<T>(
   endpoint: string,
   options: ApiRequestOptions = {},
-  isRetry = false,
 ): Promise<ApiResponse<T>> {
   const { method = 'GET', body, headers = {}, token } = options;
 
@@ -199,12 +160,6 @@ export async function apiRequest<T>(
 
   if (effectiveToken) {
     requestHeaders.Authorization = `Bearer ${effectiveToken}`;
-  }
-
-  // Replay the persisted refresh cookie so the native cookie jar doesn't need
-  // to survive restarts. Only sent for the auth endpoints that use it.
-  if (refreshCookieValue && endpoint.startsWith('/auth/')) {
-    requestHeaders.Cookie = refreshCookieValue;
   }
 
   const fetchOptions: RequestInit = {
@@ -226,9 +181,6 @@ export async function apiRequest<T>(
     throw { success: false, message } as ApiError;
   }
 
-  // Capture + persist any refresh-cookie rotation before anything else.
-  captureRefreshCookie(response);
-
   // Some endpoints (e.g. logout) may return an empty body.
   let data: (ApiResponse<T> & { message?: string }) | null = null;
   const text = await response.text();
@@ -241,16 +193,9 @@ export async function apiRequest<T>(
   }
 
   if (!response.ok) {
-    if (response.status === 401 && !isAuthExempt(endpoint) && !isRetry) {
-      const newToken = await refreshAccessToken();
-      if (newToken) {
-        // Retry exactly once with the freshly minted token.
-        return apiRequest<T>(
-          endpoint,
-          { ...options, token: newToken },
-          true,
-        );
-      }
+    // No silent refresh is possible on mobile — an unrecoverable 401 means the
+    // token is gone/expired, so eject the user back to Login.
+    if (response.status === 401 && !isAuthExempt(endpoint)) {
       handleUnauthorized(endpoint);
     }
 

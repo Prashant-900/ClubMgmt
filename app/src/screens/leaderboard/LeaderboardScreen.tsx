@@ -106,7 +106,7 @@ export function LeaderboardScreen() {
                     {isMe ? ' (you)' : ''}
                   </Text>
                   <Text style={styles.memberSub} numberOfLines={1}>
-                    {entry.user.club?.name ?? 'No club'}
+                    {entry.user.club?.name ?? 'No domain'}
                   </Text>
                 </View>
                 <View style={styles.hoursCell}>

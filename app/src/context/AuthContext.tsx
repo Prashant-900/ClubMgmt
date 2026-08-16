@@ -12,8 +12,9 @@ import type { Role, User } from '../types';
 import {
   setAccessToken,
   setUnauthorizedHandler,
-  loadPersistedRefreshCookie,
-  clearPersistedRefreshCookie,
+  loadPersistedToken,
+  persistToken,
+  clearPersistedToken,
 } from '../api/client';
 import * as authApi from '../api/auth.api';
 import {
@@ -71,13 +72,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAccessToken(null);
     setToken(null);
     setUser(null);
-    // Forget the persisted refresh cookie so a later boot can't restore it.
-    void clearPersistedRefreshCookie();
+    // Forget the persisted access token so a later boot can't restore it.
+    void clearPersistedToken();
   }, []);
 
   const setSession = useCallback(async (freshToken: string) => {
-    // Access token lives in memory only — never AsyncStorage / Keychain.
-    setAccessToken(freshToken);
+    // Persist the access token (memory + AsyncStorage) so the session survives
+    // app restarts — there is no refresh cookie to fall back on.
+    await persistToken(freshToken);
     setToken(freshToken);
     try {
       const profile = await authApi.getProfile(freshToken);
@@ -86,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch {
       // Token is set but the profile call failed; leave user null and let the
-      // guards / silent-refresh flow recover.
+      // guards / unauthorized handler recover.
       if (mounted.current) {
         setUser(null);
       }
@@ -121,31 +123,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => setUnauthorizedHandler(null);
   }, [clearSession]);
 
-  // Bootstrap: try to recover a session from the HttpOnly refresh cookie held
-  // in the native cookie jar. If none exists this 401s quietly.
+  // Bootstrap: restore the session from the access token persisted in
+  // AsyncStorage. If one exists we re-fetch the profile to validate it; a 401
+  // there means it expired and the client's unauthorized handler clears it.
   useEffect(() => {
     mounted.current = true;
 
     (async () => {
       try {
-        // Restore the persisted refresh cookie first so the refresh call below
-        // can authenticate even after a cold start / app reinstall.
-        await loadPersistedRefreshCookie();
-        const res = await authApi.refreshSession();
-        const freshToken = res.data?.token ?? null;
-        if (!freshToken) {
+        const storedToken = await loadPersistedToken();
+        if (!storedToken) {
           throw new Error('No session');
         }
-        setAccessToken(freshToken);
         if (mounted.current) {
-          setToken(freshToken);
+          setToken(storedToken);
         }
-        const profile = await authApi.getProfile(freshToken);
+        const profile = await authApi.getProfile(storedToken);
         if (mounted.current) {
           setUser(profile.data ?? null);
         }
       } catch {
         setAccessToken(null);
+        void clearPersistedToken();
         if (mounted.current) {
           setToken(null);
           setUser(null);

@@ -100,9 +100,9 @@ export function MemberCard({
     if (!selectedClubId) return;
     if (isCrossClubPromotion && currentClub) {
       Alert.alert(
-        'Move member to another club?',
+        'Move member to another domain?',
         `${displayName} is currently in ${currentClub.name}. Promoting them to Coordinator of ${
-          targetClub?.name ?? 'the selected club'
+          targetClub?.name ?? 'the selected domain'
         } will move them out of ${currentClub.name}.`,
         [
           { text: 'Cancel', style: 'cancel' },
@@ -152,7 +152,7 @@ export function MemberCard({
 
     Alert.alert(
       'Remove member',
-      'This member will lose access to the club. You can invite them again later.',
+      'This member will lose access to the domain. You can invite them again later.',
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Remove member', style: 'destructive', onPress: doRemove },
@@ -193,7 +193,7 @@ export function MemberCard({
               {member.email}
             </Text>
             <Text style={styles.sub} numberOfLines={1}>
-              {member.club?.name ?? 'No club'} · Joined{' '}
+              {member.club?.name ?? 'No domain'} · Joined{' '}
               {formatMonthYear(member.createdAt)}
             </Text>
           </View>
@@ -222,7 +222,7 @@ export function MemberCard({
 
           {canAssign && clubs.length > 0 ? (
             <View style={styles.actionBlock}>
-              <Text style={styles.actionLabel}>Assign to club</Text>
+              <Text style={styles.actionLabel}>Assign to domain</Text>
               <View style={styles.chips}>
                 {clubs.map((club) => (
                   <ClubChip
@@ -267,7 +267,7 @@ export function MemberCard({
               </View>
               {isCrossClubPromotion && currentClub ? (
                 <Text style={styles.warning}>
-                  Different club. {displayName} is currently in{' '}
+                  Different domain. {displayName} is currently in{' '}
                   {currentClub.name} — promoting them here will move them out of
                   it.
                 </Text>

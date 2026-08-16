@@ -111,8 +111,8 @@ export function AdminHome() {
 
   const handleDeleteClub = useCallback((club: EnrichedClub) => {
     Alert.alert(
-      'Delete club',
-      `Delete "${club.name}"? This removes the club and unassigns its members. This cannot be undone.`,
+      'Delete domain',
+      `Delete "${club.name}"? This removes the domain and unassigns its members. This cannot be undone.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -127,7 +127,7 @@ export function AdminHome() {
                   : prev,
               );
             } catch (err) {
-              Alert.alert('Error', getApiErrorMessage(err, 'Failed to delete club.'));
+              Alert.alert('Error', getApiErrorMessage(err, 'Failed to delete domain.'));
             }
           },
         },
@@ -161,7 +161,7 @@ export function AdminHome() {
 
       <StatGrid>
         <StatCard
-          label="Total Clubs"
+          label="Total Domains"
           value={data.clubs.length}
           valueColor={colors.accentEmphasis}
         />
@@ -205,11 +205,11 @@ export function AdminHome() {
       </View>
 
       <SectionHeader
-        title="Clubs"
+        title="Domains"
         subtitle={`${data.clubs.length} total`}
         action={
           <Button
-            title="New club"
+            title="New domain"
             size="sm"
             fullWidth={false}
             onPress={() => navigation.navigate('ClubForm', { mode: 'create' })}
@@ -219,8 +219,8 @@ export function AdminHome() {
       {data.clubs.length === 0 ? (
         <BlockedState
           tone="neutral"
-          title="No clubs yet"
-          message="Create a club to start assigning members."
+          title="No domains yet"
+          message="Create a domain to start assigning members."
         />
       ) : (
         data.clubs.map((club) => (

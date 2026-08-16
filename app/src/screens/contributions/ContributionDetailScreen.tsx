@@ -171,7 +171,7 @@ export function ContributionDetailScreen() {
             label="Submitted by"
             value={c.user?.name ?? c.user?.email ?? 'Unknown'}
           />
-          <MetaField label="Club" value={c.club?.name ?? null} />
+          <MetaField label="Domain" value={c.club?.name ?? null} />
           {c.approvedBy ? (
             <MetaField
               label={c.status === 'REJECTED' ? 'Reviewed by' : 'Approved by'}

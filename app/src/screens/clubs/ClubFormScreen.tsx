@@ -60,7 +60,7 @@ export function ClubFormScreen() {
       setError(
         getApiErrorMessage(
           err,
-          isEdit ? 'Failed to update club' : 'Failed to create club',
+          isEdit ? 'Failed to update domain' : 'Failed to create domain',
         ),
       );
     } finally {
@@ -70,11 +70,11 @@ export function ClubFormScreen() {
 
   return (
     <Screen>
-      <Text style={styles.title}>{isEdit ? 'Edit club' : 'Create club'}</Text>
+      <Text style={styles.title}>{isEdit ? 'Edit domain' : 'Create domain'}</Text>
 
       <Card style={styles.form}>
         <Input
-          label="Club name"
+          label="Domain name"
           value={name}
           onChangeText={setName}
           placeholder="e.g. GDG on Campus"
@@ -94,7 +94,7 @@ export function ClubFormScreen() {
           label="Description (optional)"
           value={description}
           onChangeText={setDescription}
-          placeholder="What does this club do?"
+          placeholder="What does this domain do?"
           multiline
           numberOfLines={4}
           maxLength={CLUB_DESCRIPTION_MAX}

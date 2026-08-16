@@ -57,7 +57,7 @@ export function SubmitContributionScreen() {
     setFormError(null);
 
     if (showClubSelector && !clubId) {
-      setClubError('Please select a club.');
+      setClubError('Please select a domain.');
       return;
     }
     setClubError(null);
@@ -91,7 +91,7 @@ export function SubmitContributionScreen() {
 
       {showClubSelector ? (
         <View style={styles.clubBlock}>
-          <Text style={styles.fieldLabel}>Club</Text>
+          <Text style={styles.fieldLabel}>Domain</Text>
           <View style={styles.clubWrap}>
             {clubs.map((club) => {
               const active = club.id === clubId;

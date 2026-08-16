@@ -20,7 +20,8 @@ async function getProfile(req, res, next) {
 
 // Deep-link schemes the mobile app is allowed to be bounced back to. Kept as an
 // allowlist so the `redirect` param can never be abused as an open redirect.
-const MOBILE_REDIRECT_ALLOWLIST = ["gdg://"];
+// The React Native app uses `clubmgmt://`; `gdg://` is kept for backward compat.
+const MOBILE_REDIRECT_ALLOWLIST = ["clubmgmt://", "gdg://"];
 
 function isAllowedMobileRedirect(value) {
   return (
