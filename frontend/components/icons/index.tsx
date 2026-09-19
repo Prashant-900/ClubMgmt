@@ -132,12 +132,5 @@ export const TrophyIcon = (p: IconProps) => (
 //   ">"  → green top stick, yellow bottom stick
 // Rendered with no fill so it sits inside a transparent, outlined box.
 export const LogoMark = (p: IconProps) => (
-  <Base strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" {...p}>
-    {/* "<" */}
-    <path d="M8 8 L4 12" stroke="#ea4335" /> {/* top stick — red */}
-    <path d="M4 12 L8 16" stroke="#4285f4" /> {/* bottom stick — blue */}
-    {/* ">" */}
-    <path d="M16 8 L20 12" stroke="#34a853" /> {/* top stick — green */}
-    <path d="M20 12 L16 16" stroke="#fbbc05" /> {/* bottom stick — yellow */}
-  </Base>
+  <img src="/logo.png" alt="GDG Logo" className={p.className} />
 );

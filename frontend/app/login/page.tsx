@@ -13,11 +13,11 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 bg-[#f8f9fa] border border-[#dadce0] rounded-lg flex items-center justify-center mb-4">
-            <span className="text-base font-extrabold text-[#202124] font-mono tracking-tight">
-              GDG
-            </span>
-          </div>
+          <img
+            src="/logo.png"
+            alt="GDG Logo"
+            className="w-12 h-12 mb-4 object-contain"
+          />
           <h1 className="text-xl font-semibold text-[#202124]">Sign in to GDG</h1>
         </div>
 
