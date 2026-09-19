@@ -325,7 +325,6 @@ function AdminHome() {
 
   const [totalMembers, setTotalMembers] = useState<number | null>(null);
   const [pendingUsersCount, setPendingUsersCount] = useState<number | null>(null);
-  const [pendingCount, setPendingCount] = useState<number | null>(null);
   const [totalHours, setTotalHours] = useState<number | null>(null);
   const [recentContributions, setRecentContributions] = useState<Contribution[]>([]);
   const [statsError, setStatsError] = useState<string | null>(null);
@@ -342,12 +341,11 @@ function AdminHome() {
     // allSettled — the club grid and each sidebar counter are independent, so a
     // single failing endpoint must not blank the entire dashboard.
     // The club cards come from ONE enriched request (no per-club follow-ups).
-    const [clubsRes, membersRes, pendingUsersRes, pendingApprovalsRes, analyticsRes] =
+    const [clubsRes, membersRes, pendingUsersRes, analyticsRes] =
       await Promise.allSettled([
         listEnrichedClubs(),
         listMembers({ limit: 1 }, token ?? undefined),
         listMembers({ clubStatus: "pending", limit: 1 }, token ?? undefined),
-        listContributions({ status: "PENDING", limit: 1 }, token ?? undefined),
         getGlobalAnalytics(undefined, token ?? undefined),
       ]);
 
@@ -375,15 +373,8 @@ function AdminHome() {
       anyStatFailed = true;
     }
 
-    if (pendingApprovalsRes.status === "fulfilled") {
-      setPendingCount(pendingApprovalsRes.value.data?.pagination.total ?? 0);
-    } else {
-      setPendingCount(null);
-      anyStatFailed = true;
-    }
-
     if (analyticsRes.status === "fulfilled") {
-      setTotalHours(analyticsRes.value.data?.stats.totalApprovedHours ?? 0);
+      setTotalHours(analyticsRes.value.data?.stats.totalHours ?? 0);
       setRecentContributions(analyticsRes.value.data?.recentContributions ?? []);
     } else {
       setTotalHours(null);
@@ -430,12 +421,6 @@ function AdminHome() {
       value: pendingUsersCount ?? "—",
       error: pendingUsersCount == null ? statsError : null,
       onRetry: pendingUsersCount == null ? loadData : undefined,
-    },
-    {
-      label: "Pending Approvals",
-      value: pendingCount ?? "—",
-      error: pendingCount == null ? statsError : null,
-      onRetry: pendingCount == null ? loadData : undefined,
     },
     {
       label: "Total Hours",

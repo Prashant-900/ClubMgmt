@@ -320,10 +320,7 @@ function MemberProfileContent({ memberId }: { memberId: string }) {
   // partially-deployed API would otherwise crash the whole page here.
   const stats: MemberStats = profile.stats ?? {
     totalContributions: 0,
-    pendingCount: 0,
-    approvedCount: 0,
-    rejectedCount: 0,
-    approvedHours: 0,
+    totalHours: 0,
     recentContributions: [],
   };
   const displayName = profile.name ?? profile.email;
@@ -406,10 +403,10 @@ function MemberProfileContent({ memberId }: { memberId: string }) {
       </section>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <StatCard
-          label="Approved hours"
-          value={formatHours(stats.approvedHours)}
+          label="Total hours"
+          value={formatHours(stats.totalHours)}
           sub="Credited"
           accent="text-gh-success-fg"
         />
@@ -418,24 +415,6 @@ function MemberProfileContent({ memberId }: { memberId: string }) {
           value={stats.totalContributions}
           sub="All time"
           accent="text-role-coordinator"
-        />
-        <StatCard
-          label="Approved"
-          value={stats.approvedCount}
-          sub="Reviewed"
-          accent="text-gh-success-fg"
-        />
-        <StatCard
-          label="Pending"
-          value={stats.pendingCount}
-          sub="Awaiting review"
-          accent="text-gh-warning-fg"
-        />
-        <StatCard
-          label="Rejected"
-          value={stats.rejectedCount}
-          sub="Needs rework"
-          accent="text-gh-danger-fg"
         />
       </div>
 
