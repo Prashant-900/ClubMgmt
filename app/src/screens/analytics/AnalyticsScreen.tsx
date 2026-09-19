@@ -149,41 +149,25 @@ function WeeklyTrend({ points }: { points: WeeklyTrendPoint[] }) {
 }
 
 function SummaryStats({
-  totalApprovedHours,
-  totalApproved,
-  totalPending,
-  totalRejected,
+  totalHours,
+  totalContributions,
 }: {
-  totalApprovedHours: number;
-  totalApproved: number;
-  totalPending: number;
-  totalRejected: number;
+  totalHours: number;
+  totalContributions: number;
 }) {
   return (
     <StatGrid>
       <StatCard
-        label="Approved hours"
-        value={formatHours(totalApprovedHours)}
+        label="Total hours"
+        value={formatHours(totalHours)}
         valueColor={colors.successEmphasis}
         hint="Total logged"
       />
       <StatCard
         label="Contributions"
-        value={totalApproved}
+        value={totalContributions}
         valueColor={colors.roleCoordinator}
-        hint="Approved"
-      />
-      <StatCard
-        label="Pending"
-        value={totalPending}
-        valueColor={colors.warningEmphasis}
-        hint="Awaiting review"
-      />
-      <StatCard
-        label="Rejected"
-        value={totalRejected}
-        valueColor={colors.dangerEmphasis}
-        hint="Total"
+        hint="All time"
       />
     </StatGrid>
   );
@@ -404,10 +388,8 @@ export function AnalyticsScreen() {
       <Screen onRefresh={onRefresh} refreshing={refreshing}>
         <Text style={styles.title}>{clubData.club?.name ?? title}</Text>
         <SummaryStats
-          totalApprovedHours={clubData.stats.totalApprovedHours}
-          totalApproved={clubData.stats.totalApproved}
-          totalPending={clubData.stats.totalPending}
-          totalRejected={clubData.stats.totalRejected}
+          totalHours={clubData.stats.totalHours}
+          totalContributions={clubData.stats.totalContributions}
         />
         <CategorySection breakdown={clubData.categoryBreakdown} />
         <ContributorsSection list={clubData.topContributors} />
@@ -444,10 +426,8 @@ export function AnalyticsScreen() {
       ) : (
         <>
           <SummaryStats
-            totalApprovedHours={globalData.stats.totalApprovedHours}
-            totalApproved={globalData.stats.totalApproved}
-            totalPending={globalData.stats.totalPending}
-            totalRejected={globalData.stats.totalRejected}
+            totalHours={globalData.stats.totalHours}
+            totalContributions={globalData.stats.totalContributions}
           />
           {!filterClubId ? <ClubsSection list={globalData.topClubs} /> : null}
           <CategorySection breakdown={globalData.categoryBreakdown} />

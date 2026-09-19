@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Card } from './ui';
-import { StatusBadge, CategoryBadge } from './ui';
+import { CategoryBadge } from './ui';
 import { Avatar } from './Avatar';
 import { colors, spacing, typography } from '../theme';
 import { formatDateLong, formatHoursSuffix } from '../utils/format';
@@ -19,14 +19,13 @@ interface ContributionCardProps {
  * status, optional contributor row, category / hours / date meta line.
  */
 export function ContributionCard({ contribution, onPress, showUser = false }: ContributionCardProps) {
-  const { title, category, hours, datePerformed, status, user } = contribution;
+  const { title, category, hours, datePerformed, user } = contribution;
   return (
     <Card compact onPress={onPress} style={styles.card}>
       <View style={styles.header}>
         <Text style={styles.title} numberOfLines={2}>
           {title}
         </Text>
-        <StatusBadge status={status} />
       </View>
 
       {showUser && user ? (

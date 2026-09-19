@@ -35,10 +35,7 @@ import { colors, spacing, typography } from '../../theme';
 
 const EMPTY_STATS: MemberStats = {
   totalContributions: 0,
-  pendingCount: 0,
-  approvedCount: 0,
-  rejectedCount: 0,
-  approvedHours: 0,
+  totalHours: 0,
   recentContributions: [],
 };
 
@@ -227,34 +224,16 @@ export function MemberProfileScreen() {
       {/* Stats */}
       <StatGrid>
         <StatCard
-          label="Approved hours"
-          value={formatHours(stats.approvedHours)}
+          label="Total hours"
+          value={formatHours(stats.totalHours)}
           valueColor={colors.successEmphasis}
-          hint="Credited"
+          hint="Total logged"
         />
         <StatCard
           label="Contributions"
           value={stats.totalContributions}
           valueColor={colors.roleCoordinator}
           hint="All time"
-        />
-        <StatCard
-          label="Approved"
-          value={stats.approvedCount}
-          valueColor={colors.successEmphasis}
-          hint="Reviewed"
-        />
-        <StatCard
-          label="Pending"
-          value={stats.pendingCount}
-          valueColor={colors.warningEmphasis}
-          hint="Awaiting review"
-        />
-        <StatCard
-          label="Rejected"
-          value={stats.rejectedCount}
-          valueColor={colors.dangerEmphasis}
-          hint="Needs rework"
         />
       </StatGrid>
 

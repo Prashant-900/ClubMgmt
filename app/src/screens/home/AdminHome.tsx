@@ -21,7 +21,6 @@ interface AdminHomeData {
   clubs: EnrichedClub[];
   totalMembers: number;
   unassignedMembers: number;
-  pendingApprovals: number;
   totalHours: number;
 }
 
@@ -47,12 +46,11 @@ export function AdminHome() {
 
   const load = useCallback(async () => {
     setError(null);
-    const [clubsRes, membersRes, unassignedRes, pendingRes, analyticsRes] =
+    const [clubsRes, membersRes, unassignedRes, analyticsRes] =
       await Promise.allSettled([
         clubApi.listClubs(true),
         memberApi.listMembers({ limit: 1 }),
         memberApi.listMembers({ clubStatus: 'unassigned', limit: 1 }),
-        contributionApi.listContributions({ status: 'PENDING', limit: 1 }),
         contributionApi.getGlobalAnalytics(),
       ]);
 
@@ -72,14 +70,13 @@ export function AdminHome() {
       analyticsRes.status === 'fulfilled' &&
       analyticsRes.value.success &&
       analyticsRes.value.data
-        ? analyticsRes.value.data.stats.totalApprovedHours
+        ? analyticsRes.value.data.stats.totalHours
         : 0;
 
     setData({
       clubs: clubsRes.value.data as EnrichedClub[],
       totalMembers: totalFromResult(membersRes),
       unassignedMembers: totalFromResult(unassignedRes),
-      pendingApprovals: totalFromResult(pendingRes),
       totalHours,
     });
   }, []);
@@ -174,11 +171,6 @@ export function AdminHome() {
           label="Pending Users"
           value={data.unassignedMembers}
           valueColor={colors.warningEmphasis}
-        />
-        <StatCard
-          label="Pending Approvals"
-          value={data.pendingApprovals}
-          valueColor={colors.dangerEmphasis}
         />
         <StatCard
           label="Total Hours"

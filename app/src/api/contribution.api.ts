@@ -5,11 +5,8 @@ import type {
   Contribution,
   ContributionCategory,
   ContributionListResponse,
-  ContributionStatus,
   GlobalAnalytics,
   HeatmapResponse,
-  LeaderboardPeriod,
-  LeaderboardResponse,
 } from '../types';
 
 /**
@@ -34,7 +31,6 @@ export function createContribution(payload: CreateContributionPayload) {
 }
 
 export interface ListMyContributionsParams {
-  status?: ContributionStatus;
   category?: ContributionCategory;
   page?: number;
   limit?: number;
@@ -71,19 +67,6 @@ export function updateContribution(
   });
 }
 
-export function approveContribution(id: string) {
-  return apiRequest<Contribution>(`/contributions/${id}/approve`, {
-    method: 'PATCH',
-  });
-}
-
-export function rejectContribution(id: string, rejectionReason?: string) {
-  return apiRequest<Contribution>(`/contributions/${id}/reject`, {
-    method: 'PATCH',
-    body: rejectionReason ? { rejectionReason } : {},
-  });
-}
-
 export function deleteContribution(id: string) {
   return apiRequest<null>(`/contributions/${id}`, { method: 'DELETE' });
 }
@@ -110,18 +93,5 @@ export interface HeatmapParams {
 export function getContributionHeatmap(params: HeatmapParams = {}) {
   return apiRequest<HeatmapResponse>(
     `/contributions/heatmap${toQuery(params)}`,
-  );
-}
-
-export interface LeaderboardParams {
-  period?: LeaderboardPeriod;
-  clubId?: string;
-  page?: number;
-  limit?: number;
-}
-
-export function getLeaderboard(params: LeaderboardParams = {}) {
-  return apiRequest<LeaderboardResponse>(
-    `/contributions/leaderboard${toQuery(params)}`,
   );
 }

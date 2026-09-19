@@ -12,7 +12,6 @@ import {
   MetaGrid,
   Screen,
   Spinner,
-  StatusBadge,
 } from '../../components';
 import { contributionApi } from '../../api';
 import { useAuth } from '../../context/AuthContext';
@@ -39,17 +38,9 @@ export function ContributionDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
-  const [showRejectForm, setShowRejectForm] = useState(false);
-  const [rejectReason, setRejectReason] = useState('');
 
-  const canModerate =
-    user?.role === 'ADMIN' ||
-    (user?.role === 'COORDINATOR' && contribution?.club?.id === user?.clubId);
   const canDelete = user?.role === 'ADMIN';
-  const canEdit =
-    Boolean(user) &&
-    contribution?.user?.id === user?.id &&
-    contribution?.status === 'PENDING';
+  const canEdit = Boolean(user) && contribution?.user?.id === user?.id;
 
   const load = useCallback(async () => {
     setError(null);
@@ -65,35 +56,6 @@ export function ContributionDetailScreen() {
     setLoading(true);
     load().finally(() => setLoading(false));
   }, [load]);
-
-  const handleApprove = useCallback(async () => {
-    setActionLoading(true);
-    try {
-      const res = await contributionApi.approveContribution(id);
-      if (res.data) setContribution(res.data);
-    } catch (err) {
-      Alert.alert('Approve failed', getApiErrorMessage(err, 'Failed to approve.'));
-    } finally {
-      setActionLoading(false);
-    }
-  }, [id]);
-
-  const handleReject = useCallback(async () => {
-    setActionLoading(true);
-    try {
-      const res = await contributionApi.rejectContribution(
-        id,
-        rejectReason.trim() || undefined,
-      );
-      if (res.data) setContribution(res.data);
-      setShowRejectForm(false);
-      setRejectReason('');
-    } catch (err) {
-      Alert.alert('Reject failed', getApiErrorMessage(err, 'Failed to reject.'));
-    } finally {
-      setActionLoading(false);
-    }
-  }, [id, rejectReason]);
 
   const confirmDelete = useCallback(() => {
     Alert.alert(
@@ -150,7 +112,6 @@ export function ContributionDetailScreen() {
     <Screen>
       <Card style={styles.card}>
         <View style={styles.topRow}>
-          <StatusBadge status={c.status} />
           <CategoryBadge category={c.category} />
         </View>
 
@@ -172,18 +133,6 @@ export function ContributionDetailScreen() {
             value={c.user?.name ?? c.user?.email ?? 'Unknown'}
           />
           <MetaField label="Domain" value={c.club?.name ?? null} />
-          {c.approvedBy ? (
-            <MetaField
-              label={c.status === 'REJECTED' ? 'Reviewed by' : 'Approved by'}
-              value={c.approvedBy.name ?? c.approvedBy.email}
-            />
-          ) : null}
-          {c.approvedAt ? (
-            <MetaField
-              label={c.status === 'REJECTED' ? 'Reviewed at' : 'Approved at'}
-              value={formatDateLong(c.approvedAt)}
-            />
-          ) : null}
         </MetaGrid>
 
         {c.attachmentUrl ? (
@@ -196,13 +145,6 @@ export function ContributionDetailScreen() {
               View attachment
             </Text>
           </>
-        ) : null}
-
-        {c.status === 'REJECTED' && c.rejectionReason ? (
-          <View style={styles.rejectionBox}>
-            <Text style={styles.rejectionLabel}>Rejection reason</Text>
-            <Text style={styles.rejectionText}>{c.rejectionReason}</Text>
-          </View>
         ) : null}
 
         <View style={styles.divider} />
@@ -224,48 +166,6 @@ export function ContributionDetailScreen() {
           onPress={() => navigation.navigate('EditContribution', { id: c.id })}
         />
       ) : null}
-
-      {canModerate && c.status === 'PENDING' ? (
-        <Card style={styles.spaced}>
-          <Text style={styles.reviewTitle}>Review</Text>
-          <View style={styles.reviewButtons}>
-            <Button
-              title="Approve"
-              variant="success"
-              loading={actionLoading}
-              style={styles.flexBtn}
-              onPress={handleApprove}
-            />
-            <Button
-              title="Reject"
-              variant="secondary"
-              disabled={actionLoading}
-              style={styles.flexBtn}
-              onPress={() => setShowRejectForm((v) => !v)}
-            />
-          </View>
-
-          {showRejectForm ? (
-            <View style={styles.rejectForm}>
-              <Input
-                label="Reason for rejection (optional)"
-                value={rejectReason}
-                onChangeText={setRejectReason}
-                placeholder="Let the contributor know what needs to change…"
-                multiline
-                numberOfLines={3}
-              />
-              <Button
-                title="Confirm rejection"
-                variant="danger"
-                loading={actionLoading}
-                onPress={handleReject}
-              />
-            </View>
-          ) : null}
-        </Card>
-      ) : null}
-
       {canDelete ? (
         <Button
           title="Delete contribution"
@@ -311,21 +211,6 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.accentEmphasis,
   },
-  rejectionBox: {
-    backgroundColor: colors.dangerSubtle,
-    borderRadius: 6,
-    padding: spacing.md,
-    gap: spacing.xs,
-  },
-  rejectionLabel: {
-    ...typography.caption,
-    color: colors.dangerEmphasis,
-    fontWeight: '600',
-  },
-  rejectionText: {
-    ...typography.body,
-    color: colors.text,
-  },
   timestamps: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -336,21 +221,5 @@ const styles = StyleSheet.create({
   },
   spaced: {
     marginTop: spacing.lg,
-  },
-  reviewTitle: {
-    ...typography.bodyStrong,
-    color: colors.text,
-    marginBottom: spacing.md,
-  },
-  reviewButtons: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  flexBtn: {
-    flex: 1,
-  },
-  rejectForm: {
-    marginTop: spacing.md,
-    gap: spacing.md,
   },
 });

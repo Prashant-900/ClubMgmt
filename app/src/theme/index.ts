@@ -1,6 +1,6 @@
 import { colors, heatmapRamp } from './colors';
 import { radius, spacing, typography } from './layout';
-import type { Role, ContributionStatus } from '../types';
+import type { Role } from '../types';
 
 export { colors, heatmapRamp, radius, spacing, typography };
 
@@ -17,21 +17,7 @@ export function roleColor(role: Role): string {
   }
 }
 
-/** {fg, bg} colors for a contribution-status badge. */
-export function statusColors(status: ContributionStatus): {
-  fg: string;
-  bg: string;
-} {
-  switch (status) {
-    case 'APPROVED':
-      return { fg: colors.successEmphasis, bg: colors.successSubtle };
-    case 'REJECTED':
-      return { fg: colors.dangerEmphasis, bg: colors.dangerSubtle };
-    case 'PENDING':
-    default:
-      return { fg: colors.warningEmphasis, bg: colors.warningSubtle };
-  }
-}
+
 
 /** Map an intensity level (0–4) to a heatmap color. */
 export function heatmapColor(level: number): string {

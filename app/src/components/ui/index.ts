@@ -5,6 +5,6 @@ export { Badge } from './Badge';
 export { Input } from './Input';
 export { Spinner } from './Spinner';
 export { EmptyState } from './EmptyState';
-export { RoleBadge, StatusBadge, CategoryBadge } from './StatusBadge';
+export { RoleBadge, CategoryBadge } from './StatusBadge';
 export { SegmentedControl, type SegmentedControlOption } from './SegmentedControl';
 export { GdscLoader, GdscLoaderScreen } from './GdscLoader';

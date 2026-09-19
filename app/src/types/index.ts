@@ -75,10 +75,7 @@ export interface PaginatedResponse<T> {
 // ── Member stats / profile ──
 export interface MemberStats {
   totalContributions: number;
-  pendingCount: number;
-  approvedCount: number;
-  rejectedCount: number;
-  approvedHours: number;
+  totalHours: number;
   recentContributions: Contribution[];
 }
 
@@ -103,8 +100,6 @@ export interface HeatmapResponse {
 }
 
 // ── Contribution model ──
-export type ContributionStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
-
 export type ContributionCategory =
   | 'DEVELOPMENT'
   | 'WORKSHOP'
@@ -123,14 +118,10 @@ export interface Contribution {
   hours: number;
   datePerformed: string;
   attachmentUrl: string | null;
-  status: ContributionStatus;
-  rejectionReason: string | null;
-  approvedAt: string | null;
   createdAt: string;
   updatedAt: string;
   user?: Pick<User, 'id' | 'name' | 'email'> | null;
   club?: Club | null;
-  approvedBy?: Pick<User, 'id' | 'name' | 'email'> | null;
 }
 
 export interface ContributionListResponse {
@@ -159,10 +150,8 @@ export interface WeeklyTrendPoint {
 }
 
 export interface ClubStats {
-  totalApproved: number;
-  totalPending: number;
-  totalRejected: number;
-  totalApprovedHours: number;
+  totalContributions: number;
+  totalHours: number;
 }
 
 export interface ClubAnalytics {
@@ -187,22 +176,6 @@ export interface GlobalAnalytics {
   categoryBreakdown: CategoryStat[];
   recentContributions: Contribution[];
   weeklyTrend: WeeklyTrendPoint[];
-}
-
-// ── Leaderboard ──
-export type LeaderboardPeriod = 'weekly' | 'monthly' | 'semester' | 'all';
-
-export interface LeaderboardEntry {
-  rank: number;
-  user: Pick<User, 'id' | 'name' | 'email' | 'clubId' | 'club'>;
-  totalHours: number;
-  totalContributions: number;
-}
-
-export interface LeaderboardResponse {
-  period: LeaderboardPeriod;
-  entries: LeaderboardEntry[];
-  pagination: Pagination;
 }
 
 // ── Generic API envelope ──

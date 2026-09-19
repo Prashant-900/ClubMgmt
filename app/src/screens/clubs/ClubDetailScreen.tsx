@@ -24,21 +24,17 @@ import type {
   ClubAnalytics,
   Contribution,
   EnrichedClub,
-  LeaderboardEntry,
   User,
 } from '../../types';
 import { colors, spacing, typography } from '../../theme';
 
-type TabValue = 'overview' | 'members' | 'contributions' | 'analytics';
+type TabValue = 'members' | 'contributions' | 'analytics';
 
 const TABS = [
-  { value: 'overview' as TabValue, label: 'Overview' },
   { value: 'members' as TabValue, label: 'Members' },
   { value: 'contributions' as TabValue, label: 'Contributions' },
   { value: 'analytics' as TabValue, label: 'Analytics' },
 ];
-
-const MEDALS: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' };
 
 /**
  * Club drill-down screen with four tabs: Overview (leaderboard), Members,
@@ -50,9 +46,8 @@ export function ClubDetailScreen() {
   const { isAdmin, isCoordinator } = useAuth();
   const { clubId, clubName } = route.params;
 
-  const [tab, setTab] = useState<TabValue>('overview');
+  const [tab, setTab] = useState<TabValue>('members');
   const [club, setClub] = useState<EnrichedClub | null>(null);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [members, setMembers] = useState<User[]>([]);
   const [contributions, setContributions] = useState<Contribution[]>([]);
   const [analytics, setAnalytics] = useState<ClubAnalytics | null>(null);
@@ -65,10 +60,9 @@ export function ClubDetailScreen() {
   const load = useCallback(async () => {
     setError(null);
     try {
-      const [clubsRes, lbRes, membersRes, contribRes, analyticsRes] =
+      const [clubsRes, membersRes, contribRes, analyticsRes] =
         await Promise.allSettled([
           clubApi.listClubs(true),
-          contributionApi.getLeaderboard({ clubId, limit: 20 }),
           memberApi.listMembers({ clubId, limit: 100 }),
           contributionApi.listContributions({ clubId, limit: 20 }),
           contributionApi.getClubAnalytics(clubId),
@@ -79,9 +73,6 @@ export function ClubDetailScreen() {
           (c) => c.id === clubId,
         );
         setClub(found ?? null);
-      }
-      if (lbRes.status === 'fulfilled') {
-        setLeaderboard(lbRes.value.data?.entries ?? []);
       }
       if (membersRes.status === 'fulfilled') {
         setMembers(membersRes.value.data?.members ?? []);
@@ -144,8 +135,8 @@ export function ClubDetailScreen() {
           value={club?.contributionCount ?? 0}
         />
         <StatCard
-          label="Approved hours"
-          value={formatHours(analytics?.stats.totalApprovedHours ?? 0)}
+          label="Total hours"
+          value={formatHours(analytics?.stats.totalHours ?? 0)}
           valueColor={colors.successEmphasis}
         />
         <StatCard
@@ -158,9 +149,7 @@ export function ClubDetailScreen() {
         <SegmentedControl options={TABS} value={tab} onChange={setTab} />
       </View>
 
-      {tab === 'overview' ? (
-        <OverviewTab entries={leaderboard} />
-      ) : tab === 'members' ? (
+      {tab === 'members' ? (
         <MembersTab
           members={members}
           onOpen={(id) => navigation.navigate('MemberProfile', { id })}
@@ -184,43 +173,6 @@ export function ClubDetailScreen() {
 }
 
 // ── Tabs ────────────────────────────────────────────────────────────────────
-
-function OverviewTab({ entries }: { entries: LeaderboardEntry[] }) {
-  if (entries.length === 0) {
-    return (
-      <EmptyState
-        title="No ranking yet"
-        message="No contributions logged in this domain yet."
-      />
-    );
-  }
-  return (
-    <View style={styles.list}>
-      <Text style={styles.sectionTitle}>Leaderboard</Text>
-      {entries.map((entry) => (
-        <Card key={entry.user.id} style={styles.row} compact>
-          <View style={styles.rankCell}>
-            <Text style={styles.rankText}>
-              {MEDALS[entry.rank] ?? entry.rank}
-            </Text>
-          </View>
-          <Avatar name={entry.user.name} size={36} />
-          <View style={styles.memberCell}>
-            <Text style={styles.memberName} numberOfLines={1}>
-              {entry.user.name ?? entry.user.email}
-            </Text>
-            <Text style={styles.memberSub} numberOfLines={1}>
-              {entry.totalContributions} contributions
-            </Text>
-          </View>
-          <Text style={styles.hoursText}>
-            {formatHours(entry.totalHours)}h
-          </Text>
-        </Card>
-      ))}
-    </View>
-  );
-}
 
 function MembersTab({
   members,
@@ -311,23 +263,13 @@ function AnalyticsTab({
     <View style={styles.list}>
       <StatGrid>
         <StatCard
-          label="Approved"
-          value={analytics.stats.totalApproved}
+          label="Contributions"
+          value={analytics.stats.totalContributions}
           valueColor={colors.successEmphasis}
         />
         <StatCard
-          label="Pending"
-          value={analytics.stats.totalPending}
-          valueColor={colors.warningEmphasis}
-        />
-        <StatCard
-          label="Rejected"
-          value={analytics.stats.totalRejected}
-          valueColor={colors.dangerEmphasis}
-        />
-        <StatCard
-          label="Hours"
-          value={formatHours(analytics.stats.totalApprovedHours)}
+          label="Total hours"
+          value={formatHours(analytics.stats.totalHours)}
         />
       </StatGrid>
       {canManage ? (

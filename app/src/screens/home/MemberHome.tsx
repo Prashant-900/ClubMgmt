@@ -17,16 +17,13 @@ import { contributionApi } from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import { formatHours, getApiErrorMessage } from '../../utils/format';
 import type { AppNavigation } from '../../navigation/types';
-import type { Contribution, HeatmapResponse, LeaderboardEntry } from '../../types';
+import type { Contribution, HeatmapResponse } from '../../types';
 import { StyleSheet, Text, View } from 'react-native';
 import { colors, spacing, typography } from '../../theme';
 
 interface MemberHomeData {
   contributions: Contribution[];
-  approvedHours: number;
-  approvedCount: number;
-  pendingCount: number;
-  rank: number | null;
+  totalHours: number;
 }
 
 /** Member / coordinator landing dashboard. */
@@ -43,9 +40,8 @@ export function MemberHome() {
   const load = useCallback(async () => {
     setError(null);
     setHeatmapError(null);
-    const [contribRes, boardRes, heatmapRes] = await Promise.allSettled([
+    const [contribRes, heatmapRes] = await Promise.allSettled([
       contributionApi.listMyContributions({ limit: 100 }),
-      contributionApi.getLeaderboard({ period: 'all', limit: 100 }),
       user?.id
         ? contributionApi.getContributionHeatmap({ userId: user.id })
         : Promise.reject(new Error('No user')),
@@ -65,28 +61,11 @@ export function MemberHome() {
     }
 
     const contributions = contribRes.value.data.contributions;
-    const approved = contributions.filter((c) => c.status === 'APPROVED');
-    const pending = contributions.filter((c) => c.status === 'PENDING');
-    const approvedHours = approved.reduce((sum, c) => sum + c.hours, 0);
-
-    let rank: number | null = null;
-    if (
-      boardRes.status === 'fulfilled' &&
-      boardRes.value.success &&
-      boardRes.value.data
-    ) {
-      const mine = boardRes.value.data.entries.find(
-        (e: LeaderboardEntry) => e.user.id === user?.id,
-      );
-      rank = mine ? mine.rank : null;
-    }
+    const totalHours = contributions.reduce((sum, c) => sum + c.hours, 0);
 
     setData({
       contributions,
-      approvedHours,
-      approvedCount: approved.length,
-      pendingCount: pending.length,
-      rank,
+      totalHours,
     });
 
     if (
@@ -171,23 +150,13 @@ export function MemberHome() {
       <StatGrid>
         <StatCard
           label="Total Hours"
-          value={formatHours(data.approvedHours)}
+          value={formatHours(data.totalHours)}
           valueColor={colors.successEmphasis}
         />
         <StatCard
-          label="Approved"
-          value={data.approvedCount}
+          label="Contributions"
+          value={data.contributions.length}
           valueColor={colors.accentEmphasis}
-        />
-        <StatCard
-          label="Pending"
-          value={data.pendingCount}
-          valueColor={colors.warningEmphasis}
-        />
-        <StatCard
-          label="Domain Rank"
-          value={data.rank != null ? `#${data.rank}` : '—'}
-          valueColor={colors.dangerEmphasis}
         />
       </StatGrid>
 

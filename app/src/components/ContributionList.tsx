@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Button, EmptyState, Spinner } from './ui';
 import { ContributionCard } from './ContributionCard';
 import { colors, radius, spacing, typography } from '../theme';
@@ -8,12 +8,10 @@ import type {
   Contribution,
   ContributionCategory,
   ContributionListResponse,
-  ContributionStatus,
   Pagination,
 } from '../types';
 
 type ListFetcher = (params: {
-  status?: ContributionStatus;
   category?: ContributionCategory;
   page?: number;
   limit?: number;
@@ -33,13 +31,6 @@ interface ContributionListProps {
   header?: React.ReactNode;
 }
 
-const STATUS_FILTERS: { label: string; value?: ContributionStatus }[] = [
-  { label: 'All', value: undefined },
-  { label: 'Pending', value: 'PENDING' },
-  { label: 'Approved', value: 'APPROVED' },
-  { label: 'Rejected', value: 'REJECTED' },
-];
-
 export function ContributionList({
   fetcher,
   onOpen,
@@ -50,7 +41,6 @@ export function ContributionList({
   emptyMessage,
   header,
 }: ContributionListProps) {
-  const [status, setStatus] = useState<ContributionStatus | undefined>(undefined);
   const [page, setPage] = useState(1);
   const [items, setItems] = useState<Contribution[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
@@ -60,15 +50,15 @@ export function ContributionList({
   // Serialise the external refresh signal so it can join the effect deps.
   const refreshSignal = useMemo(() => JSON.stringify(refreshKey), [refreshKey]);
 
-  // Reset to page 1 whenever the status filter or an external dependency changes.
+  // Reset to page 1 whenever an external dependency changes.
   useEffect(() => {
     setPage(1);
-  }, [status, refreshSignal]);
+  }, [refreshSignal]);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const res = await fetcher({ status, page, limit: pageSize });
+    const res = await fetcher({ page, limit: pageSize });
     if (res.success && res.data) {
       setItems(res.data.contributions);
       setPagination(res.data.pagination);
@@ -78,7 +68,7 @@ export function ContributionList({
       setError(getApiErrorMessage(res, 'Could not load contributions.'));
     }
     setLoading(false);
-  }, [fetcher, status, page, pageSize]);
+  }, [fetcher, page, pageSize]);
 
   useEffect(() => {
     load();
@@ -91,25 +81,6 @@ export function ContributionList({
   return (
     <View>
       {header}
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filterRow}
-      >
-        {STATUS_FILTERS.map((filter) => {
-          const active = filter.value === status;
-          return (
-            <Text
-              key={filter.label}
-              onPress={() => setStatus(filter.value)}
-              style={[styles.chip, active && styles.chipActive]}
-            >
-              {filter.label}
-            </Text>
-          );
-        })}
-      </ScrollView>
 
       {loading ? (
         <Spinner label="Loading contributions…" />

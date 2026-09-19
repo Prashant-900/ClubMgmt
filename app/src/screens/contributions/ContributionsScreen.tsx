@@ -7,10 +7,9 @@ import type { AppNavigation } from '../../navigation/types';
 import type { Role } from '../../types';
 import { colors, spacing, typography } from '../../theme';
 import { MineTab } from './tabs/MineTab';
-import { ApprovalQueue } from './tabs/ApprovalQueue';
 import { ClubFeedTab } from './tabs/ClubFeedTab';
 
-type HubTab = 'mine' | 'pending' | 'club';
+type HubTab = 'mine' | 'club';
 
 interface TabDef {
   value: HubTab;
@@ -20,7 +19,6 @@ interface TabDef {
 
 const TABS: TabDef[] = [
   { value: 'mine', label: 'Mine' },
-  { value: 'pending', label: 'Pending', roles: ['ADMIN', 'COORDINATOR'] },
   { value: 'club', label: 'Domain feed', roles: ['ADMIN', 'COORDINATOR'] },
 ];
 
@@ -64,10 +62,6 @@ export function ContributionsScreen() {
       <View style={styles.body}>
         {activeTab === 'mine' ? (
           <MineTab
-            onOpen={(c) => navigation.navigate('ContributionDetail', { id: c.id })}
-          />
-        ) : activeTab === 'pending' ? (
-          <ApprovalQueue
             onOpen={(c) => navigation.navigate('ContributionDetail', { id: c.id })}
           />
         ) : (

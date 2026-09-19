@@ -119,14 +119,10 @@ export function EditContributionScreen() {
 
   const c = contribution;
   const isOwner = Boolean(user) && c.user?.id === user?.id;
-  const canEdit = isOwner && c.status === 'PENDING';
+  const canEdit = isOwner;
 
   if (!canEdit) {
-    const lockedMessage = !isOwner
-      ? 'Only the member who submitted a contribution can edit it. You can still view the full record.'
-      : c.status === 'APPROVED'
-      ? 'This contribution has already been approved, so it can no longer be edited. Ask a coordinator if something needs to change.'
-      : 'This contribution has already been rejected, so it can no longer be edited. Submit a new one with the corrected details.';
+    const lockedMessage = 'Only the member who submitted a contribution can edit it. You can still view the full record.';
 
     return (
       <Screen>
@@ -163,7 +159,6 @@ export function EditContributionScreen() {
         submitLabel="Save changes"
         submitting={submitting}
         onSubmit={handleSubmit}
-        notice="Edits are only possible while this contribution is still pending review."
         initialValues={toFormValues(c)}
       />
     </Screen>
