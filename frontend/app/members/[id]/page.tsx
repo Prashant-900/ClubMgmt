@@ -505,7 +505,6 @@ function MemberProfileContent({ memberId }: { memberId: string }) {
                         {c.title}
                       </span>
                     </span>
-                    </span>
                     <span className="block text-xs text-gh-text-secondary mt-1">
                       {formatDate(c.datePerformed)}
                     </span>
