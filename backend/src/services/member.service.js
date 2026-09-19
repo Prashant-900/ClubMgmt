@@ -144,14 +144,9 @@ async function getMemberById(id, requester) {
  * reducing in JavaScript, which would not survive a member with a long history.
  */
 async function getContributionStats(userId) {
-  const [byStatus, approvedHours, recent] = await Promise.all([
-    prisma.contribution.groupBy({
-      by: ["status"],
-      where: { userId },
-      _count: { _all: true },
-    }),
+  const [totalHours, recent, totalContributions] = await Promise.all([
     prisma.contribution.aggregate({
-      where: { userId, status: "APPROVED" },
+      where: { userId },
       _sum: { hours: true },
     }),
     prisma.contribution.findMany({
@@ -161,27 +156,21 @@ async function getContributionStats(userId) {
         title: true,
         category: true,
         hours: true,
-        status: true,
         datePerformed: true,
         createdAt: true,
       },
       orderBy: { datePerformed: "desc" },
       take: 5,
     }),
+    prisma.contribution.count({
+      where: { userId }
+    })
   ]);
 
-  const counts = { PENDING: 0, APPROVED: 0, REJECTED: 0 };
-  for (const row of byStatus) {
-    counts[row.status] = row._count._all;
-  }
-
   return {
-    totalContributions: counts.PENDING + counts.APPROVED + counts.REJECTED,
-    pendingCount: counts.PENDING,
-    approvedCount: counts.APPROVED,
-    rejectedCount: counts.REJECTED,
+    totalContributions,
     // Float sums can land on values like 12.299999999999999.
-    approvedHours: Math.round((approvedHours._sum.hours || 0) * 100) / 100,
+    totalHours: Math.round((totalHours._sum.hours || 0) * 100) / 100,
     recentContributions: recent,
   };
 }
