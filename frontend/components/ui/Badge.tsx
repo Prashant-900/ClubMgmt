@@ -1,6 +1,6 @@
-// Badge.tsx — Google-style label / status badges
+// Badge.tsx — Google-style label badges
 import React from "react";
-import type { ContributionCategory, ContributionStatus, Role } from "@/types";
+import type { ContributionCategory, Role } from "@/types";
 
 // ── Role badge (Google palette: admin=red, coordinator=blue, member=green) ────
 
@@ -26,53 +26,6 @@ export function RoleBadge({ role, className = "" }: RoleBadgeProps) {
       {role}
     </span>
   );
-}
-
-// ── Status badge ──────────────────────────────────────────────────────────────
-
-const STATUS_CONFIG: Record<
-  ContributionStatus,
-  { label: string; className: string; dot: string }
-> = {
-  APPROVED: {
-    label: "Approved",
-    className:
-      "text-brand-green-fg bg-[rgba(52,168,83,0.10)] border border-[rgba(52,168,83,0.30)]",
-    dot: "bg-brand-green",
-  },
-  REJECTED: {
-    label: "Rejected",
-    className:
-      "text-brand-red-fg bg-[rgba(234,67,53,0.10)] border border-[rgba(234,67,53,0.30)]",
-    dot: "bg-brand-red",
-  },
-  PENDING: {
-    label: "Pending",
-    className:
-      "text-brand-yellow-fg bg-[rgba(251,188,5,0.16)] border border-[rgba(251,188,5,0.40)]",
-    dot: "bg-brand-yellow",
-  },
-};
-
-interface StatusBadgeProps {
-  status: ContributionStatus;
-  className?: string;
-}
-
-export function StatusBadge({ status, className = "" }: StatusBadgeProps) {
-  const cfg = STATUS_CONFIG[status];
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium ${cfg.className} ${className}`}
-    >
-      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-      {cfg.label}
-    </span>
-  );
-}
-
-export function getStatusConfig(status: ContributionStatus) {
-  return STATUS_CONFIG[status];
 }
 
 // ── Category badge (mapped onto the four Google hues) ─────────────────────────

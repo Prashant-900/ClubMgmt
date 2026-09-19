@@ -7,11 +7,9 @@ import { AuthGuard } from "@/components/providers/AuthGuard";
 import { useAuth } from "@/components/providers/AuthProvider";
 import {
   getContributionById,
-  approveContribution,
-  rejectContribution,
   deleteContribution,
 } from "@/lib/api/contribution.api";
-import { StatusBadge, CategoryBadge } from "@/components/ui/Badge";
+import { CategoryBadge } from "@/components/ui/Badge";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import type { Contribution } from "@/types";
 import Link from "next/link";
@@ -26,19 +24,13 @@ function ContributionDetailContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
-  const [showRejectForm, setShowRejectForm] = useState(false);
-  const [rejectReason, setRejectReason] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const canModerate =
-    user?.role === "ADMIN" ||
-    (user?.role === "COORDINATOR" && contribution?.club?.id === user?.clubId);
   const canDelete = user?.role === "ADMIN";
-  /** Owners may edit their own work, but only while it is still pending. */
+  /** Owners may edit their own contributions at any time. */
   const canEdit =
     Boolean(user) &&
-    contribution?.user?.id === user?.id &&
-    contribution?.status === "PENDING";
+    contribution?.user?.id === user?.id;
 
   const fetchContribution = useCallback(async () => {
     setLoading(true);
@@ -57,33 +49,6 @@ function ContributionDetailContent() {
   useEffect(() => {
     fetchContribution();
   }, [fetchContribution]);
-
-  async function handleApprove() {
-    setActionLoading(true);
-    try {
-      const res = await approveContribution(id, token ?? undefined);
-      if (res.data) setContribution(res.data);
-    } catch (err: unknown) {
-      const e = err as { message?: string };
-      setError(e?.message ?? "Failed to approve");
-    } finally {
-      setActionLoading(false);
-    }
-  }
-
-  async function handleReject() {
-    setActionLoading(true);
-    try {
-      const res = await rejectContribution(id, rejectReason || undefined, token ?? undefined);
-      if (res.data) setContribution(res.data);
-      setShowRejectForm(false);
-    } catch (err: unknown) {
-      const e = err as { message?: string };
-      setError(e?.message ?? "Failed to reject");
-    } finally {
-      setActionLoading(false);
-    }
-  }
 
   async function handleDelete() {
     setActionLoading(true);
@@ -159,11 +124,10 @@ function ContributionDetailContent() {
 
       {/* Main card */}
       <div className="bg-gh-canvas-subtle border border-gh-border-default rounded-md p-5 space-y-5">
-        {/* Status + category row */}
+        {/* Category + edit row */}
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <StatusBadge status={contribution.status} />
+          <CategoryBadge category={contribution.category} />
           <div className="flex items-center gap-2">
-            <CategoryBadge category={contribution.category} />
             {canEdit && (
               <Link
                 href={`/contributions/${contribution.id}/edit`}
@@ -229,21 +193,6 @@ function ContributionDetailContent() {
             }
           />
           <MetaField label="Domain" value={contribution.club?.name ?? "—"} />
-
-          {contribution.approvedBy && (
-            <MetaField
-              label={contribution.status === "REJECTED" ? "Reviewed By" : "Approved By"}
-              value={contribution.approvedBy.name ?? contribution.approvedBy.email}
-            />
-          )}
-          {contribution.approvedAt && (
-            <MetaField
-              label={contribution.status === "REJECTED" ? "Reviewed At" : "Approved At"}
-              value={new Date(contribution.approvedAt).toLocaleDateString("en-IN", {
-                day: "numeric", month: "long", year: "numeric",
-              })}
-            />
-          )}
         </div>
 
         {/* Attachment */}
@@ -265,14 +214,6 @@ function ContributionDetailContent() {
           </div>
         )}
 
-        {/* Rejection reason */}
-        {contribution.status === "REJECTED" && contribution.rejectionReason && (
-          <div className="px-4 py-3 rounded-md bg-gh-danger-muted border border-gh-danger-emphasis/40">
-            <p className="text-xs font-medium text-gh-danger-fg mb-1">Rejection reason</p>
-            <p className="text-sm text-gh-text-primary">{contribution.rejectionReason}</p>
-          </div>
-        )}
-
         {/* Timestamps */}
         <div className="flex items-center justify-between pt-3 border-t border-gh-border-muted text-xs text-gh-text-tertiary">
           <span>Submitted {new Date(contribution.createdAt).toLocaleDateString("en-IN")}</span>
@@ -287,65 +228,6 @@ function ContributionDetailContent() {
           className="mt-4 px-4 py-3 rounded-md bg-gh-danger-muted border border-gh-danger-emphasis/40 text-sm text-gh-danger-fg"
         >
           {error}
-        </div>
-      )}
-
-      {/* Moderator actions */}
-      {canModerate && contribution.status === "PENDING" && (
-        <div className="mt-4 bg-gh-canvas-subtle border border-gh-border-default rounded-md p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-gh-text-primary border-b border-gh-border-muted pb-3">
-            Review
-          </h2>
-
-          <div className="flex gap-3">
-            <button
-              onClick={handleApprove}
-              disabled={actionLoading}
-              className="gh-btn gh-btn-primary flex-1 justify-center disabled:opacity-50 disabled:cursor-not-allowed
-                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gh-accent-emphasis
-                         focus-visible:ring-offset-2 focus-visible:ring-offset-gh-canvas-subtle"
-            >
-              {actionLoading ? "Working…" : "Approve"}
-            </button>
-            <button
-              onClick={() => setShowRejectForm(!showRejectForm)}
-              disabled={actionLoading}
-              aria-expanded={showRejectForm}
-              aria-controls="reject-reason-panel"
-              className="gh-btn gh-btn-default flex-1 justify-center text-gh-danger-fg disabled:opacity-50 disabled:cursor-not-allowed
-                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gh-accent-emphasis
-                         focus-visible:ring-offset-2 focus-visible:ring-offset-gh-canvas-subtle"
-            >
-              Reject
-            </button>
-          </div>
-
-          {showRejectForm && (
-            <div id="reject-reason-panel" className="space-y-3 animate-fade-in">
-              <div className="space-y-1.5">
-                <label htmlFor="reject-reason" className="block text-xs font-medium text-gh-text-secondary">
-                  Reason for rejection <span className="text-gh-text-tertiary">(optional)</span>
-                </label>
-                <textarea
-                  id="reject-reason"
-                  value={rejectReason}
-                  onChange={(e) => setRejectReason(e.target.value)}
-                  placeholder="Let the contributor know what needs to change…"
-                  rows={3}
-                  className="gh-input py-2 resize-none"
-                />
-              </div>
-              <button
-                onClick={handleReject}
-                disabled={actionLoading}
-                className="gh-btn gh-btn-danger w-full justify-center disabled:opacity-50 disabled:cursor-not-allowed
-                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gh-accent-emphasis
-                           focus-visible:ring-offset-2 focus-visible:ring-offset-gh-canvas-subtle"
-              >
-                {actionLoading ? "Rejecting…" : "Confirm rejection"}
-              </button>
-            </div>
-          )}
         </div>
       )}
 

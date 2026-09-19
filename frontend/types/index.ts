@@ -82,13 +82,10 @@ export interface PaginatedResponse<T> {
  */
 export interface MemberStats {
   totalContributions: number;
-  pendingCount: number;
-  approvedCount: number;
-  rejectedCount: number;
-  approvedHours: number;
+  totalHours: number;
   recentContributions: Pick<
     Contribution,
-    "id" | "title" | "category" | "hours" | "status" | "datePerformed" | "createdAt"
+    "id" | "title" | "category" | "hours" | "datePerformed" | "createdAt"
   >[];
 }
 
@@ -127,8 +124,6 @@ export interface ApiResponse<T = unknown> {
 
 // ── Contribution enums ────────────────────────────────────────────────────────
 
-export type ContributionStatus = "PENDING" | "APPROVED" | "REJECTED";
-
 export type ContributionCategory =
   | "DEVELOPMENT"
   | "WORKSHOP"
@@ -149,14 +144,10 @@ export interface Contribution {
   hours: number;
   datePerformed: string;
   attachmentUrl: string | null;
-  status: ContributionStatus;
-  rejectionReason: string | null;
-  approvedAt: string | null;
   createdAt: string;
   updatedAt: string;
   user: Pick<User, "id" | "name" | "email" | "role">;
   club: Pick<Club, "id" | "name">;
-  approvedBy: Pick<User, "id" | "name" | "email"> | null;
 }
 
 // ── Contribution list response ────────────────────────────────────────────────
@@ -187,10 +178,8 @@ export interface WeeklyTrendPoint {
 }
 
 export interface ClubStats {
-  totalApproved: number;
-  totalPending: number;
-  totalRejected: number;
-  totalApprovedHours: number;
+  totalContributions: number;
+  totalHours: number;
 }
 
 export interface ClubAnalytics {
@@ -217,31 +206,11 @@ export interface GlobalAnalytics {
   weeklyTrend: WeeklyTrendPoint[];
 }
 
-// ── Leaderboard ───────────────────────────────────────────────────────────────
-
-export type LeaderboardPeriod = "weekly" | "monthly" | "semester" | "all";
-
-export interface LeaderboardEntry {
-  rank: number;
-  user: Pick<User, "id" | "name" | "email"> & { club?: Club | null };
-  totalHours: number;
-  totalContributions: number;
-}
-
-export interface LeaderboardResponse {
-  period: LeaderboardPeriod;
-  entries: LeaderboardEntry[];
-  pagination: Pagination;
-}
-
 // ── Notifications ──
 // Frontend-facing shape for the notification system (redesign initiative).
 // The backend model/endpoints are delivered separately; the web bell polls
 // these and degrades gracefully (empty) when the API isn't live yet.
 export type NotificationType =
-  | "CONTRIBUTION_APPROVED"
-  | "CONTRIBUTION_REJECTED"
-  | "CONTRIBUTION_PENDING"
   | "INVITE_USED";
 
 export interface AppNotification {

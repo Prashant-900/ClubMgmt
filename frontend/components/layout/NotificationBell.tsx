@@ -9,21 +9,12 @@ import Link from "next/link";
 import { useNotifications } from "@/lib/hooks/useNotifications";
 import {
   BellIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  ClockIcon,
   InviteIcon,
 } from "@/components/icons";
 import type { AppNotification, NotificationType } from "@/types";
 
 function iconFor(type: NotificationType) {
   switch (type) {
-    case "CONTRIBUTION_APPROVED":
-      return <CheckCircleIcon className="w-4 h-4 text-brand-green-fg" />;
-    case "CONTRIBUTION_REJECTED":
-      return <XCircleIcon className="w-4 h-4 text-brand-red-fg" />;
-    case "CONTRIBUTION_PENDING":
-      return <ClockIcon className="w-4 h-4 text-brand-yellow-fg" />;
     case "INVITE_USED":
       return <InviteIcon className="w-4 h-4 text-brand-blue-fg" />;
     default:

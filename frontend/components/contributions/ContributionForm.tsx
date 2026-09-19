@@ -406,53 +406,7 @@ export function ContributionForm({
         </div>
       )}
 
-      {/* Auto-approve notice — create only */}
-      {!isEdit &&
-        (user?.role === "COORDINATOR" || user?.role === "ADMIN") && (
-          <div className="flex items-start gap-2 px-3 py-2 rounded-md bg-gh-success-muted border border-gh-success-emphasis/40">
-            <svg
-              className="w-4 h-4 shrink-0 mt-px text-gh-success-fg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <p className="text-xs text-gh-success-fg">
-              Your contributions are automatically approved.
-            </p>
-          </div>
-        )}
 
-      {/* Edit notice */}
-      {isEdit && (
-        <div className="flex items-start gap-2 px-3 py-2 rounded-md bg-gh-accent-subtle border border-gh-accent-emphasis/40">
-          <svg
-            className="w-4 h-4 shrink-0 mt-px text-role-coordinator"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <p className="text-xs text-gh-text-secondary">
-            Edits are only possible while this contribution is still pending
-            review.
-          </p>
-        </div>
-      )}
 
       {/* Error */}
       {error && (

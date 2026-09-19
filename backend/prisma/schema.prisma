@@ -16,12 +16,6 @@ enum Role {
   MEMBER
 }
 
-enum ContributionStatus {
-  PENDING
-  APPROVED
-  REJECTED
-}
-
 enum ContributionCategory {
   DEVELOPMENT
   WORKSHOP
@@ -71,9 +65,6 @@ model User {
 
   // Contributions submitted by this user
   contributions Contribution[] @relation("UserContributions")
-
-  // Contributions approved/rejected by this user
-  approvedContributions Contribution[] @relation("Approvals")
 
   // Active refresh tokens (sessions) for this user
   refreshTokens RefreshToken[]
@@ -129,22 +120,14 @@ model Contribution {
   datePerformed DateTime
   attachmentUrl String?
 
-  status          ContributionStatus @default(PENDING)
-  rejectionReason String?
-
-  approvedById String?
-  approvedBy   User?     @relation("Approvals", fields: [approvedById], references: [id])
-  approvedAt   DateTime?
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // M-07: indexes for the hot query paths.
-  // "my contributions" and per-user leaderboard grouping
+  // "my contributions" grouping
   @@index([userId])
-  // approval queue + club analytics (club scoping is almost always paired with status)
-  @@index([clubId, status])
-  // heatmap and leaderboard period windows filter on datePerformed
+  // club analytics scoping
+  @@index([clubId])
+  // heatmap period windows filter on datePerformed
   @@index([datePerformed])
   // default list ordering
   @@index([createdAt])

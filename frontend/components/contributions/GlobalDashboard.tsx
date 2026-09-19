@@ -116,34 +116,22 @@ export function GlobalDashboard({ clubs = [] }: GlobalDashboardProps) {
       ) : data ? (
         <>
           {/* Stat cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
             <StatCard
               label="Total Hours"
               value={
-                data.stats.totalApprovedHours % 1 === 0
-                  ? data.stats.totalApprovedHours
-                  : data.stats.totalApprovedHours.toFixed(1)
+                data.stats.totalHours % 1 === 0
+                  ? data.stats.totalHours
+                  : data.stats.totalHours.toFixed(1)
               }
-              sub="Approved"
+              sub="All logged"
               color="#34a853"
             />
             <StatCard
               label="Contributions"
-              value={data.stats.totalApproved}
-              sub="Approved"
+              value={data.stats.totalContributions}
+              sub="Total logged"
               color="#4285f4"
-            />
-            <StatCard
-              label="Pending"
-              value={data.stats.totalPending}
-              sub="Awaiting review"
-              color="#fbbc05"
-            />
-            <StatCard
-              label="Rejected"
-              value={data.stats.totalRejected}
-              sub="Total"
-              color="#ea4335"
             />
           </div>
 

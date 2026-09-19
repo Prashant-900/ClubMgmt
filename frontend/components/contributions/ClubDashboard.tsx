@@ -127,30 +127,18 @@ export function ClubDashboard({ clubId }: ClubDashboardProps) {
   return (
     <div className="space-y-6">
       {/* Stat cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
         <StatCard
-          label="Approved Hours"
-          value={data.stats.totalApprovedHours % 1 === 0 ? data.stats.totalApprovedHours : data.stats.totalApprovedHours.toFixed(1)}
-          sub="Total logged"
+          label="Total Hours"
+          value={data.stats.totalHours % 1 === 0 ? data.stats.totalHours : data.stats.totalHours.toFixed(1)}
+          sub="All logged"
           color="#34a853"
         />
         <StatCard
           label="Contributions"
-          value={data.stats.totalApproved}
-          sub="Approved"
+          value={data.stats.totalContributions}
+          sub="Total logged"
           color="#4285f4"
-        />
-        <StatCard
-          label="Pending"
-          value={data.stats.totalPending}
-          sub="Awaiting review"
-          color="#fbbc05"
-        />
-        <StatCard
-          label="Rejected"
-          value={data.stats.totalRejected}
-          sub="Total rejected"
-          color="#ea4335"
         />
       </div>
 
@@ -162,7 +150,7 @@ export function ClubDashboard({ clubId }: ClubDashboardProps) {
             Category Breakdown
           </h3>
           {data.categoryBreakdown.length === 0 ? (
-            <p className="text-xs text-[#5f6368] py-4 text-center">No approved contributions yet</p>
+            <p className="text-xs text-[#5f6368] py-4 text-center">No contributions yet</p>
           ) : (
             <div className="space-y-3.5">
               {data.categoryBreakdown.map((c, i) => (

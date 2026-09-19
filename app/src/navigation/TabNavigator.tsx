@@ -10,7 +10,6 @@ import { colors } from '../theme';
 import { HomeScreen } from '../screens/home/HomeScreen';
 import { ContributionsScreen } from '../screens/contributions/ContributionsScreen';
 import { MembersScreen } from '../screens/members/MembersScreen';
-import { LeaderboardScreen } from '../screens/leaderboard/LeaderboardScreen';
 import { ProfileScreen } from '../screens/profile/ProfileScreen';
 
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -60,7 +59,6 @@ const INDICATOR_BG = [
   '#34a853', // green  (Home)
   '#ea4335', // red    (Contributions)
   '#fbbc05', // yellow (Members)
-  '#4285f4', // blue   (Leaderboard)
   '#34a853', // green  (Profile — cycles back)
 ] as const;
 
@@ -73,7 +71,6 @@ const TABS: {
   { name: 'Home', label: 'Home', glyph: '⌂' },
   { name: 'Contributions', label: 'Logs', glyph: '✎' },
   { name: 'Members', label: 'Members', glyph: '⧉' },
-  { name: 'Leaderboard', label: 'Rank', glyph: '☆' },
   { name: 'Profile', label: 'Profile', custom: 'profile' },
 ];
 
@@ -235,7 +232,6 @@ export function TabNavigator() {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Contributions" component={ContributionsScreen} />
       <Tab.Screen name="Members" component={MembersScreen} />
-      <Tab.Screen name="Leaderboard" component={LeaderboardScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );

@@ -21,7 +21,7 @@ import { getMemberProfile } from "@/lib/api/member.api";
 import { getContributionHeatmap } from "@/lib/api/contribution.api";
 import { HeatmapGrid } from "@/components/contributions/HeatmapGrid";
 import { Avatar } from "@/components/ui/Avatar";
-import { RoleBadge, StatusBadge, CategoryBadge } from "@/components/ui/Badge";
+import { RoleBadge, CategoryBadge } from "@/components/ui/Badge";
 import type {
   HeatmapResponse,
   MemberProfile,
@@ -497,14 +497,14 @@ function MemberProfileContent({ memberId }: { memberId: string }) {
                              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gh-accent-emphasis"
                 >
                   <span className="shrink-0 mt-0.5">
-                    <StatusBadge status={c.status} />
+                    <CategoryBadge category={c.category} />
                   </span>
                   <span className="flex-1 min-w-0">
                     <span className="flex flex-wrap items-baseline gap-2">
                       <span className="text-sm font-medium text-gh-text-primary leading-snug">
                         {c.title}
                       </span>
-                      <CategoryBadge category={c.category} />
+                    </span>
                     </span>
                     <span className="block text-xs text-gh-text-secondary mt-1">
                       {formatDate(c.datePerformed)}

@@ -24,8 +24,6 @@ const CATEGORIES = [
   "OTHER",
 ];
 
-const STATUSES = ["PENDING", "APPROVED", "REJECTED"];
-
 // ── Shared select shape for a contribution ──────────────────────────────────
 const contributionSelect = {
   id: true,
@@ -35,32 +33,13 @@ const contributionSelect = {
   hours: true,
   datePerformed: true,
   attachmentUrl: true,
-  status: true,
-  rejectionReason: true,
-  approvedAt: true,
   createdAt: true,
   updatedAt: true,
   user: { select: { id: true, name: true, email: true, role: true } },
   club: { select: { id: true, name: true } },
-  approvedBy: { select: { id: true, name: true, email: true } },
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-/**
- * Determine the initial status and approval fields for a new contribution
- * based on the submitter's role.
- */
-function resolveInitialStatus(role, userId) {
-  if (role === "ADMIN" || role === "COORDINATOR") {
-    return {
-      status: "APPROVED",
-      approvedById: userId,
-      approvedAt: new Date(),
-    };
-  }
-  return { status: "PENDING" };
-}
 
 /**
  * Assert that the requester can act on contributions belonging to a club.
@@ -75,31 +54,6 @@ function assertClubScope(requester, clubId) {
       );
     }
   }
-}
-
-// ── Date helpers for leaderboard ─────────────────────────────────────────────
-
-function getStartOfWeek() {
-  const d = new Date();
-  const day = d.getDay(); // 0 = Sun
-  d.setDate(d.getDate() - day);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function getStartOfMonth() {
-  const d = new Date();
-  d.setDate(1);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function getStartOfSemester() {
-  // 6-month rolling window
-  const d = new Date();
-  d.setMonth(d.getMonth() - 6);
-  d.setHours(0, 0, 0, 0);
-  return d;
 }
 
 /** Midnight UTC on the same calendar day as `date`. */
@@ -174,8 +128,7 @@ function normalizeContributionInput(data = {}, { partial = false } = {}) {
 
 /**
  * Create a new contribution.
- * MEMBER → status = PENDING
- * COORDINATOR / ADMIN → status = APPROVED (auto)
+ * All contributions are stored directly — no approval workflow.
  */
 async function createContribution(data, requester) {
   const fields = normalizeContributionInput(data);
@@ -201,14 +154,11 @@ async function createContribution(data, requester) {
     throw createError("Club not found", 404);
   }
 
-  const statusData = resolveInitialStatus(requester.role, requester.id);
-
   return prisma.contribution.create({
     data: {
       userId: requester.id,
       clubId: resolvedClubId,
       ...fields,
-      ...statusData,
     },
     select: contributionSelect,
   });
@@ -217,17 +167,14 @@ async function createContribution(data, requester) {
 /**
  * Update a contribution.
  *
- * Deliberately narrow: only the owner, and only while the contribution is still
- * PENDING. Once a coordinator has approved or rejected it, the record is part of
- * the club's audit trail — letting a member silently rewrite an approved entry
- * would make approved hours meaningless.
+ * Only the owner can edit their own contribution.
  *
  * Passing `attachmentUrl: null` (or an empty string) clears the attachment.
  */
 async function updateContribution(id, data, requester) {
   const existing = await prisma.contribution.findUnique({
     where: { id },
-    select: { id: true, userId: true, status: true, clubId: true },
+    select: { id: true, userId: true, clubId: true },
   });
 
   if (!existing) {
@@ -236,13 +183,6 @@ async function updateContribution(id, data, requester) {
 
   if (existing.userId !== requester.id) {
     throw createError("You can only edit your own contributions", 403);
-  }
-
-  if (existing.status !== "PENDING") {
-    throw createError(
-      `This contribution has already been ${existing.status.toLowerCase()} and can no longer be edited`,
-      400
-    );
   }
 
   const fields = normalizeContributionInput(data, { partial: true });
@@ -261,14 +201,13 @@ async function updateContribution(id, data, requester) {
 /**
  * Get contributions for the requesting user only.
  */
-async function listMyContributions({ status, category, page, limit } = {}, requester) {
+async function listMyContributions({ category, page, limit } = {}, requester) {
   const { page: safePage, limit: safeLimit } = clampPagination(page, limit, {
     maxLimit: LIMITS.pagination.maxLimit,
     defaultLimit: LIMITS.pagination.defaultLimit,
   });
 
   const where = { userId: requester.id };
-  if (status) where.status = validateEnum(status, "status", STATUSES);
   if (category) where.category = validateEnum(category, "category", CATEGORIES);
 
   const [contributions, total] = await Promise.all([
@@ -297,10 +236,10 @@ async function listMyContributions({ status, category, page, limit } = {}, reque
  * List contributions — scoped by role.
  * ADMIN  → everything (optionally filtered by clubId)
  * COORDINATOR → own club only
- * MEMBER → own contributions only (use listMyContributions instead)
+ * MEMBER → own club's contributions
  */
 async function listContributions(
-  { status, category, clubId, userId, page, limit } = {},
+  { category, clubId, userId, page, limit } = {},
   requester
 ) {
   const { page: safePage, limit: safeLimit } = clampPagination(page, limit, {
@@ -310,24 +249,17 @@ async function listContributions(
 
   const where = {};
 
-  if (requester.role === "COORDINATOR") {
+  if (requester.role === "COORDINATOR" || requester.role === "MEMBER") {
     if (!requester.clubId) {
       throw createError("You must belong to a club to view contributions", 403);
     }
     where.clubId = requester.clubId;
-    // A coordinator may still narrow to one member inside their own club.
     if (userId) where.userId = userId;
   } else if (requester.role === "ADMIN") {
     if (clubId) where.clubId = clubId;
     if (userId) where.userId = userId;
-  } else {
-    // MEMBER — never allowed to see anyone else's submissions through this
-    // endpoint. Without this branch the `where` stayed empty for members and
-    // the query returned every contribution in the college.
-    where.userId = requester.id;
   }
 
-  if (status) where.status = validateEnum(status, "status", STATUSES);
   if (category) where.category = validateEnum(category, "category", CATEGORIES);
 
   const [contributions, total] = await Promise.all([
@@ -354,7 +286,7 @@ async function listContributions(
 
 /**
  * Get a single contribution by ID.
- * Access rules: ADMIN — any; COORDINATOR — own club; MEMBER — own only.
+ * Access rules: ADMIN — any; COORDINATOR/MEMBER — own club only.
  */
 async function getContributionById(id, requester) {
   const contribution = await prisma.contribution.findUnique({
@@ -366,78 +298,15 @@ async function getContributionById(id, requester) {
     throw createError("Contribution not found", 404);
   }
 
-  if (requester.role === "MEMBER" && contribution.user.id !== requester.id) {
-    // Members may view approved contributions from their own club
-    if (
-      contribution.status !== "APPROVED" ||
-      !requester.clubId ||
-      contribution.club.id !== requester.clubId
-    ) {
-      throw createError("You can only view your own contributions", 403);
+  if (requester.role === "MEMBER" || requester.role === "COORDINATOR") {
+    if (!requester.clubId || contribution.club.id !== requester.clubId) {
+      if (contribution.user.id !== requester.id) {
+        throw createError("You can only view contributions from your own club", 403);
+      }
     }
   }
 
-  if (requester.role === "COORDINATOR") {
-    assertClubScope(requester, contribution.club.id);
-  }
-
   return contribution;
-}
-
-/**
- * Approve a contribution.
- */
-async function approveContribution(id, requester) {
-  const contribution = await prisma.contribution.findUnique({
-    where: { id },
-    select: { id: true, status: true, clubId: true },
-  });
-
-  if (!contribution) throw createError("Contribution not found", 404);
-  if (contribution.status === "APPROVED") {
-    throw createError("Contribution is already approved", 400);
-  }
-
-  assertClubScope(requester, contribution.clubId);
-
-  return prisma.contribution.update({
-    where: { id },
-    data: {
-      status: "APPROVED",
-      approvedById: requester.id,
-      approvedAt: new Date(),
-      rejectionReason: null,
-    },
-    select: contributionSelect,
-  });
-}
-
-/**
- * Reject a contribution with an optional reason.
- */
-async function rejectContribution(id, { rejectionReason } = {}, requester) {
-  const contribution = await prisma.contribution.findUnique({
-    where: { id },
-    select: { id: true, status: true, clubId: true },
-  });
-
-  if (!contribution) throw createError("Contribution not found", 404);
-  if (contribution.status === "REJECTED") {
-    throw createError("Contribution is already rejected", 400);
-  }
-
-  assertClubScope(requester, contribution.clubId);
-
-  return prisma.contribution.update({
-    where: { id },
-    data: {
-      status: "REJECTED",
-      approvedById: requester.id,
-      approvedAt: new Date(),
-      rejectionReason: rejectionReason || null,
-    },
-    select: contributionSelect,
-  });
 }
 
 /**
@@ -470,45 +339,37 @@ async function getClubAnalytics(clubId, requester) {
   if (!club) throw createError("Club not found", 404);
 
   const [
-    totalApproved,
-    totalPending,
-    totalRejected,
-    approvedHoursAgg,
+    totalContributions,
+    hoursAgg,
     categoryBreakdown,
     topContributors,
     recentContributions,
     weeklyTrend,
   ] = await Promise.all([
-    // Counts
+    // Total count
     prisma.contribution.count({
-      where: { clubId: resolvedClubId, status: "APPROVED" },
-    }),
-    prisma.contribution.count({
-      where: { clubId: resolvedClubId, status: "PENDING" },
-    }),
-    prisma.contribution.count({
-      where: { clubId: resolvedClubId, status: "REJECTED" },
+      where: { clubId: resolvedClubId },
     }),
 
-    // Total approved hours
+    // Total hours
     prisma.contribution.aggregate({
-      where: { clubId: resolvedClubId, status: "APPROVED" },
+      where: { clubId: resolvedClubId },
       _sum: { hours: true },
     }),
 
-    // Category breakdown (approved only)
+    // Category breakdown
     prisma.contribution.groupBy({
       by: ["category"],
-      where: { clubId: resolvedClubId, status: "APPROVED" },
+      where: { clubId: resolvedClubId },
       _sum: { hours: true },
       _count: { _all: true },
       orderBy: { _sum: { hours: "desc" } },
     }),
 
-    // Top 5 contributors by approved hours
+    // Top 5 contributors by hours
     prisma.contribution.groupBy({
       by: ["userId"],
-      where: { clubId: resolvedClubId, status: "APPROVED" },
+      where: { clubId: resolvedClubId },
       _sum: { hours: true },
       orderBy: { _sum: { hours: "desc" } },
       take: 5,
@@ -525,13 +386,9 @@ async function getClubAnalytics(clubId, requester) {
     // Weekly trend — last 8 weeks
     prisma.$queryRaw`
       SELECT
-        -- M-10: bucket by when the work was actually done, not when it was
-        -- typed in. Backdated entries were landing in the week they were
-        -- submitted, which made the trend chart disagree with the leaderboard
-        -- (which has always filtered on "datePerformed").
         DATE_TRUNC('week', "datePerformed") AS week,
         COUNT(*)::int AS count,
-        COALESCE(SUM(CASE WHEN status = 'APPROVED' THEN hours ELSE 0 END), 0) AS hours
+        COALESCE(SUM(hours), 0) AS hours
       FROM contributions
       WHERE "clubId" = ${resolvedClubId}
         AND "datePerformed" >= NOW() - INTERVAL '8 weeks'
@@ -556,10 +413,8 @@ async function getClubAnalytics(clubId, requester) {
   return {
     club,
     stats: {
-      totalApproved,
-      totalPending,
-      totalRejected,
-      totalApprovedHours: approvedHoursAgg._sum.hours ?? 0,
+      totalContributions,
+      totalHours: hoursAgg._sum.hours ?? 0,
     },
     categoryBreakdown: categoryBreakdown.map((c) => ({
       category: c.category,
@@ -579,29 +434,25 @@ async function getGlobalAnalytics(clubId) {
   const clubFilter = clubId ? { clubId } : {};
 
   const [
-    totalApproved,
-    totalPending,
-    totalRejected,
-    approvedHoursAgg,
+    totalContributions,
+    hoursAgg,
     topClubs,
     topContributors,
     categoryBreakdown,
     recentContributions,
     weeklyTrend,
   ] = await Promise.all([
-    prisma.contribution.count({ where: { ...clubFilter, status: "APPROVED" } }),
-    prisma.contribution.count({ where: { ...clubFilter, status: "PENDING" } }),
-    prisma.contribution.count({ where: { ...clubFilter, status: "REJECTED" } }),
+    prisma.contribution.count({ where: { ...clubFilter } }),
 
     prisma.contribution.aggregate({
-      where: { ...clubFilter, status: "APPROVED" },
+      where: { ...clubFilter },
       _sum: { hours: true },
     }),
 
     // Top clubs
     prisma.contribution.groupBy({
       by: ["clubId"],
-      where: { status: "APPROVED" },
+      where: {},
       _sum: { hours: true },
       _count: { _all: true },
       orderBy: { _sum: { hours: "desc" } },
@@ -611,7 +462,7 @@ async function getGlobalAnalytics(clubId) {
     // Top contributors across all clubs
     prisma.contribution.groupBy({
       by: ["userId"],
-      where: { ...clubFilter, status: "APPROVED" },
+      where: { ...clubFilter },
       _sum: { hours: true },
       orderBy: { _sum: { hours: "desc" } },
       take: 10,
@@ -620,7 +471,7 @@ async function getGlobalAnalytics(clubId) {
     // Category breakdown
     prisma.contribution.groupBy({
       by: ["category"],
-      where: { ...clubFilter, status: "APPROVED" },
+      where: { ...clubFilter },
       _sum: { hours: true },
       _count: { _all: true },
       orderBy: { _sum: { hours: "desc" } },
@@ -638,13 +489,9 @@ async function getGlobalAnalytics(clubId) {
     clubId
       ? prisma.$queryRaw`
           SELECT
-            -- M-10: bucket by when the work was actually done, not when it was
-        -- typed in. Backdated entries were landing in the week they were
-        -- submitted, which made the trend chart disagree with the leaderboard
-        -- (which has always filtered on "datePerformed").
-        DATE_TRUNC('week', "datePerformed") AS week,
+            DATE_TRUNC('week', "datePerformed") AS week,
             COUNT(*)::int AS count,
-            COALESCE(SUM(CASE WHEN status = 'APPROVED' THEN hours ELSE 0 END), 0) AS hours
+            COALESCE(SUM(hours), 0) AS hours
           FROM contributions
           WHERE "clubId" = ${clubId}
             AND "datePerformed" >= NOW() - INTERVAL '8 weeks'
@@ -653,13 +500,9 @@ async function getGlobalAnalytics(clubId) {
         `
       : prisma.$queryRaw`
           SELECT
-            -- M-10: bucket by when the work was actually done, not when it was
-        -- typed in. Backdated entries were landing in the week they were
-        -- submitted, which made the trend chart disagree with the leaderboard
-        -- (which has always filtered on "datePerformed").
-        DATE_TRUNC('week', "datePerformed") AS week,
+            DATE_TRUNC('week', "datePerformed") AS week,
             COUNT(*)::int AS count,
-            COALESCE(SUM(CASE WHEN status = 'APPROVED' THEN hours ELSE 0 END), 0) AS hours
+            COALESCE(SUM(hours), 0) AS hours
           FROM contributions
           WHERE "datePerformed" >= NOW() - INTERVAL '8 weeks'
           GROUP BY week
@@ -696,10 +539,8 @@ async function getGlobalAnalytics(clubId) {
 
   return {
     stats: {
-      totalApproved,
-      totalPending,
-      totalRejected,
-      totalApprovedHours: approvedHoursAgg._sum.hours ?? 0,
+      totalContributions,
+      totalHours: hoursAgg._sum.hours ?? 0,
     },
     topClubs: topClubsHydrated,
     topContributors: topContributorsHydrated,
@@ -713,100 +554,6 @@ async function getGlobalAnalytics(clubId) {
   };
 }
 
-// ── Leaderboard ───────────────────────────────────────────────────────────────
-
-/**
- * Leaderboard — ranked by total approved hours within a time window.
- * period: "weekly" | "monthly" | "semester" | "all"
- */
-async function getLeaderboard({ period = "all", clubId, page, limit } = {}, requester) {
-  const safePeriod = validateEnum(period, "period", [
-    "weekly",
-    "monthly",
-    "semester",
-    "all",
-  ]);
-
-  const { page: safePage, limit: safeLimit } = clampPagination(page, limit, {
-    maxLimit: LIMITS.pagination.maxLimit,
-    defaultLimit: LIMITS.pagination.defaultLimit,
-  });
-
-  let dateFilter = {};
-
-  if (safePeriod === "weekly") {
-    dateFilter = { datePerformed: { gte: getStartOfWeek() } };
-  } else if (safePeriod === "monthly") {
-    dateFilter = { datePerformed: { gte: getStartOfMonth() } };
-  } else if (safePeriod === "semester") {
-    dateFilter = { datePerformed: { gte: getStartOfSemester() } };
-  }
-
-  const where = {
-    status: "APPROVED",
-    ...dateFilter,
-  };
-
-  // Scope by club for coordinators
-  if (requester.role === "COORDINATOR") {
-    if (!requester.clubId) throw createError("You must belong to a club", 403);
-    where.clubId = requester.clubId;
-  } else if (requester.role === "ADMIN" && clubId) {
-    where.clubId = clubId;
-  } else if (requester.role === "MEMBER" && requester.clubId) {
-    // Members see the leaderboard scoped to their own domain, so the
-    // "Domain Rank" shown in the app is a within-domain rank, not global.
-    where.clubId = requester.clubId;
-  }
-
-  const grouped = await prisma.contribution.groupBy({
-    by: ["userId"],
-    where,
-    _sum: { hours: true },
-    _count: { _all: true },
-    orderBy: { _sum: { hours: "desc" } },
-    skip: (safePage - 1) * safeLimit,
-    take: safeLimit,
-  });
-
-  const total = await prisma.contribution.groupBy({
-    by: ["userId"],
-    where,
-    _count: { _all: true },
-  });
-
-  const userIds = grouped.map((g) => g.userId);
-  const users = await prisma.user.findMany({
-    where: { id: { in: userIds } },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      club: { select: { id: true, name: true } },
-    },
-  });
-  const userMap = Object.fromEntries(users.map((u) => [u.id, u]));
-
-  const offset = (safePage - 1) * safeLimit;
-  const entries = grouped.map((g, i) => ({
-    rank: offset + i + 1,
-    user: userMap[g.userId],
-    totalHours: g._sum.hours ?? 0,
-    totalContributions: g._count._all,
-  }));
-
-  return {
-    period: safePeriod,
-    entries,
-    pagination: {
-      page: safePage,
-      limit: safeLimit,
-      total: total.length,
-      totalPages: Math.ceil(total.length / safeLimit),
-    },
-  };
-}
-
 // ── Heatmap ───────────────────────────────────────────────────────────────────
 
 /**
@@ -817,10 +564,7 @@ async function getLeaderboard({ period = "all", clubId, page, limit } = {}, requ
  * thousands of records to render ~365 small squares. This aggregates in the
  * database and returns one row per day instead.
  *
- * REJECTED contributions are excluded — a rejected submission is not activity
- * worth celebrating on a profile. `hours` is therefore the total hours of
- * *non-rejected* contributions that day, which is deliberately not the same
- * number as the "approved hours" stat on the profile header.
+ * All contributions are counted (no status filtering).
  *
  * @param {{ userId?: string, clubId?: string, days?: number|string }} filters
  * @param {{ id: string, role: string, clubId: string|null }} requester
@@ -850,7 +594,6 @@ async function getHeatmap({ userId, clubId, days } = {}, requester) {
   const conditions = [
     Prisma.sql`"datePerformed" >= ${start}`,
     Prisma.sql`"datePerformed" < ${endExclusive}`,
-    Prisma.sql`status <> 'REJECTED'::"ContributionStatus"`,
   ];
 
   if (targetUserId) {
@@ -933,53 +676,14 @@ async function assertHeatmapScope({ userId, clubId }, requester) {
   }
 }
 
-/**
- * Number of contributions awaiting review, scoped to what the caller can act on.
- *
- * This backs the in-app "pending review" badge — goal.md asks for a coordinator
- * notification when a contribution is submitted. Email delivery isn't wired up
- * (no mail transport is available), so the in-app option is what ships: the
- * badge is derived from live data, which means it can never go stale or fire a
- * duplicate the way a stored notification queue can.
- */
-async function getPendingReviewCount(requester) {
-  const where = { status: "PENDING" };
-
-  if (requester.role === "COORDINATOR") {
-    if (!requester.clubId) {
-      return { pendingCount: 0, scope: "none" };
-    }
-    where.clubId = requester.clubId;
-  } else if (requester.role !== "ADMIN") {
-    // Members only ever see their own pending submissions.
-    where.userId = requester.id;
-  }
-
-  const pendingCount = await prisma.contribution.count({ where });
-
-  return {
-    pendingCount,
-    scope:
-      requester.role === "ADMIN"
-        ? "all"
-        : requester.role === "COORDINATOR"
-          ? "club"
-          : "self",
-  };
-}
-
 module.exports = {
   createContribution,
   updateContribution,
   listMyContributions,
   listContributions,
   getContributionById,
-  approveContribution,
-  rejectContribution,
   deleteContribution,
   getClubAnalytics,
   getGlobalAnalytics,
-  getLeaderboard,
   getHeatmap,
-  getPendingReviewCount,
 };

@@ -5,8 +5,6 @@ import type {
   ClubAnalytics,
   GlobalAnalytics,
   HeatmapResponse,
-  LeaderboardResponse,
-  LeaderboardPeriod,
 } from "@/types";
 
 // ── Create ────────────────────────────────────────────────────────────────────
@@ -35,7 +33,6 @@ export async function createContribution(
 // ── Read ──────────────────────────────────────────────────────────────────────
 
 export interface ContributionFilters {
-  status?: string;
   category?: string;
   page?: number;
   limit?: number;
@@ -46,7 +43,6 @@ export async function listMyContributions(
   token?: string
 ) {
   const q = new URLSearchParams();
-  if (params.status) q.set("status", params.status);
   if (params.category) q.set("category", params.category);
   if (params.page) q.set("page", String(params.page));
   if (params.limit) q.set("limit", String(params.limit));
@@ -62,7 +58,6 @@ export async function listContributions(
   token?: string
 ) {
   const q = new URLSearchParams();
-  if (params.status) q.set("status", params.status);
   if (params.category) q.set("category", params.category);
   if (params.clubId) q.set("clubId", params.clubId);
   if (params.userId) q.set("userId", params.userId);
@@ -95,9 +90,7 @@ export interface UpdateContributionPayload {
 }
 
 /**
- * Edit a contribution. Only the owner may do this, and only while the
- * contribution is still PENDING — the server answers 403 for a non-owner and
- * 400 once the contribution has been approved or rejected.
+ * Edit a contribution. Only the owner may do this.
  */
 export async function updateContribution(
   id: string,
@@ -107,27 +100,6 @@ export async function updateContribution(
   return apiRequest<Contribution>(`/contributions/${id}`, {
     method: "PATCH",
     body: data as unknown as Record<string, unknown>,
-    token,
-  });
-}
-
-// ── Approve / Reject ──────────────────────────────────────────────────────────
-
-export async function approveContribution(id: string, token?: string) {
-  return apiRequest<Contribution>(`/contributions/${id}/approve`, {
-    method: "PATCH",
-    token,
-  });
-}
-
-export async function rejectContribution(
-  id: string,
-  rejectionReason?: string,
-  token?: string
-) {
-  return apiRequest<Contribution>(`/contributions/${id}/reject`, {
-    method: "PATCH",
-    body: { rejectionReason },
     token,
   });
 }
@@ -176,24 +148,6 @@ export async function getContributionHeatmap(
   const query = q.toString();
   return apiRequest<HeatmapResponse>(
     `/contributions/heatmap${query ? `?${query}` : ""}`,
-    { token }
-  );
-}
-
-// ── Leaderboard ───────────────────────────────────────────────────────────────
-
-export async function getLeaderboard(
-  params: { period?: LeaderboardPeriod; clubId?: string; page?: number; limit?: number } = {},
-  token?: string
-) {
-  const q = new URLSearchParams();
-  if (params.period) q.set("period", params.period);
-  if (params.clubId) q.set("clubId", params.clubId);
-  if (params.page) q.set("page", String(params.page));
-  if (params.limit) q.set("limit", String(params.limit));
-  const query = q.toString();
-  return apiRequest<LeaderboardResponse>(
-    `/contributions/leaderboard${query ? `?${query}` : ""}`,
     { token }
   );
 }

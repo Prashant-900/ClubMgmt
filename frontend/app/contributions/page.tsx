@@ -4,10 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { AuthGuard } from "@/components/providers/AuthGuard";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { ContributionList } from "@/components/contributions/ContributionList";
-import { ApprovalQueue } from "@/components/contributions/ApprovalQueue";
 import { ClubDashboard } from "@/components/contributions/ClubDashboard";
 import { GlobalDashboard } from "@/components/contributions/GlobalDashboard";
-import { Leaderboard } from "@/components/contributions/Leaderboard";
 import { AdminMembersOverview } from "@/components/members/AdminMembersOverview";
 import { MemberGrid } from "@/components/members/MemberGrid";
 import { PageTabs } from "@/components/ui/PageTabs";
@@ -17,7 +15,7 @@ import { getApiErrorMessage } from "@/lib/hooks/apiError";
 import type { Club } from "@/types";
 import Link from "next/link";
 
-type Tab = "mine" | "pending" | "members" | "club" | "analytics" | "leaderboard";
+type Tab = "mine" | "members" | "club" | "analytics";
 
 function ContributionsContent() {
   const { user } = useAuth();
@@ -48,12 +46,10 @@ function ContributionsContent() {
   if (!user) return null;
 
   const allTabs: { id: Tab; label: string; roles: string[] }[] = [
-    { id: "mine",        label: "My contributions",  roles: ["ADMIN", "COORDINATOR", "MEMBER"] },
-    { id: "pending",     label: "Pending approvals", roles: ["ADMIN", "COORDINATOR"] },
-    { id: "members",     label: "Members",           roles: ["ADMIN", "COORDINATOR", "MEMBER"] },
-    { id: "club",        label: "Domain contributions",roles: ["ADMIN", "COORDINATOR"] },
-    { id: "analytics",   label: "Analytics",         roles: ["ADMIN", "COORDINATOR"] },
-    { id: "leaderboard", label: "Leaderboard",       roles: ["ADMIN", "COORDINATOR", "MEMBER"] },
+    { id: "mine",      label: "My contributions",    roles: ["ADMIN", "COORDINATOR", "MEMBER"] },
+    { id: "members",   label: "Members",             roles: ["ADMIN", "COORDINATOR", "MEMBER"] },
+    { id: "club",      label: "Domain contributions", roles: ["ADMIN", "COORDINATOR"] },
+    { id: "analytics", label: "Analytics",           roles: ["ADMIN", "COORDINATOR"] },
   ];
 
   const visibleTabs = allTabs.filter((t) => t.roles.includes(user.role));
@@ -103,12 +99,6 @@ function ContributionsContent() {
           />
         )}
 
-        {activeTab === "pending" && (
-          <RoleGate allowedRoles={["ADMIN", "COORDINATOR"]}>
-            <ApprovalQueue />
-          </RoleGate>
-        )}
-
         {/* Members tab: admin sees all (assigned + unassigned), coordinator/member sees club members */}
         {activeTab === "members" && (
           <RoleGate allowedRoles={["ADMIN", "COORDINATOR", "MEMBER"]}>
@@ -147,8 +137,6 @@ function ContributionsContent() {
             )}
           </RoleGate>
         )}
-
-        {activeTab === "leaderboard" && <Leaderboard />}
       </div>
     </div>
   );

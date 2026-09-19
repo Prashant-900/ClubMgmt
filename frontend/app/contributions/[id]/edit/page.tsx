@@ -3,10 +3,9 @@
 /**
  * Edit a contribution — `/contributions/[id]/edit`
  *
- * Only the owner may edit, and only while the contribution is still PENDING.
- * The server enforces both rules (403 for a non-owner, 400 once reviewed);
- * this page checks them up front so a locked contribution renders a read-only
- * explanation instead of a form the user cannot submit.
+ * Only the owner may edit their own contributions. The server enforces
+ * ownership rules (403 for a non-owner); this page checks up front so
+ * a non-owner sees a read-only explanation instead of a form they cannot submit.
  */
 
 import { use, useCallback, useEffect, useState } from "react";
@@ -18,7 +17,6 @@ import {
   ContributionForm,
   toFormValues,
 } from "@/components/contributions/ContributionForm";
-import { StatusBadge } from "@/components/ui/Badge";
 import type { Contribution } from "@/types";
 
 interface ApiError {
@@ -31,12 +29,10 @@ function LockedNotice({
   contributionId,
   heading,
   message,
-  status,
 }: {
   contributionId: string;
   heading: string;
   message: string;
-  status?: Contribution["status"];
 }) {
   return (
     <div className="bg-gh-canvas-subtle border border-gh-border-default rounded-md p-5 space-y-4">
@@ -44,7 +40,6 @@ function LockedNotice({
         <h2 className="text-sm font-semibold text-gh-text-primary">
           {heading}
         </h2>
-        {status && <StatusBadge status={status} />}
       </div>
 
       <p
@@ -110,8 +105,7 @@ function EditContributionContent({ id }: { id: string }) {
   const isOwner = Boolean(
     contribution && user && contribution.user?.id === user.id
   );
-  const isPending = contribution?.status === "PENDING";
-  const canEdit = isOwner && isPending;
+  const canEdit = isOwner;
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
@@ -128,7 +122,7 @@ function EditContributionContent({ id }: { id: string }) {
           Edit contribution
         </h1>
         <p className="text-sm text-gh-text-secondary mt-1">
-          Change the details of a contribution that is still awaiting review.
+          Update the details of your contribution.
         </p>
       </div>
 
@@ -170,19 +164,7 @@ function EditContributionContent({ id }: { id: string }) {
         <LockedNotice
           contributionId={id}
           heading={contribution.title}
-          status={contribution.status}
           message="Only the member who submitted a contribution can edit it. You can still view the full record."
-        />
-      ) : !isPending ? (
-        <LockedNotice
-          contributionId={id}
-          heading={contribution.title}
-          status={contribution.status}
-          message={
-            contribution.status === "APPROVED"
-              ? "This contribution has already been approved, so it can no longer be edited. Ask a coordinator if something needs to change."
-              : "This contribution has already been rejected, so it can no longer be edited. Submit a new one with the corrected details."
-          }
         />
       ) : canEdit ? (
         <div className="bg-gh-canvas-subtle border border-gh-border-default rounded-md p-5">

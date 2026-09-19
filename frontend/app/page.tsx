@@ -6,18 +6,17 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Suspense, useEffect, useState, useCallback } from "react";
 import { ContributionHeatmap, type HeatmapDay } from "@/components/ui/ContributionHeatmap";
-import { RoleBadge, StatusBadge, CategoryBadge } from "@/components/ui/Badge";
+import { RoleBadge, CategoryBadge } from "@/components/ui/Badge";
 import { PageTabs } from "@/components/ui/PageTabs";
 import { MemberGrid } from "@/components/members/MemberGrid";
 import { ContributionList } from "@/components/contributions/ContributionList";
 import { ClubDashboard } from "@/components/contributions/ClubDashboard";
-import { Leaderboard } from "@/components/contributions/Leaderboard";
+
 import { AdminMembersOverview } from "@/components/members/AdminMembersOverview";
 import { ClubGrid } from "@/components/clubs/ClubGrid";
 import {
   listMyContributions,
   listContributions,
-  getLeaderboard,
   getGlobalAnalytics,
 } from "@/lib/api/contribution.api";
 import { listMembers } from "@/lib/api/member.api";
@@ -81,14 +80,14 @@ function ContributionRow({ c }: { c: Contribution }) {
       href={`/contributions/${c.id}`}
       className="flex items-center gap-3 py-2.5 px-3 -mx-3 rounded-md hover:bg-[#f8f9fa] transition-colors group"
     >
-      <StatusBadge status={c.status} />
+      <CategoryBadge category={c.category} className="hidden sm:inline-flex" />
       <span className="flex-1 text-sm text-[#202124] truncate group-hover:text-[#1a73e8] transition-colors">
         {c.title}
       </span>
       <span className="text-xs text-[#5f6368] shrink-0 tabular-nums">
         {c.hours % 1 === 0 ? c.hours : c.hours.toFixed(1)}h
       </span>
-      <CategoryBadge category={c.category} className="hidden sm:inline-flex" />
+
     </Link>
   );
 }
@@ -177,38 +176,21 @@ function MemberHome() {
   const { user, token } = useAuth();
   const [contributions, setContributions] = useState<Contribution[]>([]);
   const [contributionsError, setContributionsError] = useState<string | null>(null);
-  const [rank, setRank] = useState<number | null>(null);
-  const [rankError, setRankError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     setContributionsError(null);
-    setRankError(null);
 
-    // allSettled: a failing leaderboard must not blank the contribution list,
-    // and vice versa — the two are unrelated.
-    const [contribRes, lbRes] = await Promise.allSettled([
-      listMyContributions({ limit: 100 }, token ?? undefined),
-      getLeaderboard({ period: "all", limit: 100 }, token ?? undefined),
-    ]);
-
-    if (contribRes.status === "fulfilled") {
-      setContributions(contribRes.value.data?.contributions ?? []);
-    } else {
+    try {
+      const res = await listMyContributions({ limit: 100 }, token ?? undefined);
+      setContributions(res.data?.contributions ?? []);
+    } catch (err: unknown) {
       setContributions([]);
       setContributionsError(
-        getApiErrorMessage(contribRes.reason, "Failed to load your contributions")
+        getApiErrorMessage(err, "Failed to load your contributions")
       );
-    }
-
-    if (lbRes.status === "fulfilled") {
-      const entry = lbRes.value.data?.entries.find((e) => e.user?.id === user.id);
-      setRank(entry?.rank ?? null);
-    } else {
-      setRank(null);
-      setRankError(getApiErrorMessage(lbRes.reason, "Rank unavailable"));
     }
 
     setLoading(false);
@@ -220,9 +202,7 @@ function MemberHome() {
 
   if (!user) return null;
 
-  const approved = contributions.filter((c) => c.status === "APPROVED");
-  const pending = contributions.filter((c) => c.status === "PENDING");
-  const totalHours = approved.reduce((s, c) => s + c.hours, 0);
+  const totalHours = contributions.reduce((s, c) => s + c.hours, 0);
   const heatmapData = buildHeatmap(contributions);
   const recent = [...contributions]
     .sort((a, b) => new Date(b.datePerformed).getTime() - new Date(a.datePerformed).getTime())
@@ -237,14 +217,7 @@ function MemberHome() {
         ? `${totalHours}h`
         : `${totalHours.toFixed(1)}h`,
     },
-    { label: "Approved", value: contributionsError ? "—" : approved.length },
-    { label: "Pending", value: contributionsError ? "—" : pending.length },
-    {
-      label: "Domain Rank",
-      value: rank != null ? `#${rank}` : "—",
-      error: rankError,
-      onRetry: rankError ? loadData : undefined,
-    },
+    { label: "Contributions", value: contributionsError ? "—" : contributions.length },
   ];
 
   return (
@@ -546,12 +519,12 @@ function AdminHome() {
 
 // ── ADMIN Club drill-down ──────────────────────────────────────────────────────
 
-type ClubTab = "overview" | "members" | "contributions" | "analytics" | "events";
+type ClubTab = "members" | "contributions" | "analytics" | "events";
 
 function ClubDrilldown({ clubId }: { clubId: string }) {
   const router = useRouter();
   const { listEnrichedClubs } = useClubApi();
-  const [activeTab, setActiveTab] = useState<ClubTab>("overview");
+  const [activeTab, setActiveTab] = useState<ClubTab>("members");
   const [club, setClub] = useState<EnrichedClub | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -579,7 +552,6 @@ function ClubDrilldown({ clubId }: { clubId: string }) {
   const memberCount = club?.memberCount ?? 0;
 
   const TABS: { id: ClubTab; label: string }[] = [
-    { id: "overview",      label: "Overview" },
     { id: "members",       label: "Members" },
     { id: "contributions", label: "Contributions" },
     { id: "analytics",     label: "Analytics" },
@@ -659,14 +631,7 @@ function ClubDrilldown({ clubId }: { clubId: string }) {
           panel instead of tearing down the whole subtree (which flashed like
           a full-page reload). */}
       <div className="animate-fade-in">
-        {activeTab === "overview" && (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-sm font-semibold text-[#202124] mb-3">Leaderboard</h3>
-              <Leaderboard clubId={clubId} />
-            </div>
-          </div>
-        )}
+
         {activeTab === "members" && <MemberGrid clubId={clubId} />}
         {activeTab === "contributions" && (
           <ContributionList clubId={clubId} showUser emptyMessage="No contributions in this club yet." />

@@ -4,14 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { listContributions, listMyContributions } from "@/lib/api/contribution.api";
 import { ContributionCard } from "./ContributionCard";
-import type { Contribution, ContributionStatus, ContributionCategory } from "@/types";
-
-const STATUSES: { value: string; label: string }[] = [
-  { value: "",         label: "All status" },
-  { value: "PENDING",  label: "Open" },
-  { value: "APPROVED", label: "Closed" },
-  { value: "REJECTED", label: "Rejected" },
-];
+import type { Contribution, ContributionCategory } from "@/types";
 
 const CATEGORIES: { value: string; label: string }[] = [
   { value: "",              label: "All categories" },
@@ -49,7 +42,6 @@ export function ContributionList({
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  const [statusFilter, setStatusFilter] = useState<ContributionStatus | "">("");
   const [categoryFilter, setCategoryFilter] = useState<ContributionCategory | "">("");
 
   const limit = 20;
@@ -59,7 +51,6 @@ export function ContributionList({
     setError(null);
     try {
       const params = {
-        status: statusFilter || undefined,
         category: categoryFilter || undefined,
         clubId: clubId || undefined,
         page,
@@ -81,32 +72,15 @@ export function ContributionList({
     } finally {
       setLoading(false);
     }
-  }, [token, mineOnly, clubId, statusFilter, categoryFilter, page]);
+  }, [token, mineOnly, clubId, categoryFilter, page]);
 
   useEffect(() => { fetchContributions(); }, [fetchContributions]);
-  useEffect(() => { setPage(1); }, [statusFilter, categoryFilter]);
+  useEffect(() => { setPage(1); }, [categoryFilter]);
 
   return (
     <div className="space-y-4">
-      {/* Filter toolbar — GitHub issue list style */}
+      {/* Filter toolbar */}
       <div className="flex flex-wrap items-center gap-2">
-        {/* Status filters */}
-        <div className="flex items-center border border-[#dadce0] rounded-md overflow-hidden text-xs">
-          {STATUSES.map((s) => (
-            <button
-              key={s.value}
-              onClick={() => setStatusFilter(s.value as ContributionStatus | "")}
-              className={`px-3 py-1.5 font-medium transition-colors cursor-pointer border-r border-[#dadce0] last:border-r-0 ${
-                statusFilter === s.value
-                  ? "bg-[#f1f3f4] text-[#202124]"
-                  : "text-[#5f6368] hover:bg-[#f8f9fa] hover:text-[#202124]"
-              }`}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
-
         {/* Category filter */}
         <select
           value={categoryFilter}
